@@ -31,6 +31,7 @@ This private fork is organized for ongoing collaboration and iteration.
 
 - Working notes: [AGENTS.md](./AGENTS.md)
 - Reproduction guide: [docs/REPRODUCTION.md](./docs/REPRODUCTION.md)
+- Download plan: [docs/DOWNLOADS.md](./docs/DOWNLOADS.md)
 - Collaboration workflow: [docs/WORKFLOW.md](./docs/WORKFLOW.md)
 - Experiment log template: [docs/EXPERIMENT_LOG.md](./docs/EXPERIMENT_LOG.md)
 
