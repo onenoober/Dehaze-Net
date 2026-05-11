@@ -1,8 +1,50 @@
+# Local environments
+.venv/
+venv/
+env/
+ENV/
+.python-version
+.env
+.env.*
+!.env.example
+
+# IDE / OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Python artifacts
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*.pyd
+*.so
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+**/.ipynb_checkpoints/
+
+# Experiment outputs
 experiment/
+runs/
+wandb/
+tensorboard/
+*.log
+
+# Model and dataset storage
 trained_models/*
 !trained_models/README.md
 dataset/*
 !dataset/README.md
-**/__pycache__
-**/.ipynb_checkpoints
+*.pth
+*.pt
+*.ckpt
+*.onnx
+*.pk
+*.npy
+*.npz
+
 .history/

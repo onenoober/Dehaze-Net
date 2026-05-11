@@ -25,6 +25,15 @@ Zhejiang University
 
 This repo is the official implementation of "[DEA-Net: Single image dehazing based on detail-enhanced convolution and content-guided attention](https://arxiv.org/abs/2301.04805)".
 
+## Research Fork Notes
+
+This private fork is organized for ongoing collaboration and iteration.
+
+- Working notes: [AGENTS.md](./AGENTS.md)
+- Reproduction guide: [docs/REPRODUCTION.md](./docs/REPRODUCTION.md)
+- Collaboration workflow: [docs/WORKFLOW.md](./docs/WORKFLOW.md)
+- Experiment log template: [docs/EXPERIMENT_LOG.md](./docs/EXPERIMENT_LOG.md)
+
 ## News
 
 - **Ocr 27, 2024**: :tada::tada::tada: Our following work "[Prompt-Based Test-Time Real Image Dehazing: A Novel Pipeline](https://www.ecva.net/papers/eccv_2024/papers_ECCV/papers/09815.pdf)" is accepted by ECCV 2024, and the [source code](https://github.com/cecret3350/PTTD-Dehazing) is available now.
