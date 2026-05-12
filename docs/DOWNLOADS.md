@@ -55,6 +55,9 @@ Recommended layout:
 Dehaze-Net/
   code/
   dataset/
+    RESIDE/
+      ITS/
+      OTS/
     ITS/
     OTS/
     HAZE4K/
@@ -66,3 +69,17 @@ Dehaze-Net/
   downloads/
 ```
 
+## Path compatibility note
+
+- `code/train.py` reads `../dataset/RESIDE/ITS/train` and `../dataset/RESIDE/ITS/test`.
+- `code/eval.py` reads `../dataset/<dataset>/test`.
+- To keep both scripts happy, you can store the real data under `dataset/RESIDE/...` and create symlinks:
+
+```powershell
+mkdir dataset
+mkdir dataset\RESIDE
+mklink /D dataset\ITS dataset\RESIDE\ITS
+mklink /D dataset\OTS dataset\RESIDE\OTS
+```
+
+- If you do not want symlinks, you can duplicate the folder layout, but that wastes disk space.
