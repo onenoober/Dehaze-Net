@@ -8,6 +8,7 @@ This repository is a private research fork of DEA-Net.
 - Do not commit datasets, checkpoints, experiment outputs, or temporary logs.
 
 ## Working conventions
+- For continuity across new conversations, read `docs/CURRENT_CONTEXT.md` before changing server, GitHub, dataset, or training workflow assumptions.
 - Use one feature branch per task.
 - Prefer small, reviewable commits.
 - Check `git status` before and after edits.
