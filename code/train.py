@@ -170,15 +170,31 @@ def set_seed_torch(seed=2018):
     torch.backends.cudnn.deterministic = True
 
 
+def resolve_dataset_root(dataset):
+    dataset_root = os.path.join('../dataset', dataset)
+    if os.path.isdir(dataset_root):
+        return dataset_root
+
+    reside_dataset_root = os.path.join('../dataset/RESIDE', dataset)
+    if os.path.isdir(reside_dataset_root):
+        return reside_dataset_root
+
+    raise FileNotFoundError(f'No dataset directory found for {dataset}')
+
+
 if __name__ == "__main__":
 
     set_seed_torch(666)
 
-    train_dir = '../dataset/RESIDE/ITS/train'
+    dataset_root = resolve_dataset_root(opt.dataset)
+    train_dir = os.path.join(dataset_root, 'train')
+    test_dir = os.path.join(dataset_root, 'test')
+    print('train_dir:', train_dir)
+    print('test_dir:', test_dir)
+
     train_set = TrainDataset(os.path.join(train_dir, 'hazy'), os.path.join(train_dir, 'clear'))
-    test_dir = '../dataset/RESIDE/ITS/test'
     test_set = TestDataset(os.path.join(test_dir, 'hazy'), os.path.join(test_dir, 'clear'))
-    loader_train = DataLoader(dataset=train_set, batch_size=16, shuffle=True, num_workers=12)
+    loader_train = DataLoader(dataset=train_set, batch_size=opt.bs, shuffle=True, num_workers=12)
     loader_test = DataLoader(dataset=test_set, batch_size=1, shuffle=False, num_workers=4)
 
     net = DEANet(base_dim=32)

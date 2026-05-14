@@ -47,9 +47,8 @@ if __name__ == '__main__':
     val_loader = DataLoader(val_dataset,
                             batch_size=1,
                             shuffle=False,
-                            num_workers=0,
+                            num_workers=4,
                             pin_memory=False)
-    val_loader.num_workers = 12
 
     # load pre-trained model
     ckpt = torch.load(os.path.join('../trained_models', opt.dataset, opt.pre_trained_model), map_location='cpu')

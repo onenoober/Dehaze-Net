@@ -1,8 +1,18 @@
 import os, random
+from pathlib import Path
 import torch.utils.data as data
 from PIL import Image
 from torchvision.transforms.functional import hflip, rotate, crop
 from torchvision.transforms import ToTensor, RandomCrop, Resize
+
+
+def find_clear_image(clear_path, hazy_image_name):
+    stem = hazy_image_name.split('_')[0]
+    for suffix in ('.png', '.jpg', '.jpeg', '.PNG', '.JPG', '.JPEG'):
+        candidate = Path(clear_path) / f'{stem}{suffix}'
+        if candidate.exists():
+            return str(candidate)
+    raise FileNotFoundError(f'No clear image found for {hazy_image_name} in {clear_path}')
 
 
 class TrainDataset(data.Dataset):
@@ -15,10 +25,9 @@ class TrainDataset(data.Dataset):
 
     def __getitem__(self, index):
         hazy_image_name = self.hazy_image_list[index]
-        clear_image_name = hazy_image_name.split('_')[0] + '.png'
 
         hazy_image_path = os.path.join(self.hazy_path, hazy_image_name)
-        clear_image_path = os.path.join(self.clear_path, clear_image_name)
+        clear_image_path = find_clear_image(self.clear_path, hazy_image_name)
 
         hazy = Image.open(hazy_image_path).convert('RGB')
         clear = Image.open(clear_image_path).convert('RGB')
@@ -57,10 +66,9 @@ class TestDataset(data.Dataset):
         # data shape: C*H*W
 
         hazy_image_name = self.hazy_image_list[index]
-        clear_image_name = hazy_image_name.split('_')[0] + '.png'
 
         hazy_image_path = os.path.join(self.hazy_path, hazy_image_name)
-        clear_image_path = os.path.join(self.clear_path, clear_image_name)
+        clear_image_path = find_clear_image(self.clear_path, hazy_image_name)
 
         hazy = Image.open(hazy_image_path).convert('RGB')
         clear = Image.open(clear_image_path).convert('RGB')
@@ -88,10 +96,9 @@ class ValDataset(data.Dataset):
 
     def __getitem__(self, index):
         hazy_image_name = self.hazy_image_list[index]
-        clear_image_name = hazy_image_name.split('_')[0] + '.png'
 
         hazy_image_path = os.path.join(self.hazy_path, hazy_image_name)
-        clear_image_path = os.path.join(self.clear_path, clear_image_name)
+        clear_image_path = find_clear_image(self.clear_path, hazy_image_name)
 
         hazy = Image.open(hazy_image_path).convert('RGB')
         clear = Image.open(clear_image_path).convert('RGB')
