@@ -28,6 +28,10 @@ parser.add_argument('--saved_plot_dir', type=str, default='saved_plot')
 parser.add_argument('--saved_infer_dir', type=str, default='saved_infer_dir')
 
 parser.add_argument('--dataset', type=str, default='ITS')
+parser.add_argument('--no_tqdm', action='store_true', help='disable tqdm training progress bar')
+parser.add_argument('--no_tensorboard', action='store_true', help='disable TensorBoard scalar logging')
+parser.add_argument('--tensorboard_log_dir', type=str, default='tensorboard', help='TensorBoard log directory; relative paths are created under model_dir')
+parser.add_argument('--tb_log_interval', type=int, default=20, help='write TensorBoard train scalars every N steps')
 
 # only need for resume
 parser.add_argument('--resume', type=bool,default=False)
@@ -57,8 +61,13 @@ else:
     print(f'{model_dir} has already existed!')
     exit()
 
+if not os.path.isabs(opt.tensorboard_log_dir):
+    opt.tensorboard_log_dir = os.path.join(model_dir, opt.tensorboard_log_dir)
+os.makedirs(opt.tensorboard_log_dir, exist_ok=True)
+
 print(opt)
 print('model_dir:', model_dir)
+print('tensorboard_log_dir:', opt.tensorboard_log_dir)
 
 with open(os.path.join(model_dir, 'args.txt'), 'w') as f:
     json.dump(opt.__dict__, f, indent=2)

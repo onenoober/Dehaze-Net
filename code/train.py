@@ -7,6 +7,12 @@ from torch import optim, nn
 from torch.backends import cudnn
 from torchvision.utils import save_image
 from torch.utils.data import DataLoader
+from tqdm import tqdm
+
+try:
+    from torch.utils.tensorboard import SummaryWriter
+except ImportError:
+    SummaryWriter = None
 
 from logger import plot_loss_log, plot_psnr_log
 from metric import psnr, ssim
@@ -27,7 +33,18 @@ def lr_schedule_cosdecay(t, T, init_lr=opt.start_lr, end_lr=opt.end_lr):
     return lr
 
 
-def train(net, loader_train, loader_test, optim, criterion):
+def create_summary_writer():
+    if opt.no_tensorboard:
+        return None
+    if SummaryWriter is None:
+        print('TensorBoard is not installed; continuing without TensorBoard logging.')
+        return None
+    writer = SummaryWriter(log_dir=opt.tensorboard_log_dir)
+    print('TensorBoard log_dir:', opt.tensorboard_log_dir)
+    return writer
+
+
+def train(net, loader_train, loader_test, optim, criterion, writer=None):
     losses = []
 
     loss_log = {'L1': [], 'CR': [], 'total': []}
@@ -41,68 +58,119 @@ def train(net, loader_train, loader_test, optim, criterion):
     psnrs = []
 
     loader_train_iter = iter(loader_train)
+    progress_bar = tqdm(
+        range(start_step + 1, steps + 1),
+        total=steps,
+        initial=start_step,
+        desc='training',
+        dynamic_ncols=True,
+        mininterval=1.0,
+        disable=opt.no_tqdm
+    )
 
-    for step in range(start_step + 1, steps + 1):
-        net.train()
-        lr = opt.start_lr
-        if not opt.no_lr_sche:
-            lr = lr_schedule_cosdecay(step, T)
-            for param_group in optim.param_groups:
-                param_group["lr"] = lr
+    try:
+        for step in progress_bar:
+            net.train()
+            lr = opt.start_lr
+            if not opt.no_lr_sche:
+                lr = lr_schedule_cosdecay(step, T)
+                for param_group in optim.param_groups:
+                    param_group["lr"] = lr
 
-        x, y = next(loader_train_iter)
-        x = x.to(opt.device)
-        y = y.to(opt.device)
+            x, y = next(loader_train_iter)
+            x = x.to(opt.device)
+            y = y.to(opt.device)
 
-        out = net(x)
-        if opt.w_loss_L1 > 0:
-            loss_L1 = criterion[0](out, y)
-        if opt.w_loss_CR > 0:
-            loss_CR = criterion[1](out, y, x)
-        loss = opt.w_loss_L1 * loss_L1 + opt.w_loss_CR * loss_CR
-        loss.backward()
-        optim.step()
-        optim.zero_grad()
-        losses.append(loss.item())
-        loss_log_tmp['L1'].append(loss_L1.item())
-        loss_log_tmp['CR'].append(loss_CR.item())
-        loss_log_tmp['total'].append(loss.item())
+            out = net(x)
+            if opt.w_loss_L1 > 0:
+                loss_L1 = criterion[0](out, y)
+            if opt.w_loss_CR > 0:
+                loss_CR = criterion[1](out, y, x)
+            loss = opt.w_loss_L1 * loss_L1 + opt.w_loss_CR * loss_CR
+            loss.backward()
+            optim.step()
+            optim.zero_grad()
+            losses.append(loss.item())
+            loss_log_tmp['L1'].append(loss_L1.item())
+            loss_log_tmp['CR'].append(loss_CR.item())
+            loss_log_tmp['total'].append(loss.item())
 
-        print(
-            f'\rloss:{loss.item():.5f} | L1:{loss_L1.item():.5f} | CR:{opt.w_loss_CR * loss_CR.item():.5f} | step :{step}/{steps} | lr :{lr :.7f} | time_used :{(time.time() - start_time) / 60 :.1f}',
-            end='', flush=True)
+            if writer is not None and opt.tb_log_interval > 0 and (step == 1 or step % opt.tb_log_interval == 0):
+                writer.add_scalar('train/loss_total', loss.item(), step)
+                writer.add_scalar('train/loss_L1', loss_L1.item(), step)
+                writer.add_scalar('train/loss_CR', loss_CR.item(), step)
+                writer.add_scalar('train/loss_CR_weighted', opt.w_loss_CR * loss_CR.item(), step)
+                writer.add_scalar('train/lr', lr, step)
 
-        if step % len(loader_train) == 0:
-            loader_train_iter = iter(loader_train)
-            for key in loss_log.keys():
-                loss_log[key].append(np.average(np.array(loss_log_tmp[key])))
-                loss_log_tmp[key] = []
-            plot_loss_log(loss_log, int(step / len(loader_train)), opt.saved_plot_dir)
-            np.save(os.path.join(opt.saved_data_dir, 'losses.npy'), losses)
-        if (step % opt.iters_per_epoch == 0 and step <= opt.finer_eval_step) or (step > opt.finer_eval_step and (step - opt.finer_eval_step) % (5 * len(loader_train)) == 0):
-            if step > opt.finer_eval_step:
-                epoch = opt.finer_eval_step // opt.iters_per_epoch + (step - opt.finer_eval_step) // (5 * len(loader_train))
-            else:
-                epoch = int(step / opt.iters_per_epoch)
-            with torch.no_grad():
-                ssim_eval, psnr_eval = test(net, loader_test)
-
-            log = f'\nstep :{step} | epoch: {epoch} | ssim:{ssim_eval:.4f}| psnr:{psnr_eval:.4f}'
-            print(log)
-            with open(os.path.join(opt.saved_data_dir, 'log.txt'), 'a') as f:
-                f.write(log + '\n')
-
-            ssims.append(ssim_eval)
-            psnrs.append(psnr_eval)
-            psnr_log.append(psnr_eval)
-            plot_psnr_log(psnr_log, epoch, opt.saved_plot_dir)
-
-            if psnr_eval > max_psnr:
-                max_ssim = max(max_ssim, ssim_eval)
-                max_psnr = max(max_psnr, psnr_eval)
+            if opt.no_tqdm:
                 print(
-                    f'\n model saved at step :{step}| epoch: {epoch} | max_psnr:{max_psnr:.4f}| max_ssim:{max_ssim:.4f}')
-                saved_best_model_path = os.path.join(opt.saved_model_dir, 'best.pk')
+                    f'\rloss:{loss.item():.5f} | L1:{loss_L1.item():.5f} | CR:{opt.w_loss_CR * loss_CR.item():.5f} | step :{step}/{steps} | lr :{lr :.7f} | time_used :{(time.time() - start_time) / 60 :.1f}',
+                    end='', flush=True)
+            else:
+                progress_bar.set_postfix({
+                    'loss': f'{loss.item():.5f}',
+                    'L1': f'{loss_L1.item():.5f}',
+                    'CR': f'{opt.w_loss_CR * loss_CR.item():.5f}',
+                    'lr': f'{lr:.7f}',
+                    'min': f'{(time.time() - start_time) / 60:.1f}'
+                }, refresh=False)
+
+            if step % len(loader_train) == 0:
+                loader_train_iter = iter(loader_train)
+                for key in loss_log.keys():
+                    loss_log[key].append(np.average(np.array(loss_log_tmp[key])))
+                    loss_log_tmp[key] = []
+                plot_loss_log(loss_log, int(step / len(loader_train)), opt.saved_plot_dir)
+                np.save(os.path.join(opt.saved_data_dir, 'losses.npy'), losses)
+            if (step % opt.iters_per_epoch == 0 and step <= opt.finer_eval_step) or (step > opt.finer_eval_step and (step - opt.finer_eval_step) % (5 * len(loader_train)) == 0):
+                if step > opt.finer_eval_step:
+                    epoch = opt.finer_eval_step // opt.iters_per_epoch + (step - opt.finer_eval_step) // (5 * len(loader_train))
+                else:
+                    epoch = int(step / opt.iters_per_epoch)
+                with torch.no_grad():
+                    ssim_eval, psnr_eval = test(net, loader_test)
+
+                log = f'\nstep :{step} | epoch: {epoch} | ssim:{ssim_eval:.4f}| psnr:{psnr_eval:.4f}'
+                if opt.no_tqdm:
+                    print(log)
+                else:
+                    progress_bar.write(log)
+                with open(os.path.join(opt.saved_data_dir, 'log.txt'), 'a') as f:
+                    f.write(log + '\n')
+
+                if writer is not None:
+                    writer.add_scalar('eval/ssim', ssim_eval, step)
+                    writer.add_scalar('eval/psnr', psnr_eval, step)
+
+                ssims.append(ssim_eval)
+                psnrs.append(psnr_eval)
+                psnr_log.append(psnr_eval)
+                plot_psnr_log(psnr_log, epoch, opt.saved_plot_dir)
+
+                if psnr_eval > max_psnr:
+                    max_ssim = max(max_ssim, ssim_eval)
+                    max_psnr = max(max_psnr, psnr_eval)
+                    save_log = f'\n model saved at step :{step}| epoch: {epoch} | max_psnr:{max_psnr:.4f}| max_ssim:{max_ssim:.4f}'
+                    if opt.no_tqdm:
+                        print(save_log)
+                    else:
+                        progress_bar.write(save_log)
+                    saved_best_model_path = os.path.join(opt.saved_model_dir, 'best.pk')
+                    torch.save({
+                        'epoch': epoch,
+                        'step': step,
+                        'max_psnr': max_psnr,
+                        'max_ssim': max_ssim,
+                        'ssims': ssims,
+                        'psnrs': psnrs,
+                        'losses': losses,
+                        'model': net.state_dict(),
+                        'optimizer': optim.state_dict()
+                    }, saved_best_model_path)
+                if writer is not None:
+                    writer.add_scalar('eval/max_psnr', max_psnr, step)
+                    writer.add_scalar('eval/max_ssim', max_ssim, step)
+                saved_single_model_path = os.path.join(opt.saved_model_dir, str(epoch) + '.pk')
                 torch.save({
                     'epoch': epoch,
                     'step': step,
@@ -113,22 +181,12 @@ def train(net, loader_train, loader_test, optim, criterion):
                     'losses': losses,
                     'model': net.state_dict(),
                     'optimizer': optim.state_dict()
-                }, saved_best_model_path)
-            saved_single_model_path = os.path.join(opt.saved_model_dir, str(epoch) + '.pk')
-            torch.save({
-                'epoch': epoch,
-                'step': step,
-                'max_psnr': max_psnr,
-                'max_ssim': max_ssim,
-                'ssims': ssims,
-                'psnrs': psnrs,
-                'losses': losses,
-                'model': net.state_dict(),
-                'optimizer': optim.state_dict()
-            }, saved_single_model_path)
-            loader_train_iter = iter(loader_train)
-            np.save(os.path.join(opt.saved_data_dir, 'ssims.npy'), ssims)
-            np.save(os.path.join(opt.saved_data_dir, 'psnrs.npy'), psnrs)
+                }, saved_single_model_path)
+                loader_train_iter = iter(loader_train)
+                np.save(os.path.join(opt.saved_data_dir, 'ssims.npy'), ssims)
+                np.save(os.path.join(opt.saved_data_dir, 'psnrs.npy'), psnrs)
+    finally:
+        progress_bar.close()
 
 def pad_img(x, patch_size):
     _, _, h, w = x.size()
@@ -216,4 +274,9 @@ if __name__ == "__main__":
     optimizer = optim.Adam(params=filter(lambda x: x.requires_grad, net.parameters()), lr=opt.start_lr, betas=(0.9, 0.999),
                            eps=1e-08)
     optimizer.zero_grad()
-    train(net, loader_train, loader_test, optimizer, criterion)
+    writer = create_summary_writer()
+    try:
+        train(net, loader_train, loader_test, optimizer, criterion, writer)
+    finally:
+        if writer is not None:
+            writer.close()
