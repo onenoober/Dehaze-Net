@@ -54,6 +54,10 @@ parser.add_argument('--no_pdf_plots', action='store_true', help='skip PDF curve 
 parser.add_argument('--eval_interval_steps', type=int, default=0, help='override evaluation interval in steps; 0 keeps upstream schedule')
 parser.add_argument('--checkpoint_interval_steps', type=int, default=0, help='save latest checkpoint without evaluation every N steps; 0 disables extra saves')
 parser.add_argument('--save_epoch_checkpoints', type=str2bool, nargs='?', const=True, default=True, help='save numbered epoch checkpoints in addition to best/latest')
+parser.add_argument('--early_stop_patience_evals', type=int, default=0, help='stop after N evaluations without enough improvement; 0 disables early stopping')
+parser.add_argument('--early_stop_min_delta', type=float, default=0.0, help='minimum metric improvement required to reset early-stop patience')
+parser.add_argument('--early_stop_after_step', type=int, default=0, help='do not count early-stop patience before this training step')
+parser.add_argument('--early_stop_metric', type=str, default='psnr', choices=['psnr', 'ssim'], help='metric used for early stopping')
 
 # only need for resume
 parser.add_argument('--resume', type=str2bool, nargs='?', const=True, default=False)

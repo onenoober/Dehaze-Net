@@ -129,7 +129,51 @@ def estimate_epoch(step, loader_train_len):
     return int(step / opt.iters_per_epoch)
 
 
-def build_checkpoint(epoch, step, max_psnr, max_ssim, ssims, psnrs, losses, loss_log, psnr_log, net, optimizer):
+def create_early_stop_state(training_state, max_psnr, max_ssim):
+    state = dict(training_state.get('early_stop_state', {}))
+    if state:
+        return state
+    if opt.early_stop_metric == 'ssim':
+        best_score = max_ssim
+    else:
+        best_score = max_psnr
+    return {
+        'best_score': best_score,
+        'bad_evals': 0,
+        'best_step': int(training_state.get('step', 0)),
+        'stopped': False,
+        'stop_step': 0,
+        'stop_reason': ''
+    }
+
+
+def update_early_stop_state(state, step, psnr_eval, ssim_eval):
+    if opt.early_stop_patience_evals <= 0:
+        return False
+    if step < opt.early_stop_after_step:
+        return False
+
+    score = ssim_eval if opt.early_stop_metric == 'ssim' else psnr_eval
+    best_score = state.get('best_score', 0)
+    if score > best_score + opt.early_stop_min_delta:
+        state['best_score'] = score
+        state['bad_evals'] = 0
+        state['best_step'] = step
+        return False
+
+    state['bad_evals'] = int(state.get('bad_evals', 0)) + 1
+    if state['bad_evals'] >= opt.early_stop_patience_evals:
+        state['stopped'] = True
+        state['stop_step'] = step
+        state['stop_reason'] = (
+            '{} did not improve by more than {} for {} evaluations after step {}.'
+            .format(opt.early_stop_metric, opt.early_stop_min_delta, opt.early_stop_patience_evals, opt.early_stop_after_step)
+        )
+        return True
+    return False
+
+
+def build_checkpoint(epoch, step, max_psnr, max_ssim, ssims, psnrs, losses, loss_log, psnr_log, net, optimizer, early_stop_state=None):
     return {
         'epoch': epoch,
         'step': step,
@@ -140,6 +184,7 @@ def build_checkpoint(epoch, step, max_psnr, max_ssim, ssims, psnrs, losses, loss
         'losses': losses,
         'loss_log': loss_log,
         'psnr_log': psnr_log,
+        'early_stop_state': early_stop_state or {},
         'model': net.state_dict(),
         'optimizer': optimizer.state_dict()
     }
@@ -160,6 +205,7 @@ def train(net, loader_train, loader_test, optim, criterion, writer=None, trainin
     max_psnr = training_state.get('max_psnr', 0)
     ssims = list(training_state.get('ssims', []))
     psnrs = list(training_state.get('psnrs', []))
+    early_stop_state = create_early_stop_state(training_state, max_psnr, max_ssim)
 
     loader_train_iter = iter(loader_train)
     progress_bar = tqdm(
@@ -263,9 +309,14 @@ def train(net, loader_train, loader_test, optim, criterion, writer=None, trainin
                     writer.add_scalar('eval/max_psnr', max_psnr, step)
                     writer.add_scalar('eval/max_ssim', max_ssim, step)
 
+                should_stop = update_early_stop_state(early_stop_state, step, psnr_eval, ssim_eval)
+                if writer is not None and opt.early_stop_patience_evals > 0:
+                    writer.add_scalar('early_stop/bad_evals', early_stop_state.get('bad_evals', 0), step)
+                    writer.add_scalar('early_stop/best_score', early_stop_state.get('best_score', 0), step)
+
                 checkpoint = build_checkpoint(
                     epoch, step, max_psnr, max_ssim, ssims, psnrs, losses,
-                    loss_log, psnr_log, net, optim
+                    loss_log, psnr_log, net, optim, early_stop_state
                 )
                 if improved:
                     save_checkpoint(os.path.join(opt.saved_model_dir, 'best.pk'), checkpoint)
@@ -276,10 +327,21 @@ def train(net, loader_train, loader_test, optim, criterion, writer=None, trainin
                 loader_train_iter = iter(loader_train)
                 np.save(os.path.join(opt.saved_data_dir, 'ssims.npy'), ssims)
                 np.save(os.path.join(opt.saved_data_dir, 'psnrs.npy'), psnrs)
+                if should_stop:
+                    stop_log = '\nEarly stopping at step {}: {}'.format(step, early_stop_state['stop_reason'])
+                    if opt.no_tqdm:
+                        print(stop_log)
+                    else:
+                        progress_bar.write(stop_log)
+                    with open(os.path.join(opt.saved_data_dir, 'early_stop.txt'), 'w') as f:
+                        f.write(stop_log.strip() + '\n')
+                    with open(os.path.join(opt.saved_data_dir, 'log.txt'), 'a') as f:
+                        f.write(stop_log.strip() + '\n')
+                    break
             elif opt.checkpoint_interval_steps > 0 and step % opt.checkpoint_interval_steps == 0:
                 checkpoint = build_checkpoint(
                     estimate_epoch(step, len(loader_train)), step, max_psnr, max_ssim,
-                    ssims, psnrs, losses, loss_log, psnr_log, net, optim
+                    ssims, psnrs, losses, loss_log, psnr_log, net, optim, early_stop_state
                 )
                 save_checkpoint(os.path.join(opt.saved_model_dir, 'latest.pk'), checkpoint)
                 np.save(os.path.join(opt.saved_data_dir, 'losses.npy'), losses)
