@@ -23,7 +23,6 @@ from data.data_loader import TrainDataset, TestDataset
 
 
 start_time = time.time()
-start_time = time.time()
 steps = opt.iters_per_epoch * opt.epochs
 T = steps
 
@@ -33,29 +32,117 @@ def lr_schedule_cosdecay(t, T, init_lr=opt.start_lr, end_lr=opt.end_lr):
     return lr
 
 
-def create_summary_writer():
+def create_summary_writer(start_step=0):
     if opt.no_tensorboard:
         return None
     if SummaryWriter is None:
         print('TensorBoard is not installed; continuing without TensorBoard logging.')
         return None
-    writer = SummaryWriter(log_dir=opt.tensorboard_log_dir)
+    purge_step = start_step if start_step > 0 else None
+    writer = SummaryWriter(log_dir=opt.tensorboard_log_dir, purge_step=purge_step)
     print('TensorBoard log_dir:', opt.tensorboard_log_dir)
     return writer
 
 
-def train(net, loader_train, loader_test, optim, criterion, writer=None):
-    losses = []
+def save_checkpoint(path, checkpoint):
+    tmp_path = path + '.tmp'
+    torch.save(checkpoint, tmp_path)
+    os.replace(tmp_path, path)
+
+
+def resolve_resume_checkpoint_path():
+    if not opt.resume:
+        return None
+
+    checkpoint_name = opt.pre_trained_model
+    if checkpoint_name == 'null':
+        candidates = [
+            os.path.join(opt.saved_model_dir, 'latest.pk'),
+            os.path.join(opt.saved_model_dir, 'best.pk')
+        ]
+    elif os.path.isabs(checkpoint_name):
+        candidates = [checkpoint_name]
+    else:
+        candidates = [
+            checkpoint_name,
+            os.path.join(opt.saved_model_dir, checkpoint_name),
+            os.path.join(opt.model_dir, checkpoint_name)
+        ]
+
+    for path in candidates:
+        if os.path.isfile(path):
+            return path
+
+    raise FileNotFoundError('No resume checkpoint found. Tried: {}'.format(', '.join(candidates)))
+
+
+def move_optimizer_state_to_device(optimizer, device):
+    for state in optimizer.state.values():
+        for key, value in state.items():
+            if torch.is_tensor(value):
+                state[key] = value.to(device)
+
+
+def load_checkpoint_file(path):
+    try:
+        return torch.load(path, map_location=opt.device, weights_only=False)
+    except TypeError:
+        return torch.load(path, map_location=opt.device)
+
+
+def load_training_state(net, optimizer):
+    checkpoint_path = resolve_resume_checkpoint_path()
+    if checkpoint_path is None:
+        return {}
+
+    print('Resuming training from:', checkpoint_path)
+    checkpoint = load_checkpoint_file(checkpoint_path)
+    net.load_state_dict(checkpoint['model'])
+    optimizer.load_state_dict(checkpoint['optimizer'])
+    move_optimizer_state_to_device(optimizer, opt.device)
+
+    start_step = int(checkpoint.get('step', 0))
+    if start_step >= steps:
+        raise ValueError(
+            'Checkpoint step {} is already >= target steps {}. '
+            'Increase --epochs/--iters_per_epoch or choose a new run.'.format(start_step, steps)
+        )
+
+    print('Resume step: {} / {}'.format(start_step, steps))
+    return checkpoint
+
+
+def build_checkpoint(epoch, step, max_psnr, max_ssim, ssims, psnrs, losses, loss_log, psnr_log, net, optimizer):
+    return {
+        'epoch': epoch,
+        'step': step,
+        'max_psnr': max_psnr,
+        'max_ssim': max_ssim,
+        'ssims': ssims,
+        'psnrs': psnrs,
+        'losses': losses,
+        'loss_log': loss_log,
+        'psnr_log': psnr_log,
+        'model': net.state_dict(),
+        'optimizer': optimizer.state_dict()
+    }
+
+
+def train(net, loader_train, loader_test, optim, criterion, writer=None, training_state=None):
+    training_state = training_state or {}
+    losses = list(training_state.get('losses', []))
 
     loss_log = {'L1': [], 'CR': [], 'total': []}
     loss_log_tmp = {'L1': [], 'CR': [], 'total': []}
-    psnr_log = []
+    if 'loss_log' in training_state:
+        loss_log = training_state['loss_log']
+    psnr_log = list(training_state.get('psnr_log', training_state.get('psnrs', [])))
 
-    start_step = 0
-    max_ssim = 0
-    max_psnr = 0
-    ssims = []
-    psnrs = []
+    start_step = int(training_state.get('step', 0))
+    max_ssim = training_state.get('max_ssim', 0)
+    max_psnr = training_state.get('max_psnr', 0)
+    ssims = list(training_state.get('ssims', []))
+    psnrs = list(training_state.get('psnrs', []))
 
     loader_train_iter = iter(loader_train)
     progress_bar = tqdm(
@@ -147,7 +234,8 @@ def train(net, loader_train, loader_test, optim, criterion, writer=None):
                 psnr_log.append(psnr_eval)
                 plot_psnr_log(psnr_log, epoch, opt.saved_plot_dir)
 
-                if psnr_eval > max_psnr:
+                improved = psnr_eval > max_psnr
+                if improved:
                     max_ssim = max(max_ssim, ssim_eval)
                     max_psnr = max(max_psnr, psnr_eval)
                     save_log = f'\n model saved at step :{step}| epoch: {epoch} | max_psnr:{max_psnr:.4f}| max_ssim:{max_ssim:.4f}'
@@ -155,33 +243,19 @@ def train(net, loader_train, loader_test, optim, criterion, writer=None):
                         print(save_log)
                     else:
                         progress_bar.write(save_log)
-                    saved_best_model_path = os.path.join(opt.saved_model_dir, 'best.pk')
-                    torch.save({
-                        'epoch': epoch,
-                        'step': step,
-                        'max_psnr': max_psnr,
-                        'max_ssim': max_ssim,
-                        'ssims': ssims,
-                        'psnrs': psnrs,
-                        'losses': losses,
-                        'model': net.state_dict(),
-                        'optimizer': optim.state_dict()
-                    }, saved_best_model_path)
                 if writer is not None:
                     writer.add_scalar('eval/max_psnr', max_psnr, step)
                     writer.add_scalar('eval/max_ssim', max_ssim, step)
+
+                checkpoint = build_checkpoint(
+                    epoch, step, max_psnr, max_ssim, ssims, psnrs, losses,
+                    loss_log, psnr_log, net, optim
+                )
+                if improved:
+                    save_checkpoint(os.path.join(opt.saved_model_dir, 'best.pk'), checkpoint)
                 saved_single_model_path = os.path.join(opt.saved_model_dir, str(epoch) + '.pk')
-                torch.save({
-                    'epoch': epoch,
-                    'step': step,
-                    'max_psnr': max_psnr,
-                    'max_ssim': max_ssim,
-                    'ssims': ssims,
-                    'psnrs': psnrs,
-                    'losses': losses,
-                    'model': net.state_dict(),
-                    'optimizer': optim.state_dict()
-                }, saved_single_model_path)
+                save_checkpoint(saved_single_model_path, checkpoint)
+                save_checkpoint(os.path.join(opt.saved_model_dir, 'latest.pk'), checkpoint)
                 loader_train_iter = iter(loader_train)
                 np.save(os.path.join(opt.saved_data_dir, 'ssims.npy'), ssims)
                 np.save(os.path.join(opt.saved_data_dir, 'psnrs.npy'), psnrs)
@@ -274,9 +348,10 @@ if __name__ == "__main__":
     optimizer = optim.Adam(params=filter(lambda x: x.requires_grad, net.parameters()), lr=opt.start_lr, betas=(0.9, 0.999),
                            eps=1e-08)
     optimizer.zero_grad()
-    writer = create_summary_writer()
+    training_state = load_training_state(net, optimizer)
+    writer = create_summary_writer(int(training_state.get('step', 0)))
     try:
-        train(net, loader_train, loader_test, optimizer, criterion, writer)
+        train(net, loader_train, loader_test, optimizer, criterion, writer, training_state)
     finally:
         if writer is not None:
             writer.close()

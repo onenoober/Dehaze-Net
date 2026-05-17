@@ -4,6 +4,18 @@ import json
 
 # warnings.filterwarnings('ignore')
 
+
+def str2bool(value):
+    if isinstance(value, bool):
+        return value
+    value = value.lower()
+    if value in ('yes', 'true', 't', '1'):
+        return True
+    if value in ('no', 'false', 'f', '0'):
+        return False
+    raise argparse.ArgumentTypeError('Boolean value expected.')
+
+
 parser = argparse.ArgumentParser()
 
 parser.add_argument('--device', type=str,default='Automatic detection')
@@ -34,7 +46,7 @@ parser.add_argument('--tensorboard_log_dir', type=str, default='tensorboard', he
 parser.add_argument('--tb_log_interval', type=int, default=20, help='write TensorBoard train scalars every N steps')
 
 # only need for resume
-parser.add_argument('--resume', type=bool,default=False)
+parser.add_argument('--resume', type=str2bool, nargs='?', const=True, default=False)
 parser.add_argument('--pre_trained_model', type=str,default='null')
 
 opt=parser.parse_args()
@@ -42,24 +54,24 @@ opt.device='cuda' if torch.cuda.is_available() else 'cpu'
 
 dataset_dir = os.path.join(opt.exp_dir, opt.dataset)
 model_dir = os.path.join(dataset_dir, opt.model_name)
+opt.model_dir = model_dir
+opt.saved_model_dir = os.path.join(model_dir, 'saved_model')
+opt.saved_data_dir = os.path.join(model_dir, 'saved_data')
+opt.saved_plot_dir = os.path.join(model_dir, 'saved_plot')
+opt.saved_infer_dir = os.path.join(model_dir, 'saved_infer')
 
-if not os.path.exists(opt.exp_dir):
-    os.mkdir(opt.exp_dir)
-if not os.path.exists(dataset_dir):
-    os.mkdir(dataset_dir)
-if not os.path.exists(model_dir):
-    os.mkdir(model_dir)
-    opt.saved_model_dir = os.path.join(model_dir, 'saved_model')
-    opt.saved_data_dir = os.path.join(model_dir, 'saved_data')
-    opt.saved_plot_dir = os.path.join(model_dir, 'saved_plot')
-    opt.saved_infer_dir = os.path.join(model_dir, 'saved_infer')
-    os.mkdir(opt.saved_model_dir)
-    os.mkdir(opt.saved_data_dir)
-    os.mkdir(opt.saved_plot_dir)
-    os.mkdir(opt.saved_infer_dir)
-else:
+os.makedirs(opt.exp_dir, exist_ok=True)
+os.makedirs(dataset_dir, exist_ok=True)
+
+if os.path.exists(model_dir) and not opt.resume:
     print(f'{model_dir} has already existed!')
+    print('Use --resume to continue an existing training run, or choose a new --model_name.')
     exit()
+
+os.makedirs(opt.saved_model_dir, exist_ok=True)
+os.makedirs(opt.saved_data_dir, exist_ok=True)
+os.makedirs(opt.saved_plot_dir, exist_ok=True)
+os.makedirs(opt.saved_infer_dir, exist_ok=True)
 
 if not os.path.isabs(opt.tensorboard_log_dir):
     opt.tensorboard_log_dir = os.path.join(model_dir, opt.tensorboard_log_dir)
