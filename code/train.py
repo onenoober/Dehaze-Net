@@ -112,6 +112,23 @@ def load_training_state(net, optimizer):
     return checkpoint
 
 
+def should_evaluate(step, loader_train_len):
+    if opt.eval_interval_steps > 0:
+        return step % opt.eval_interval_steps == 0 or step == steps
+    return (
+        (step % opt.iters_per_epoch == 0 and step <= opt.finer_eval_step)
+        or (step > opt.finer_eval_step and (step - opt.finer_eval_step) % (5 * loader_train_len) == 0)
+    )
+
+
+def estimate_epoch(step, loader_train_len):
+    if opt.eval_interval_steps > 0:
+        return int(math.ceil(step / opt.iters_per_epoch))
+    if step > opt.finer_eval_step:
+        return opt.finer_eval_step // opt.iters_per_epoch + (step - opt.finer_eval_step) // (5 * loader_train_len)
+    return int(step / opt.iters_per_epoch)
+
+
 def build_checkpoint(epoch, step, max_psnr, max_ssim, ssims, psnrs, losses, loss_log, psnr_log, net, optimizer):
     return {
         'epoch': epoch,
@@ -207,13 +224,11 @@ def train(net, loader_train, loader_test, optim, criterion, writer=None, trainin
                 for key in loss_log.keys():
                     loss_log[key].append(np.average(np.array(loss_log_tmp[key])))
                     loss_log_tmp[key] = []
-                plot_loss_log(loss_log, int(step / len(loader_train)), opt.saved_plot_dir)
+                if not opt.no_pdf_plots:
+                    plot_loss_log(loss_log, int(step / len(loader_train)), opt.saved_plot_dir)
                 np.save(os.path.join(opt.saved_data_dir, 'losses.npy'), losses)
-            if (step % opt.iters_per_epoch == 0 and step <= opt.finer_eval_step) or (step > opt.finer_eval_step and (step - opt.finer_eval_step) % (5 * len(loader_train)) == 0):
-                if step > opt.finer_eval_step:
-                    epoch = opt.finer_eval_step // opt.iters_per_epoch + (step - opt.finer_eval_step) // (5 * len(loader_train))
-                else:
-                    epoch = int(step / opt.iters_per_epoch)
+            if should_evaluate(step, len(loader_train)):
+                epoch = estimate_epoch(step, len(loader_train))
                 with torch.no_grad():
                     ssim_eval, psnr_eval = test(net, loader_test)
 
@@ -232,7 +247,8 @@ def train(net, loader_train, loader_test, optim, criterion, writer=None, trainin
                 ssims.append(ssim_eval)
                 psnrs.append(psnr_eval)
                 psnr_log.append(psnr_eval)
-                plot_psnr_log(psnr_log, epoch, opt.saved_plot_dir)
+                if not opt.no_pdf_plots:
+                    plot_psnr_log(psnr_log, epoch, opt.saved_plot_dir)
 
                 improved = psnr_eval > max_psnr
                 if improved:
@@ -253,12 +269,20 @@ def train(net, loader_train, loader_test, optim, criterion, writer=None, trainin
                 )
                 if improved:
                     save_checkpoint(os.path.join(opt.saved_model_dir, 'best.pk'), checkpoint)
-                saved_single_model_path = os.path.join(opt.saved_model_dir, str(epoch) + '.pk')
-                save_checkpoint(saved_single_model_path, checkpoint)
+                if opt.save_epoch_checkpoints:
+                    saved_single_model_path = os.path.join(opt.saved_model_dir, str(epoch) + '.pk')
+                    save_checkpoint(saved_single_model_path, checkpoint)
                 save_checkpoint(os.path.join(opt.saved_model_dir, 'latest.pk'), checkpoint)
                 loader_train_iter = iter(loader_train)
                 np.save(os.path.join(opt.saved_data_dir, 'ssims.npy'), ssims)
                 np.save(os.path.join(opt.saved_data_dir, 'psnrs.npy'), psnrs)
+            elif opt.checkpoint_interval_steps > 0 and step % opt.checkpoint_interval_steps == 0:
+                checkpoint = build_checkpoint(
+                    estimate_epoch(step, len(loader_train)), step, max_psnr, max_ssim,
+                    ssims, psnrs, losses, loss_log, psnr_log, net, optim
+                )
+                save_checkpoint(os.path.join(opt.saved_model_dir, 'latest.pk'), checkpoint)
+                np.save(os.path.join(opt.saved_data_dir, 'losses.npy'), losses)
     finally:
         progress_bar.close()
 
@@ -314,6 +338,20 @@ def resolve_dataset_root(dataset):
     raise FileNotFoundError(f'No dataset directory found for {dataset}')
 
 
+def create_data_loader(dataset, batch_size, shuffle, num_workers):
+    kwargs = {
+        'dataset': dataset,
+        'batch_size': batch_size,
+        'shuffle': shuffle,
+        'num_workers': num_workers,
+        'pin_memory': opt.pin_memory
+    }
+    if num_workers > 0:
+        kwargs['persistent_workers'] = opt.persistent_workers
+        kwargs['prefetch_factor'] = opt.prefetch_factor
+    return DataLoader(**kwargs)
+
+
 if __name__ == "__main__":
 
     set_seed_torch(666)
@@ -326,8 +364,8 @@ if __name__ == "__main__":
 
     train_set = TrainDataset(os.path.join(train_dir, 'hazy'), os.path.join(train_dir, 'clear'))
     test_set = TestDataset(os.path.join(test_dir, 'hazy'), os.path.join(test_dir, 'clear'))
-    loader_train = DataLoader(dataset=train_set, batch_size=opt.bs, shuffle=True, num_workers=12)
-    loader_test = DataLoader(dataset=test_set, batch_size=1, shuffle=False, num_workers=4)
+    loader_train = create_data_loader(train_set, opt.bs, True, opt.num_workers)
+    loader_test = create_data_loader(test_set, 1, False, opt.test_num_workers)
 
     net = DEANet(base_dim=32)
     net = net.to(opt.device)
