@@ -61,26 +61,28 @@ opt.saved_data_dir = os.path.join(model_dir, 'saved_data')
 opt.saved_plot_dir = os.path.join(model_dir, 'saved_plot')
 opt.saved_infer_dir = os.path.join(model_dir, 'saved_infer')
 
-os.makedirs(opt.exp_dir, exist_ok=True)
-os.makedirs(dataset_dir, exist_ok=True)
-
-if os.path.exists(model_dir) and not opt.resume:
+if os.path.exists(model_dir) and not opt.resume and not opt.dry_run:
     print(f'{model_dir} has already existed!')
     print('Use --resume to continue an existing training run, or choose a new --model_name.')
     exit()
 
-os.makedirs(opt.saved_model_dir, exist_ok=True)
-os.makedirs(opt.saved_data_dir, exist_ok=True)
-os.makedirs(opt.saved_plot_dir, exist_ok=True)
-os.makedirs(opt.saved_infer_dir, exist_ok=True)
+if not opt.dry_run:
+    os.makedirs(opt.exp_dir, exist_ok=True)
+    os.makedirs(dataset_dir, exist_ok=True)
+    os.makedirs(opt.saved_model_dir, exist_ok=True)
+    os.makedirs(opt.saved_data_dir, exist_ok=True)
+    os.makedirs(opt.saved_plot_dir, exist_ok=True)
+    os.makedirs(opt.saved_infer_dir, exist_ok=True)
 
 if not os.path.isabs(opt.tensorboard_log_dir):
     opt.tensorboard_log_dir = os.path.join(model_dir, opt.tensorboard_log_dir)
-os.makedirs(opt.tensorboard_log_dir, exist_ok=True)
+if not opt.dry_run:
+    os.makedirs(opt.tensorboard_log_dir, exist_ok=True)
 
 print(opt)
 print('model_dir:', model_dir)
 print('tensorboard_log_dir:', opt.tensorboard_log_dir)
 
-with open(os.path.join(model_dir, 'args.txt'), 'w') as f:
-    json.dump(opt.__dict__, f, indent=2)
+if not opt.dry_run:
+    with open(os.path.join(model_dir, 'args.txt'), 'w') as f:
+        json.dump(opt.__dict__, f, indent=2)
