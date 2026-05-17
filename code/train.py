@@ -349,6 +349,11 @@ if __name__ == "__main__":
                            eps=1e-08)
     optimizer.zero_grad()
     training_state = load_training_state(net, optimizer)
+    if opt.dry_run:
+        print('Dry run complete.')
+        print('Training target steps: {}'.format(steps))
+        print('Training will start from step: {}'.format(int(training_state.get('step', 0)) + 1))
+        raise SystemExit(0)
     writer = create_summary_writer(int(training_state.get('step', 0)))
     try:
         train(net, loader_train, loader_test, optimizer, criterion, writer, training_state)

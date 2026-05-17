@@ -44,6 +44,7 @@ parser.add_argument('--no_tqdm', action='store_true', help='disable tqdm trainin
 parser.add_argument('--no_tensorboard', action='store_true', help='disable TensorBoard scalar logging')
 parser.add_argument('--tensorboard_log_dir', type=str, default='tensorboard', help='TensorBoard log directory; relative paths are created under model_dir')
 parser.add_argument('--tb_log_interval', type=int, default=20, help='write TensorBoard train scalars every N steps')
+parser.add_argument('--dry_run', action='store_true', help='validate setup and resume checkpoint, then exit before training')
 
 # only need for resume
 parser.add_argument('--resume', type=str2bool, nargs='?', const=True, default=False)
