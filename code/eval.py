@@ -7,6 +7,7 @@ from tqdm import tqdm
 
 from utils import AverageMeter, pad_img, val_psnr, val_ssim
 from data import ValDataset
+from data.data_loader import resolve_pair_dirs
 from option import opt
 from model import Backbone
 
@@ -19,7 +20,9 @@ def eval(val_loader, network):
 
     network.eval()
 
-    for batch in tqdm(val_loader, desc='evaluation'):
+    for i, batch in enumerate(tqdm(val_loader, desc='evaluation')):
+        if opt.max_test_batches > 0 and i >= opt.max_test_batches:
+            break
         hazy_img = batch['hazy'].cuda()
         clear_img = batch['clear'].cuda()
 
@@ -43,11 +46,14 @@ def eval(val_loader, network):
 if __name__ == '__main__':
     network = Backbone().cuda() 
 
-    val_dataset = ValDataset(os.path.join(opt.val_dataset_dir, 'hazy'), os.path.join(opt.val_dataset_dir, 'clear'))
+    hazy_dir, clear_dir = resolve_pair_dirs(opt.val_dataset_dir)
+    print('val_hazy_dir:', hazy_dir)
+    print('val_clear_dir:', clear_dir)
+    val_dataset = ValDataset(hazy_dir, clear_dir)
     val_loader = DataLoader(val_dataset,
                             batch_size=1,
                             shuffle=False,
-                            num_workers=4,
+                            num_workers=opt.num_workers,
                             pin_memory=False)
 
     # load pre-trained model

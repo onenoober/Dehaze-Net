@@ -5,7 +5,6 @@ import torch
 import torch.nn.functional as F
 from torch import optim, nn
 from torch.backends import cudnn
-from torchvision.utils import save_image
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
@@ -19,7 +18,7 @@ from metric import psnr, ssim
 from model import DEANet
 from loss import ContrastLoss
 from option_train import opt
-from data.data_loader import TrainDataset, TestDataset
+from data.data_loader import TrainDataset, TestDataset, resolve_pair_dirs
 
 
 start_time = time.time()
@@ -362,6 +361,8 @@ def test(net, loader_test):
     psnrs = []
 
     for i, (inputs, targets, hazy_name) in enumerate(loader_test):
+        if opt.max_test_batches > 0 and i >= opt.max_test_batches:
+            break
         inputs = inputs.to(opt.device)
         targets = targets.to(opt.device)
         with torch.no_grad():
@@ -414,6 +415,14 @@ def create_data_loader(dataset, batch_size, shuffle, num_workers):
     return DataLoader(**kwargs)
 
 
+def limit_dataset_for_smoke(dataset, max_batches, batch_size):
+    if max_batches <= 0:
+        return dataset
+    max_items = min(len(dataset), max_batches * batch_size)
+    print('Limiting dataset to {} samples for smoke test.'.format(max_items))
+    return torch.utils.data.Subset(dataset, range(max_items))
+
+
 if __name__ == "__main__":
 
     set_seed_torch(666)
@@ -424,8 +433,16 @@ if __name__ == "__main__":
     print('train_dir:', train_dir)
     print('test_dir:', test_dir)
 
-    train_set = TrainDataset(os.path.join(train_dir, 'hazy'), os.path.join(train_dir, 'clear'))
-    test_set = TestDataset(os.path.join(test_dir, 'hazy'), os.path.join(test_dir, 'clear'))
+    train_hazy_dir, train_clear_dir = resolve_pair_dirs(train_dir)
+    test_hazy_dir, test_clear_dir = resolve_pair_dirs(test_dir)
+    print('train_hazy_dir:', train_hazy_dir)
+    print('train_clear_dir:', train_clear_dir)
+    print('test_hazy_dir:', test_hazy_dir)
+    print('test_clear_dir:', test_clear_dir)
+
+    train_set = TrainDataset(train_hazy_dir, train_clear_dir, patch_size=opt.patch_size)
+    test_set = TestDataset(test_hazy_dir, test_clear_dir)
+    train_set = limit_dataset_for_smoke(train_set, opt.max_train_batches, opt.bs)
     loader_train = create_data_loader(train_set, opt.bs, True, opt.num_workers)
     loader_test = create_data_loader(test_set, 1, False, opt.test_num_workers)
 

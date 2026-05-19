@@ -9,13 +9,16 @@ parser.add_argument('--dataset', type=str, default='ITS')
 parser.add_argument('--val_dataset_dir', type=str)
 parser.add_argument('--model_name', type=str, default='DEA-Net', help='experiment name')
 parser.add_argument('--saved_infer_dir', type=str, default='saved_infer_dir')
+parser.add_argument('--num_workers', type=int, default=4, help='evaluation DataLoader worker count')
+parser.add_argument('--max_test_batches', type=int, default=0, help='limit evaluation batches for smoke tests; 0 disables')
 
 # only need for evaluation
 parser.add_argument('--pre_trained_model', type=str, default='null', help='path of pre trained model for resume training')
 parser.add_argument('--save_infer_results', action='store_true', default=False, help='save the infer results during validation')
 opt=parser.parse_args()
 
-opt.val_dataset_dir = os.path.join('../dataset/', opt.dataset, 'test')
+if opt.val_dataset_dir is None:
+    opt.val_dataset_dir = os.path.join('../dataset/', opt.dataset, 'test')
 exp_dataset_dir = os.path.join(opt.exp_dir, opt.dataset)
 exp_model_dir = os.path.join(exp_dataset_dir, opt.model_name)
 

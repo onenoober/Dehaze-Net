@@ -24,6 +24,22 @@ git push -u origin feat/wavelet-fusion
 3. Save logs and checkpoints outside Git.
 4. Update the experiment log with the final result.
 
+Current Dehaze-Net remote target:
+
+```powershell
+ssh root@ssh.smoothcloud.com.cn "cd /root/workspace/Dehaze-Net && git pull --ff-only"
+ssh root@ssh.smoothcloud.com.cn "cd /root/workspace/Dehaze-Net/code && python eval.py ..."
+ssh root@ssh.smoothcloud.com.cn "cd /root/workspace/Dehaze-Net/code && python train.py ..."
+```
+
+Codex should make source changes locally, commit and push them, then pull on the
+server before testing or training. Do not edit source files directly on the
+server; use the server for data checks, dependency checks, evaluation, and
+training logs only.
+
+For long HAZE4K runs, prefer a background `tmux` session and write logs under
+`/root/workspace/Dehaze-Net/experiment/`.
+
 ## Revert policy
 - Prefer `git revert` for undoing committed changes.
 - Avoid force push unless you are deliberately resetting a short-lived feature branch.
