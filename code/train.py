@@ -451,8 +451,12 @@ if __name__ == "__main__":
 
     epoch_size = len(loader_train)
     print("epoch_size: ", epoch_size)
-    if opt.device == 'cuda':
+    if opt.device == 'cuda' and torch.cuda.device_count() > 1:
         net = torch.nn.DataParallel(net)
+        print('Using DataParallel with {} GPUs'.format(torch.cuda.device_count()))
+    elif opt.device == 'cuda':
+        print('Using single CUDA device:', torch.cuda.get_device_name(0))
+    if opt.device == 'cuda':
         cudnn.benchmark = True
 
     pytorch_total_params = sum(p.numel() for p in net.parameters() if p.requires_grad)
