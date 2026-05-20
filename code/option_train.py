@@ -39,6 +39,10 @@ parser.add_argument('--use_warm_up', type=bool, default=False, help='using warm 
 
 parser.add_argument('--w_loss_L1', default=1., type=float, help='weight of loss L1')
 parser.add_argument('--w_loss_CR', default=0.1, type=float, help='weight of loss CR')
+parser.add_argument('--use_lf_prior', action='store_true', help='enable lightweight low-frequency prior at the training bottleneck')
+parser.add_argument('--lf_prior_channels', type=int, default=8, help='hidden channels in the LF prior adapter')
+parser.add_argument('--lf_prior_pool', type=int, default=8, help='average-pooling size for fixed low-pass input')
+parser.add_argument('--lf_prior_gate_init', type=float, default=0.0, help='initial scalar gate for LF prior residual fusion')
 
 parser.add_argument('--exp_dir', type=str, default='../experiment')
 parser.add_argument('--model_name', type=str, default='MDCTDN')

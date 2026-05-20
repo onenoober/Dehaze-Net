@@ -446,8 +446,20 @@ if __name__ == "__main__":
     loader_train = create_data_loader(train_set, opt.bs, True, opt.num_workers)
     loader_test = create_data_loader(test_set, 1, False, opt.test_num_workers)
 
-    net = DEANet(base_dim=32)
+    net = DEANet(
+        base_dim=32,
+        use_lf_prior=opt.use_lf_prior,
+        lf_prior_channels=opt.lf_prior_channels,
+        lf_prior_pool=opt.lf_prior_pool,
+        lf_prior_gate_init=opt.lf_prior_gate_init
+    )
     net = net.to(opt.device)
+    if opt.use_lf_prior:
+        print(
+            'Using LF prior: channels={} pool={} gate_init={}'.format(
+                opt.lf_prior_channels, opt.lf_prior_pool, opt.lf_prior_gate_init
+            )
+        )
 
     epoch_size = len(loader_train)
     print("epoch_size: ", epoch_size)

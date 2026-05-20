@@ -310,8 +310,13 @@ input image
 
 ```bash
 python train.py \
+  --use_lf_prior \
+  --lf_prior_channels 8 \
+  --lf_prior_pool 8 \
+  --lf_prior_gate_init 0.0 \
   --epochs 20 \
   --iters_per_epoch 5000 \
+  --bs 16 \
   --w_loss_L1 1.0 \
   --w_loss_CR 0.1 \
   --start_lr 0.0001 \
@@ -323,6 +328,8 @@ python train.py \
   --eval_interval_steps 10000 \
   --save_epoch_checkpoints false
 ```
+
+第一版 LF prior 使用固定 `avg_pool2d` 低通输入、`8` 通道 adapter 和初始值为 `0.0` 的 scalar gate，插入点限定在 `x8 -> mix1` 之前。不开 `--use_lf_prior` 时，训练模型保持 DEA-Net-CR baseline 行为。
 
 通过标准：
 
