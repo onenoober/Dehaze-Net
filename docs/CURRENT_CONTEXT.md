@@ -229,6 +229,16 @@ PY
   `latest.pk` are not directly interchangeable with `eval.py` `.pth` weights.
   Final formal evaluation needs a train-checkpoint eval path or an explicit
   export/reparameterization path.
+- Active LF prior scout:
+  `DEA-Net-LF-H4K-scout-20260521-003100`, branch `codex/haze4k-lf-prior`,
+  code commit `857661d`, tmux `h4k_lf_scout_20260521_003100`.
+  It uses `bs=16`, `patch_size=256`, `epochs=20`, `iters_per_epoch=5000`,
+  `use_lf_prior=true`, `lf_prior_channels=8`, `lf_prior_pool=8`,
+  `lf_prior_gate_init=0.0`, and validates every `10000` steps.
+  Launcher log:
+  `/root/workspace/Dehaze-Net/experiment/HAZE4K/_run_logs/DEA-Net-LF-H4K-scout-20260521-003100.log`.
+  Training artifacts:
+  `/root/workspace/Dehaze-Net/experiment/HAZE4K/DEA-Net-LF-H4K-scout-20260521-003100/`.
 
 ## Recommended First Run Order
 
