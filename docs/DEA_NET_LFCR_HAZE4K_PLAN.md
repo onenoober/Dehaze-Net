@@ -194,6 +194,32 @@ python train.py \
 - 固定挑选至少 20 张代表性测试图作为视觉对比集。
 - 记录失败样例，例如强雾残留、天空偏色、建筑边缘 halo、暗部噪声等。
 
+#### 当前短跑参照（已完成，2026-05-20）
+
+短期对照训练已经完成，作为 LF、CRPlus 和 LFCR 第一轮筛选的同长度参照曲线。
+
+- Run：`DEA-Net-CR-H4K-Baseline-scout-20260520-101334`
+- 远程路径：`/root/workspace/Dehaze-Net/experiment/HAZE4K/DEA-Net-CR-H4K-Baseline-scout-20260520-101334/`
+- 配置：`bs=16`、`patch_size=256`、`epochs=20`、`iters_per_epoch=5000`、共 `100000` step、每 `10000` step 验证/保存一次、`w_loss_L1=1.0`、`w_loss_CR=0.1`
+- `best.pk`：step `90000` / epoch `18`，PSNR `32.2255`，SSIM `0.9844`
+- `latest.pk`：step `100000` / epoch `20`，PSNR `32.0952`，SSIM `0.9844`
+- 官方 HAZE4K `.pth` 权重完整评测参照：`eval-H4K-official-full-20260520-095415`，PSNR `34.2556`，SSIM `0.9885`
+
+| Step | SSIM | PSNR |
+| --- | --- | --- |
+| 10000 | 0.9615 | 27.1101 |
+| 20000 | 0.9713 | 28.9030 |
+| 30000 | 0.9776 | 30.1143 |
+| 40000 | 0.9804 | 30.3812 |
+| 50000 | 0.9817 | 31.2384 |
+| 60000 | 0.9821 | 31.3803 |
+| 70000 | 0.9826 | 31.7662 |
+| 80000 | 0.9841 | 32.0107 |
+| 90000 | 0.9844 | 32.2255 |
+| 100000 | 0.9844 | 32.0952 |
+
+后续变体筛选时，优先比较 `50k` 和 `100k` 两个节点：`50k` 不应明显低于 PSNR `31.2384` / SSIM `0.9817`，`100k` 不应明显低于 PSNR `32.0952` / SSIM `0.9844`，并且固定视觉样例不能出现系统性偏色、halo、过锐化或大片雾残留。由于当前仓库训练输出是 `.pk` 训练态 checkpoint，正式论文表格前仍需使用训练态评测入口或导出/重参数化入口，不能把 `best.pk` 直接交给 `eval.py` 当作 `.pth` 使用。
+
 ### 5.4 短跑筛选规则
 
 除基线外，LF、CRPlus 和 LFCR 的第一轮实验先使用短跑命令：
@@ -202,6 +228,7 @@ python train.py \
 python train.py \
   --epochs 20 \
   --iters_per_epoch 5000 \
+  --bs 16 \
   --w_loss_L1 1.0 \
   --w_loss_CR 0.1 \
   --start_lr 0.0001 \
@@ -217,9 +244,11 @@ python train.py \
 短跑通过条件：
 
 - `50k` step 前 loss 没有明显发散。
-- `100k` step 时 PSNR 不应明显低于同等训练长度的基线短跑。
+- `50k` / `100k` step 时 PSNR/SSIM 不应明显低于上面的基线短跑曲线。
 - 固定视觉样例中没有系统性偏色、halo、过锐化或大片雾残留。
 - 参数量和显存增长符合轻量改造预期。
+
+实测 batch-size 速度基准显示 `bs=16` 最合适：`bs=16` 为 `4.2868` step/s、`68.59` img/s；`bs=24` 为 `2.8391` step/s、`68.14` img/s；`bs=32` 为 `2.1166` step/s、`67.73` img/s。后续 HAZE4K scout 和 baseline 默认继续使用 `bs=16`，除非模型变体显存增长迫使再次调整。
 
 只有通过短跑的变体才进入完整训练。
 
@@ -626,7 +655,7 @@ hazy input | DEA-Net-CR baseline | LF | CRPlus | LFCR | clear GT
 | 阶段 | 工作 | 产出 |
 | --- | --- | --- |
 | 第 1 周 | HAZE4K 数据检查、官方权重评测、baseline smoke test | 确认基线可跑 |
-| 第 2 周 | 完整训练 DEA-Net-CR HAZE4K baseline，同时保存短跑参照曲线 | 基线 checkpoint、短跑参照和指标 |
+| 第 2 周 | 已完成 DEA-Net-CR HAZE4K `100k` 短跑参照；完整 baseline 训练保留给正式阶段 | 短跑参照曲线、`best.pk` / `latest.pk` 和筛选阈值 |
 | 第 3 周 | 实现 LF prior 并做 `50k/100k` scouting | A1 短跑指标、视觉结果和是否进入完整训练的结论 |
 | 第 4 周 | 实现独立 CRPlus P1，并搜索 `0.05/0.1` 权重短跑 | A2 短跑指标和最佳 CR 权重 |
 | 第 5 周 | 训练通过筛选的 LF、CRPlus 或 LFCR 完整版 | 主模型 checkpoint |

@@ -15,7 +15,10 @@ This file is the handoff note for future Codex conversations. Read this first wh
 
 - OS: Ubuntu 22.04.5 LTS
 - Login user: `root`
-- SSH host: `ssh.smoothcloud.com.cn`
+- Preferred SSH alias: `runyun-ts`
+- Tailscale address: `100.118.134.99`
+- Tailscale SSH port: `2222`
+- Public SSH host fallback: `ssh.smoothcloud.com.cn`
 - Server project path: `/root/workspace/Dehaze-Net`
 - Server shell prompt seen before: `(base) root@tm5cq1-0:~/workspace/Dehaze-Net#`
 - Recommended server working directory:
@@ -45,17 +48,46 @@ ssh -T git@github.com
 
 ### Windows to Cloud Server
 
-- Preferred method: SSH private key file, for example `D:\Dehaze\smoothcloud.pem`.
-- Do not commit or paste the private key.
+- Preferred method: `runyun-ts`, the local SSH alias that reaches the server
+  through Tailscale Serve.
+- The alias uses `C:\Users\Administrator\.ssh\key.pem`; do not commit or paste
+  the private key.
 - Login example:
 
 ```powershell
-ssh -i D:\Dehaze\smoothcloud.pem root@ssh.smoothcloud.com.cn
+ssh runyun-ts
 ```
+
+- Open the server project in VS Code:
+
+```powershell
+code --remote ssh-remote+runyun-ts /root/workspace/Dehaze-Net
+```
+
+- Keep the public `ssh.smoothcloud.com.cn` path only as a fallback for repairing
+  Tailscale if `runyun-ts` stops working.
+- If `runyun-ts` times out after a server restart, restore it through the
+  public fallback:
+
+```powershell
+ssh runyun "bash /root/workspace/tailscale-ssh/start.sh"
+```
+
+- The recovery script starts userspace Tailscale, local SSHD
+  `127.0.0.1:2223`, and Tailscale Serve `100.118.134.99:2222 -> 127.0.0.1:2223`.
+- Because the container has no `systemd` and no `/dev/net/tun`, Tailscale is
+  recovered through Supervisor plus userspace networking. The Supervisor program
+  `runyun-tailscale-ssh` runs `/root/workspace/tailscale-ssh/supervisor-keepalive.sh`,
+  which calls `/root/workspace/tailscale-ssh/start.sh` if tailscaled, Serve, or
+  the local SSHD is missing.
+- Tailscale state is persisted under
+  `/root/workspace/tailscale-ssh/state/tailscaled.state`; logs are under
+  `/root/workspace/tailscale-ssh/logs/`.
 
 ## Important Documentation
 
 - New beginner Linux/server guide: `Linux.md`
+- Core training server runbook: `docs/CORE_SERVER_RUNBOOK.md`
 - Download links and fallback plan: `docs/DOWNLOADS.md`
 - Reproduction notes: `docs/REPRODUCTION.md`
 - Collaboration workflow: `docs/WORKFLOW.md`
@@ -117,7 +149,7 @@ See `docs/DOWNLOADS.md`. As of the previous check:
 
 ```bash
 cd /root/workspace/Dehaze-Net
-git pull --ff-only
+git -c http.version=HTTP/1.1 pull --ff-only
 ```
 
 ## DEA-Net Path Notes
@@ -143,6 +175,13 @@ ln -sfn haze hazy
 
 - Server has Ubuntu 22.04.
 - RTX 5090 was discussed as the target GPU.
+- The active `runyun-ts` training environment is `py310` under `/opt/anaconda`.
+- One-shot SSH commands through `runyun-ts` should load conda explicitly:
+
+```bash
+source /opt/anaconda/etc/profile.d/conda.sh && conda activate py310
+```
+
 - The old official DEA-Net environment, especially PyTorch 1.10 / CUDA 11.3, may not support RTX 5090.
 - Prefer a modern PyTorch CUDA 12.x build when setting up the training environment.
 - Example:
@@ -167,6 +206,29 @@ if torch.cuda.is_available():
     print("gpu:", torch.cuda.get_device_name(0))
 PY
 ```
+
+## Latest HAZE4K Training Reference
+
+- Current short-run reference: `DEA-Net-CR-H4K-Baseline-scout-20260520-101334`.
+- Remote artifact path:
+  `/root/workspace/Dehaze-Net/experiment/HAZE4K/DEA-Net-CR-H4K-Baseline-scout-20260520-101334/`.
+- Training config: HAZE4K, DEA-Net-CR, `bs=16`, `patch_size=256`,
+  `epochs=20`, `iters_per_epoch=5000`, `100000` total steps,
+  `w_loss_L1=1.0`, `w_loss_CR=0.1`, checkpoint/eval every `10000` steps.
+- Best scout checkpoint: `saved_model/best.pk` at step `90000` / epoch `18`,
+  PSNR `32.2255`, SSIM `0.9844`.
+- Final scout checkpoint: `saved_model/latest.pk` at step `100000` / epoch `20`,
+  PSNR `32.0952`, SSIM `0.9844`.
+- Official HAZE4K `.pth` full eval reference:
+  `eval-H4K-official-full-20260520-095415`, PSNR `34.2556`, SSIM `0.9885`,
+  checkpoint `PSNR3426_SSIM9885.pth`.
+- Batch-size benchmark selected `bs=16` for future HAZE4K scout/baseline runs:
+  `bs=16` `4.2868` step/s / `68.59` img/s, `bs=24` `2.8391` step/s /
+  `68.14` img/s, `bs=32` `2.1166` step/s / `67.73` img/s.
+- Keep the checkpoint-format distinction: training outputs `best.pk` and
+  `latest.pk` are not directly interchangeable with `eval.py` `.pth` weights.
+  Final formal evaluation needs a train-checkpoint eval path or an explicit
+  export/reparameterization path.
 
 ## Recommended First Run Order
 
@@ -196,7 +258,8 @@ Evaluation example:
 
 ```bash
 cd /root/workspace/Dehaze-Net/code
-conda activate deanet
+source /opt/anaconda/etc/profile.d/conda.sh
+conda activate py310
 python eval.py --dataset ITS --model_name DEA-Net-CR --pre_trained_model PSNR4131_SSIM9945.pth
 ```
 
@@ -204,7 +267,8 @@ Smoke test example:
 
 ```bash
 cd /root/workspace/Dehaze-Net/code
-conda activate deanet
+source /opt/anaconda/etc/profile.d/conda.sh
+conda activate py310
 python train.py --epochs 1 --iters_per_epoch 10 --finer_eval_step 10 --w_loss_L1 1.0 --w_loss_CR 0.1 --start_lr 0.0001 --end_lr 0.000001 --exp_dir ../experiment/ --model_name smoke-test --dataset ITS
 ```
 
