@@ -4,8 +4,8 @@ set -euo pipefail
 ROOT="/root/workspace/Dehaze-Net"
 CODE_DIR="$ROOT/code"
 MODEL_NAME="${MODEL_NAME:-DEA-Net-LF-H4K-scout-$(date +%Y%m%d-%H%M%S)}"
-LOG_DIR="$ROOT/experiment/HAZE4K/$MODEL_NAME"
-LOG_FILE="$LOG_DIR/train.log"
+LOG_DIR="$ROOT/experiment/HAZE4K/_run_logs"
+LOG_FILE="$LOG_DIR/${MODEL_NAME}.log"
 
 mkdir -p "$LOG_DIR"
 cd "$CODE_DIR"
