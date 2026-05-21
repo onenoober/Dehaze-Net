@@ -246,6 +246,9 @@ PY
   uncheckpointed tail after step `80000` should be treated as lost. It was
   resumed from `latest.pk` in tmux `h4k_lf_resume_20260521_084700`; resume log:
   `/root/workspace/Dehaze-Net/experiment/HAZE4K/_run_logs/DEA-Net-LF-H4K-scout-20260521-003100-resume-20260521-084700.log`.
+  Final result: `best.pk` at step `90000` / epoch `18`, PSNR `32.4281`, SSIM
+  `0.9845`; `latest.pk` at step `100000` / epoch `20`, PSNR `32.3857`, SSIM
+  `0.9845`.
 
 ## Recommended First Run Order
 
