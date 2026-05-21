@@ -239,6 +239,13 @@ PY
   `/root/workspace/Dehaze-Net/experiment/HAZE4K/_run_logs/DEA-Net-LF-H4K-scout-20260521-003100.log`.
   Training artifacts:
   `/root/workspace/Dehaze-Net/experiment/HAZE4K/DEA-Net-LF-H4K-scout-20260521-003100/`.
+  After the server restarted on 2026-05-21, `runyun-ts` was restored through
+  `ssh runyun "bash /root/workspace/tailscale-ssh/start.sh"`. The LF scout had
+  `best.pk` and `latest.pk` at step `80000` / epoch `16`, PSNR `32.1721`,
+  SSIM `0.9841`; `losses.npy` contained about `86856` entries, so the
+  uncheckpointed tail after step `80000` should be treated as lost. It was
+  resumed from `latest.pk` in tmux `h4k_lf_resume_20260521_084700`; resume log:
+  `/root/workspace/Dehaze-Net/experiment/HAZE4K/_run_logs/DEA-Net-LF-H4K-scout-20260521-003100-resume-20260521-084700.log`.
 
 ## Recommended First Run Order
 
