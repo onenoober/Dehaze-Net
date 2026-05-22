@@ -300,6 +300,30 @@ PY
   residual contributing to over-dehazing; `9` improves as gate increases, so it
   is a different failure mode; `80` improves in PSNR/color but still has lower
   SSIM, matching the backlight/brightness tradeoff.
+- Conservative LF v2 scout completed on 2026-05-22:
+  `DEA-Net-LF-Conservative-H4K-scout-20260522-145904`, code commit `242a7a6`,
+  `bs=16`, `patch_size=256`, `epochs=20`, `iters_per_epoch=5000`,
+  `lf_prior_channels=4`, `lf_prior_pool=8`,
+  `lf_prior_residual_center=true`, `lf_prior_train_dropout=0.25`,
+  `lf_prior_gate_max=0.02`, `w_loss_lf_gate=0.01`, `w_loss_CR=0.1`.
+  It finished 100000 steps in tmux `h4k_lf_cons_20260522_145904`; final and
+  best checkpoint are both at step `100000` / epoch `20`, PSNR `32.1083`,
+  SSIM `0.9843`. This is lower than the baseline scout best `32.2255 / 0.9844`
+  and lower than LF-v1 best `32.4281 / 0.9845`, so it should be treated as an
+  over-constrained/failed LF ablation rather than a main candidate.
+- Fixed-sample Conservative visual/objective comparison was generated at
+  `/root/workspace/Dehaze-Net/experiment/HAZE4K/visual_compare/DEA-Net-CR-vs-LF-Conservative-20260522/`
+  and partially copied locally under
+  `D:\Dehaze\Dehaze-Net\experiment\HAZE4K\visual_compare\DEA-Net-CR-vs-LF-Conservative-20260522\`.
+  It uses the same 20 sample list as `DEA-Net-CR-vs-LF-20260522`, baseline
+  `best.pk` at step `90000`, and Conservative `best.pk` at step `100000`.
+  Subset visual summary: baseline `31.5373 / 0.9835`, Conservative
+  `30.7523 / 0.9830`, mean delta `-0.7850` PSNR / `-0.0005` SSIM. Objective
+  triage: Conservative better on `4`, worse on `14`, mixed on `2`; mean delta
+  PSNR `-0.7825`, mean delta-E improvement `-0.1479`, dark-channel abs-bias
+  improvement `-0.0026`, and edge-error improvement `-0.00063`. Compared with
+  LF-v1 (`-0.2782` PSNR, better/worse/mixed `5/9/6`), the Conservative variant
+  did not reduce fixed-sample risk and should not be promoted.
 
 ## Recommended First Run Order
 

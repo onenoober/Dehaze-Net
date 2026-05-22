@@ -387,6 +387,15 @@ bash scripts/runyun-haze4k-lf-conservative-scout.sh
 
 筛选标准比第一版 LF 更严格：`100k` 全量 HAZE4K test PSNR/SSIM 至少不能低于 baseline scout；固定 20 张样例的 mean delta PSNR 应接近 0 或转正；`384`、`9`、`715`、`952` 等负向样例的 delta-E 和暗通道偏差不能继续扩大。只有该保守版同时满足“全量指标不降”和“固定样本退化收敛”，才进入 CRPlus 或 LFCR 组合。
 
+保守训练约束版已完成 100k scout：
+
+- Run：`DEA-Net-LF-Conservative-H4K-scout-20260522-145904`
+- 配置：`lf_prior_channels=4`、`lf_prior_pool=8`、`lf_prior_residual_center=true`、`lf_prior_train_dropout=0.25`、`lf_prior_gate_max=0.02`、`w_loss_lf_gate=0.01`、`w_loss_CR=0.1`
+- `best.pk` / `latest.pk`：step `100000` / epoch `20`，PSNR `32.1083`，SSIM `0.9843`
+- 结论：低于 baseline scout best `32.2255 / 0.9844`，也低于第一版 LF best `32.4281 / 0.9845`，不作为后续主候选。
+
+固定 20 张样例分析也未通过筛选。Conservative 相对 baseline 的子集均值为 `-0.7850 dB` / `-0.0005` SSIM，客观分析为更好 `4`、更差 `14`、混合 `2`；mean delta-E improvement `-0.1479`，dark-channel abs-bias improvement `-0.0026`，edge-error improvement `-0.00063`。相比第一版 LF 的 `-0.2782 dB`、更好/更差/混合 `5/9/6`，保守约束没有解决视觉退化，反而损失更多正向样例。因此该版本只保留为“过约束导致收益不足”的失败消融证据。后续不建议继续沿 `channels=4 + dropout + gate clamp + gate L2` 加强约束；如果继续改 LF，应改成更温和的训练期约束，或优先转向 CRPlus 独立损失路线。
+
 ## 7. 阶段三：改进对比正则 CRPlus
 
 模型名：
