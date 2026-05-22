@@ -364,6 +364,8 @@ python train.py \
 
 解释边界：固定 20 张样例的平均值为负，但全量测试验证为正，因此不能用这组固定样例单独否定 LF，也不能只用全量 PSNR 直接宣称视觉质量稳定提升。下一步应先人工检查正负样例是否存在系统性颜色、亮度、halo 或纹理问题；如果负向样例集中体现为过度校正，应优先降低 LF gate 或 adapter 强度，再考虑与 CRPlus 组合。
 
+已补充客观视觉分析脚本 `code/analyze_visual_compare.py`，并在服务器 `py310` 环境完成首轮分析。输出目录为 `/root/workspace/Dehaze-Net/experiment/HAZE4K/visual_compare/DEA-Net-CR-vs-LF-20260522/analysis/`，包含 `analysis_metrics.csv`、`analysis_summary.json`、`analysis_report.md`、误差热力图和诊断 panel。该脚本用 PSNR/SSIM、MAE/RMSE、Lab delta-E、亮度/饱和度偏差、暗通道偏差、边缘误差、Laplacian 方差和高频能量做客观初筛。首轮结果显示：20 张样例中 LF 客观更好 `5` 张、更差 `9` 张、混合或中性 `6` 张；平均 delta-E、亮度、饱和度和暗通道偏差略变差，但边缘误差略有改善。这支持“LF 对部分样例有帮助，但存在场景选择性和潜在颜色/低频过校正风险”的判断。
+
 ## 7. 阶段三：改进对比正则 CRPlus
 
 模型名：
@@ -606,6 +608,18 @@ hazy input | DEA-Net-CR baseline | LF | CRPlus | LFCR | clear GT
 - 暗部噪声。
 
 当前固定对比集记录：`DEA-Net-CR-vs-LF-20260522` 已生成 `input/`、`baseline/`、`lf/`、`gt/`、`panels/`、`metrics.csv` 和 `summary.json`。该集合适合作为第一轮视觉诊断；若要写入论文或最终答辩材料，建议再补一组分层样例：5 张 LF 提升最大、5 张 LF 下降最大、10 张接近零增益或不同雾浓度的中性样例，避免均匀抽样偶然偏向某一类失败或成功案例。
+
+客观视觉分析优先使用 `scripts/runyun-haze4k-objective-analysis.sh`：
+
+```bash
+cd /root/workspace/Dehaze-Net
+COMPARE_DIR=/root/workspace/Dehaze-Net/experiment/HAZE4K/visual_compare/<compare-run> \
+CURRENT_DIR_NAME=lf \
+CURRENT_LABEL=DEA-Net-LF \
+bash scripts/runyun-haze4k-objective-analysis.sh
+```
+
+程序输出只能替代人工初筛和问题定位，不能替代最终主观判断。论文展示样例仍应人工确认自然度、颜色、边缘 halo 和纹理观感。
 
 ## 11. 消融实验表
 

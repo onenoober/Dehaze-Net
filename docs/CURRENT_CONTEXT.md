@@ -268,6 +268,23 @@ PY
   Selected panels were copied locally under
   `D:\Dehaze\Dehaze-Net\experiment\HAZE4K\visual_compare\DEA-Net-CR-vs-LF-20260522\panels\`
   for inspection; keep them out of Git.
+- Objective visual analysis tooling was added on branch `codex/haze4k-lf-prior`
+  at commit `a1424ea`: `code/analyze_visual_compare.py` plus
+  `scripts/runyun-haze4k-objective-analysis.sh`. It reads an existing
+  visual-compare directory with `input/`, `baseline/`, `lf` or other current
+  output, and `gt/`; it writes `analysis_metrics.csv`,
+  `analysis_summary.json`, `analysis_report.md`, per-image heatmaps, and
+  diagnostic panels. The first run used the existing server `py310`
+  environment through `/opt/anaconda/envs/py310/bin/python`; no extra package
+  install was required because `numpy`, `PIL`, and `cv2` were already present.
+  Output path:
+  `experiment/HAZE4K/visual_compare/DEA-Net-CR-vs-LF-20260522/analysis/`.
+  Objective triage result for the 20 fixed samples: LF better on `5`, worse on
+  `9`, mixed/neutral on `6`; mean LF delta was `-0.2782` PSNR / `-0.0006`
+  SSIM, mean delta-E improvement was `-0.0407`, and mean edge-error
+  improvement was `+0.00015`. The tool is suitable for objective pre-screening,
+  while final visual quality decisions still need subjective inspection of the
+  diagnostic panels.
 
 ## Recommended First Run Order
 
