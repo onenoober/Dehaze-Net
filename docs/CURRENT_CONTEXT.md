@@ -285,6 +285,21 @@ PY
   improvement was `+0.00015`. The tool is suitable for objective pre-screening,
   while final visual quality decisions still need subjective inspection of the
   diagnostic panels.
+- Inference-time LF gate sweep was completed at commit `e46f8a4` with
+  `scripts/runyun-haze4k-lf-gate-sweep.sh`. It uses the same fixed samples and
+  compares baseline `best.pk` with the LF `best.pk` while multiplying
+  `lf_prior.gate` by `0`, `0.25`, `0.5`, `0.75`, and `1.0`; this does not
+  retrain. Output path:
+  `experiment/HAZE4K/visual_compare/DEA-Net-CR-vs-LF-gate-sweep-20260522/`.
+  The trained LF gate was `0.033890`. Mean delta PSNR over the 20 fixed samples
+  was `-0.2694`, `-0.2683`, `-0.2695`, `-0.2732`, and `-0.2793` for scales
+  `0`, `0.25`, `0.5`, `0.75`, and `1.0`; mean delta-E improvement stayed
+  negative around `-0.04`. This means post-hoc gate weakening only mildly
+  changes the subset result and does not fix the issue. Key subjective cases:
+  `384`, `479`, and `952` get worse as gate increases, consistent with LF
+  residual contributing to over-dehazing; `9` improves as gate increases, so it
+  is a different failure mode; `80` improves in PSNR/color but still has lower
+  SSIM, matching the backlight/brightness tradeoff.
 
 ## Recommended First Run Order
 

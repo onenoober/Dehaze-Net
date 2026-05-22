@@ -366,6 +366,8 @@ python train.py \
 
 已补充客观视觉分析脚本 `code/analyze_visual_compare.py`，并在服务器 `py310` 环境完成首轮分析。输出目录为 `/root/workspace/Dehaze-Net/experiment/HAZE4K/visual_compare/DEA-Net-CR-vs-LF-20260522/analysis/`，包含 `analysis_metrics.csv`、`analysis_summary.json`、`analysis_report.md`、误差热力图和诊断 panel。该脚本用 PSNR/SSIM、MAE/RMSE、Lab delta-E、亮度/饱和度偏差、暗通道偏差、边缘误差、Laplacian 方差和高频能量做客观初筛。首轮结果显示：20 张样例中 LF 客观更好 `5` 张、更差 `9` 张、混合或中性 `6` 张；平均 delta-E、亮度、饱和度和暗通道偏差略变差，但边缘误差略有改善。这支持“LF 对部分样例有帮助，但存在场景选择性和潜在颜色/低频过校正风险”的判断。
 
+已完成推理时 LF gate 强度扫参，不重新训练，只在加载 `DEA-Net-LF-H4K-scout-20260521-003100/saved_model/best.pk` 后将 `lf_prior.gate` 乘以 `0`、`0.25`、`0.5`、`0.75`、`1.0`。输出目录为 `/root/workspace/Dehaze-Net/experiment/HAZE4K/visual_compare/DEA-Net-CR-vs-LF-gate-sweep-20260522/`。原始 gate 为 `0.033890`。20 张固定样例的 mean delta PSNR 分别为 `-0.2694`、`-0.2683`、`-0.2695`、`-0.2732`、`-0.2793`，均未恢复到 baseline。`384`、`479`、`952` 随 gate 增大逐步变差，支持“LF residual 加重远景/低频过度去雾”的主观观察；但 `9` 随 gate 增大反而改善，`80` 在 PSNR/color 上随 gate 增大改善但 SSIM 仍下降。因此当前问题不能靠推理时简单削弱 gate 根治，更可能是 LF 分支参与训练后整网权重已经共同适配，下一轮应考虑训练期约束或结构改造，而不是只调推理 gate。
+
 ## 7. 阶段三：改进对比正则 CRPlus
 
 模型名：
