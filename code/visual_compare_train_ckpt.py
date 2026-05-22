@@ -30,6 +30,8 @@ def parse_args():
     parser.add_argument('--lf_prior_channels', type=int, default=8)
     parser.add_argument('--lf_prior_pool', type=int, default=8)
     parser.add_argument('--lf_prior_gate_init', type=float, default=0.0)
+    parser.add_argument('--lf_gate_scale', type=float, default=1.0)
+    parser.add_argument('--lf_label', type=str, default='DEA-Net-LF')
     return parser.parse_args()
 
 
@@ -60,6 +62,16 @@ def load_model(checkpoint_path, use_lf_prior, args):
     model.to(args.device)
     model.eval()
     return model, checkpoint
+
+
+def apply_lf_gate_scale(model, scale):
+    if model.lf_prior is None:
+        return None, None
+    with torch.no_grad():
+        original_gate = float(model.lf_prior.gate.detach().cpu().item())
+        model.lf_prior.gate.mul_(float(scale))
+        scaled_gate = float(model.lf_prior.gate.detach().cpu().item())
+    return original_gate, scaled_gate
 
 
 def choose_samples(hazy_names, num_samples, sample_list_path):
@@ -130,6 +142,7 @@ def main():
 
     baseline_model, baseline_ckpt = load_model(args.baseline_checkpoint, False, args)
     lf_model, lf_ckpt = load_model(args.lf_checkpoint, True, args)
+    lf_original_gate, lf_effective_gate = apply_lf_gate_scale(lf_model, args.lf_gate_scale)
 
     to_tensor = ToTensor()
     rows = []
@@ -164,7 +177,7 @@ def main():
 
             panel = draw_panel(
                 [input_img, baseline_img, lf_img, gt_img],
-                ['hazy input', 'DEA-Net-CR baseline', 'DEA-Net-LF', 'clear GT'],
+                ['hazy input', 'DEA-Net-CR baseline', args.lf_label, 'clear GT'],
                 [
                     '',
                     'PSNR {:.4f} SSIM {:.4f}'.format(baseline_psnr, baseline_ssim),
@@ -201,6 +214,9 @@ def main():
         'lf_checkpoint': args.lf_checkpoint,
         'baseline_checkpoint_step': baseline_ckpt.get('step'),
         'lf_checkpoint_step': lf_ckpt.get('step'),
+        'lf_gate_scale': args.lf_gate_scale,
+        'lf_original_gate': lf_original_gate,
+        'lf_effective_gate': lf_effective_gate,
         'mean_baseline_psnr': float(np.mean([row['baseline_psnr'] for row in rows])),
         'mean_baseline_ssim': float(np.mean([row['baseline_ssim'] for row in rows])),
         'mean_lf_psnr': float(np.mean([row['lf_psnr'] for row in rows])),
