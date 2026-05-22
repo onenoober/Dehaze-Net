@@ -43,6 +43,10 @@ parser.add_argument('--use_lf_prior', action='store_true', help='enable lightwei
 parser.add_argument('--lf_prior_channels', type=int, default=8, help='hidden channels in the LF prior adapter')
 parser.add_argument('--lf_prior_pool', type=int, default=8, help='average-pooling size for fixed low-pass input')
 parser.add_argument('--lf_prior_gate_init', type=float, default=0.0, help='initial scalar gate for LF prior residual fusion')
+parser.add_argument('--lf_prior_residual_center', action='store_true', help='remove spatial mean from LF residual before fusion')
+parser.add_argument('--lf_prior_train_dropout', type=float, default=0.0, help='sample-wise LF branch dropout during training; 0 disables')
+parser.add_argument('--lf_prior_gate_max', type=float, default=0.0, help='clamp effective LF gate magnitude during forward; 0 disables')
+parser.add_argument('--w_loss_lf_gate', type=float, default=0.0, help='L2 penalty weight for the LF scalar gate; 0 disables')
 
 parser.add_argument('--exp_dir', type=str, default='../experiment')
 parser.add_argument('--model_name', type=str, default='MDCTDN')

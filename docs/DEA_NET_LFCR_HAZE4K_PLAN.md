@@ -368,6 +368,25 @@ python train.py \
 
 已完成推理时 LF gate 强度扫参，不重新训练，只在加载 `DEA-Net-LF-H4K-scout-20260521-003100/saved_model/best.pk` 后将 `lf_prior.gate` 乘以 `0`、`0.25`、`0.5`、`0.75`、`1.0`。输出目录为 `/root/workspace/Dehaze-Net/experiment/HAZE4K/visual_compare/DEA-Net-CR-vs-LF-gate-sweep-20260522/`。原始 gate 为 `0.033890`。20 张固定样例的 mean delta PSNR 分别为 `-0.2694`、`-0.2683`、`-0.2695`、`-0.2732`、`-0.2793`，均未恢复到 baseline。`384`、`479`、`952` 随 gate 增大逐步变差，支持“LF residual 加重远景/低频过度去雾”的主观观察；但 `9` 随 gate 增大反而改善，`80` 在 PSNR/color 上随 gate 增大改善但 SSIM 仍下降。因此当前问题不能靠推理时简单削弱 gate 根治，更可能是 LF 分支参与训练后整网权重已经共同适配，下一轮应考虑训练期约束或结构改造，而不是只调推理 gate。
 
+#### 下一轮 LF 改进：保守训练约束版
+
+基于上述固定样本分析，当前 LF 的问题不是全量指标完全无效，而是收益具有场景选择性：边缘误差略有改善，但 delta-E、亮度、饱和度和暗通道偏差平均变差，且 gate 置零的推理结果仍低于 baseline，说明训练期共适配已经影响主干。因此下一轮不应继续单纯增大低频分支容量，也不应只做推理期 gate 缩放，而应先验证一个更保守的 LF 版本：
+
+- 将 LF adapter 通道从 `8` 降到 `4`，降低低频分支对主干的表达支配力。
+- 启用 `--lf_prior_residual_center`，对 LF residual 做空间均值居中，减少全局亮度、颜色和暗通道偏移。
+- 启用训练期 sample-wise LF dropout，例如 `--lf_prior_train_dropout 0.25`，迫使主干在部分 batch 中不依赖 LF 分支，降低共适配风险。
+- 启用 gate 上限，例如 `--lf_prior_gate_max 0.02`，并用 `--w_loss_lf_gate 0.01` 给 scalar gate 加轻量 L2 约束。
+- 仍保持插入点为 `x8 -> mix1` 之前，不移动浅层、不增加多处 LF 注入。
+
+推荐下一轮短跑脚本：
+
+```bash
+cd /root/workspace/Dehaze-Net
+bash scripts/runyun-haze4k-lf-conservative-scout.sh
+```
+
+筛选标准比第一版 LF 更严格：`100k` 全量 HAZE4K test PSNR/SSIM 至少不能低于 baseline scout；固定 20 张样例的 mean delta PSNR 应接近 0 或转正；`384`、`9`、`715`、`952` 等负向样例的 delta-E 和暗通道偏差不能继续扩大。只有该保守版同时满足“全量指标不降”和“固定样本退化收敛”，才进入 CRPlus 或 LFCR 组合。
+
 ## 7. 阶段三：改进对比正则 CRPlus
 
 模型名：

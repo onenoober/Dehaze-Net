@@ -30,6 +30,8 @@ def parse_args():
     parser.add_argument('--lf_prior_channels', type=int, default=8)
     parser.add_argument('--lf_prior_pool', type=int, default=8)
     parser.add_argument('--lf_prior_gate_init', type=float, default=0.0)
+    parser.add_argument('--lf_prior_residual_center', action='store_true')
+    parser.add_argument('--lf_prior_gate_max', type=float, default=0.0)
     parser.add_argument('--lf_gate_scale', type=float, default=1.0)
     parser.add_argument('--lf_label', type=str, default='DEA-Net-LF')
     return parser.parse_args()
@@ -55,7 +57,9 @@ def load_model(checkpoint_path, use_lf_prior, args):
         use_lf_prior=use_lf_prior,
         lf_prior_channels=args.lf_prior_channels,
         lf_prior_pool=args.lf_prior_pool,
-        lf_prior_gate_init=args.lf_prior_gate_init
+        lf_prior_gate_init=args.lf_prior_gate_init,
+        lf_prior_residual_center=args.lf_prior_residual_center,
+        lf_prior_gate_max=args.lf_prior_gate_max
     )
     checkpoint = load_checkpoint(checkpoint_path)
     model.load_state_dict(checkpoint['model'])
@@ -71,6 +75,9 @@ def apply_lf_gate_scale(model, scale):
         original_gate = float(model.lf_prior.gate.detach().cpu().item())
         model.lf_prior.gate.mul_(float(scale))
         scaled_gate = float(model.lf_prior.gate.detach().cpu().item())
+        gate_max = float(getattr(model.lf_prior, 'gate_max', 0.0))
+        if gate_max > 0:
+            scaled_gate = max(min(scaled_gate, gate_max), -gate_max)
     return original_gate, scaled_gate
 
 
@@ -217,6 +224,8 @@ def main():
         'lf_gate_scale': args.lf_gate_scale,
         'lf_original_gate': lf_original_gate,
         'lf_effective_gate': lf_effective_gate,
+        'lf_prior_residual_center': args.lf_prior_residual_center,
+        'lf_prior_gate_max': args.lf_prior_gate_max,
         'mean_baseline_psnr': float(np.mean([row['baseline_psnr'] for row in rows])),
         'mean_baseline_ssim': float(np.mean([row['baseline_ssim'] for row in rows])),
         'mean_lf_psnr': float(np.mean([row['lf_psnr'] for row in rows])),

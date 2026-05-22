@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT="/root/workspace/Dehaze-Net"
 CODE_DIR="$ROOT/code"
-MODEL_NAME="${MODEL_NAME:-DEA-Net-LF-H4K-scout-$(date +%Y%m%d-%H%M%S)}"
+MODEL_NAME="${MODEL_NAME:-DEA-Net-LF-Conservative-H4K-scout-$(date +%Y%m%d-%H%M%S)}"
 LOG_DIR="$ROOT/experiment/HAZE4K/_run_logs"
 LOG_FILE="$LOG_DIR/${MODEL_NAME}.log"
 
@@ -15,10 +15,13 @@ echo "LOG_FILE=$LOG_FILE"
 
 /opt/anaconda/envs/py310/bin/python train.py \
   --use_lf_prior \
-  --lf_prior_channels 8 \
-  --lf_prior_pool 8 \
-  --lf_prior_gate_init 0.0 \
-  ${LF_EXTRA_ARGS:-} \
+  --lf_prior_channels "${LF_PRIOR_CHANNELS:-4}" \
+  --lf_prior_pool "${LF_PRIOR_POOL:-8}" \
+  --lf_prior_gate_init "${LF_PRIOR_GATE_INIT:-0.0}" \
+  --lf_prior_residual_center \
+  --lf_prior_train_dropout "${LF_PRIOR_TRAIN_DROPOUT:-0.25}" \
+  --lf_prior_gate_max "${LF_PRIOR_GATE_MAX:-0.02}" \
+  --w_loss_lf_gate "${W_LOSS_LF_GATE:-0.01}" \
   --model_name "$MODEL_NAME" \
   --dataset HAZE4K \
   --epochs 20 \

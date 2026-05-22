@@ -235,7 +235,10 @@ def train(net, loader_train, loader_test, optim, criterion, writer=None, trainin
                 loss_L1 = criterion[0](out, y)
             if opt.w_loss_CR > 0:
                 loss_CR = criterion[1](out, y, x)
+            loss_lf_gate = lf_gate_regularization(net)
             loss = opt.w_loss_L1 * loss_L1 + opt.w_loss_CR * loss_CR
+            if loss_lf_gate is not None:
+                loss = loss + opt.w_loss_lf_gate * loss_lf_gate
             loss.backward()
             optim.step()
             optim.zero_grad()
@@ -249,6 +252,9 @@ def train(net, loader_train, loader_test, optim, criterion, writer=None, trainin
                 writer.add_scalar('train/loss_L1', loss_L1.item(), step)
                 writer.add_scalar('train/loss_CR', loss_CR.item(), step)
                 writer.add_scalar('train/loss_CR_weighted', opt.w_loss_CR * loss_CR.item(), step)
+                if loss_lf_gate is not None:
+                    writer.add_scalar('train/loss_lf_gate', loss_lf_gate.item(), step)
+                    writer.add_scalar('train/loss_lf_gate_weighted', opt.w_loss_lf_gate * loss_lf_gate.item(), step)
                 writer.add_scalar('train/lr', lr, step)
 
             if opt.no_tqdm:
@@ -346,6 +352,18 @@ def train(net, loader_train, loader_test, optim, criterion, writer=None, trainin
                 np.save(os.path.join(opt.saved_data_dir, 'losses.npy'), losses)
     finally:
         progress_bar.close()
+
+
+def resolve_lf_prior_module(net):
+    module = net.module if hasattr(net, 'module') else net
+    return getattr(module, 'lf_prior', None)
+
+
+def lf_gate_regularization(net):
+    lf_prior = resolve_lf_prior_module(net)
+    if lf_prior is None or opt.w_loss_lf_gate <= 0:
+        return None
+    return lf_prior.gate.pow(2)
 
 def pad_img(x, patch_size):
     _, _, h, w = x.size()
@@ -451,13 +469,22 @@ if __name__ == "__main__":
         use_lf_prior=opt.use_lf_prior,
         lf_prior_channels=opt.lf_prior_channels,
         lf_prior_pool=opt.lf_prior_pool,
-        lf_prior_gate_init=opt.lf_prior_gate_init
+        lf_prior_gate_init=opt.lf_prior_gate_init,
+        lf_prior_residual_center=opt.lf_prior_residual_center,
+        lf_prior_train_dropout=opt.lf_prior_train_dropout,
+        lf_prior_gate_max=opt.lf_prior_gate_max
     )
     net = net.to(opt.device)
     if opt.use_lf_prior:
         print(
-            'Using LF prior: channels={} pool={} gate_init={}'.format(
-                opt.lf_prior_channels, opt.lf_prior_pool, opt.lf_prior_gate_init
+            'Using LF prior: channels={} pool={} gate_init={} residual_center={} train_dropout={} gate_max={} gate_l2={}'.format(
+                opt.lf_prior_channels,
+                opt.lf_prior_pool,
+                opt.lf_prior_gate_init,
+                opt.lf_prior_residual_center,
+                opt.lf_prior_train_dropout,
+                opt.lf_prior_gate_max,
+                opt.w_loss_lf_gate
             )
         )
 

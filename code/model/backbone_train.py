@@ -10,11 +10,27 @@ def default_conv(in_channels, out_channels, kernel_size, bias=True):
 
 
 class LowFrequencyPrior(nn.Module):
-    def __init__(self, out_channels, adapter_channels=8, pool_size=8, gate_init=0.0):
+    def __init__(
+        self,
+        out_channels,
+        adapter_channels=8,
+        pool_size=8,
+        gate_init=0.0,
+        residual_center=False,
+        train_dropout=0.0,
+        gate_max=0.0
+    ):
         super(LowFrequencyPrior, self).__init__()
         if pool_size <= 0:
             raise ValueError('pool_size must be positive')
+        if train_dropout < 0 or train_dropout >= 1:
+            raise ValueError('train_dropout must be in [0, 1)')
+        if gate_max < 0:
+            raise ValueError('gate_max must be non-negative')
         self.pool_size = pool_size
+        self.residual_center = residual_center
+        self.train_dropout = train_dropout
+        self.gate_max = gate_max
         self.adapter = nn.Sequential(
             nn.Conv2d(3, adapter_channels, kernel_size=3, stride=1, padding=1, bias=True),
             nn.ReLU(True),
@@ -31,11 +47,34 @@ class LowFrequencyPrior(nn.Module):
         )
         low = F.interpolate(low, size=target.shape[-2:], mode='bilinear', align_corners=False)
         prior = self.adapter(low)
-        return target + self.gate * prior
+        if self.residual_center:
+            prior = prior - prior.mean(dim=(2, 3), keepdim=True)
+        if self.training and self.train_dropout > 0:
+            keep_prob = 1.0 - self.train_dropout
+            mask = torch.empty(
+                prior.shape[0], 1, 1, 1,
+                dtype=prior.dtype,
+                device=prior.device
+            ).bernoulli_(keep_prob).div_(keep_prob)
+            prior = prior * mask
+        gate = self.gate
+        if self.gate_max > 0:
+            gate = gate.clamp(min=-self.gate_max, max=self.gate_max)
+        return target + gate * prior
 
 
 class DEANet(nn.Module):
-    def __init__(self, base_dim=32, use_lf_prior=False, lf_prior_channels=8, lf_prior_pool=8, lf_prior_gate_init=0.0):
+    def __init__(
+        self,
+        base_dim=32,
+        use_lf_prior=False,
+        lf_prior_channels=8,
+        lf_prior_pool=8,
+        lf_prior_gate_init=0.0,
+        lf_prior_residual_center=False,
+        lf_prior_train_dropout=0.0,
+        lf_prior_gate_max=0.0
+    ):
         super(DEANet, self).__init__()
         self.use_lf_prior = use_lf_prior
         # down-sample
@@ -87,7 +126,10 @@ class DEANet(nn.Module):
                 out_channels=base_dim * 4,
                 adapter_channels=lf_prior_channels,
                 pool_size=lf_prior_pool,
-                gate_init=lf_prior_gate_init
+                gate_init=lf_prior_gate_init,
+                residual_center=lf_prior_residual_center,
+                train_dropout=lf_prior_train_dropout,
+                gate_max=lf_prior_gate_max
             )
         else:
             self.lf_prior = None
