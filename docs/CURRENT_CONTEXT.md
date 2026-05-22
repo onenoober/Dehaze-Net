@@ -249,6 +249,25 @@ PY
   Final result: `best.pk` at step `90000` / epoch `18`, PSNR `32.4281`, SSIM
   `0.9845`; `latest.pk` at step `100000` / epoch `20`, PSNR `32.3857`, SSIM
   `0.9845`.
+- Fixed-sample visual comparison completed after verifying `runyun-ts` on
+  2026-05-22:
+  `experiment/HAZE4K/visual_compare/DEA-Net-CR-vs-LF-20260522/`.
+  It compares baseline
+  `DEA-Net-CR-H4K-Baseline-scout-20260520-101334/saved_model/best.pk` with LF
+  `DEA-Net-LF-H4K-scout-20260521-003100/saved_model/best.pk`; both are train
+  checkpoints at step `90000`, loaded through the train-checkpoint visual path,
+  not through official `.pth` `eval.py`.
+  On the 20 evenly spaced fixed test samples, baseline mean is PSNR `31.5373` /
+  SSIM `0.9835`, LF mean is PSNR `31.2580` / SSIM `0.9829`, so the subset mean
+  delta is `-0.2793` PSNR / `-0.0006` SSIM. Best LF cases include
+  `195_0.61_1.47.png` (`+2.1630` PSNR) and `241_0.85_0.72.png` (`+1.1115`);
+  worst cases include `384_0.97_0.82.png` (`-3.2380`) and
+  `715_0.63_1.36.png` (`-1.9517`). This fixed subset is a qualitative
+  diagnostic and should be read together with the full-test validation result,
+  which still favors LF by about `+0.20` dB at `best.pk`.
+  Selected panels were copied locally under
+  `D:\Dehaze\Dehaze-Net\experiment\HAZE4K\visual_compare\DEA-Net-CR-vs-LF-20260522\panels\`
+  for inspection; keep them out of Git.
 
 ## Recommended First Run Order
 

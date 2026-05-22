@@ -343,6 +343,27 @@ python train.py \
 - 只保留 bottleneck 位置，不在浅层多处插入。
 - 增加可学习 scalar gate，并将初始贡献设小。
 
+#### 当前 LF 短跑结果（已完成，2026-05-21/22）
+
+- Run：`DEA-Net-LF-H4K-scout-20260521-003100`
+- 远程路径：`/root/workspace/Dehaze-Net/experiment/HAZE4K/DEA-Net-LF-H4K-scout-20260521-003100/`
+- 配置：`bs=16`、`patch_size=256`、`epochs=20`、`iters_per_epoch=5000`、共 `100000` step、`use_lf_prior=true`、`lf_prior_channels=8`、`lf_prior_pool=8`、`lf_prior_gate_init=0.0`、`w_loss_CR=0.1`
+- `best.pk`：step `90000` / epoch `18`，PSNR `32.4281`，SSIM `0.9845`
+- `latest.pk`：step `100000` / epoch `20`，PSNR `32.3857`，SSIM `0.9845`
+
+与同长度基线短跑相比，LF 在全量 HAZE4K test 验证上有小幅收益：`best.pk` 对比 `32.2255` / `0.9844` 约为 `+0.2026 dB`，`latest.pk` 对比 `32.0952` / `0.9844` 约为 `+0.2905 dB`。这说明 LF prior 具备继续作为单模块候选的价值，但收益幅度仍属于轻量改动预期内，需要依赖视觉检查和后续完整训练确认稳定性。
+
+固定样例视觉对比已经完成：
+
+- 远程路径：`/root/workspace/Dehaze-Net/experiment/HAZE4K/visual_compare/DEA-Net-CR-vs-LF-20260522/`
+- 对比 checkpoint：基线 `DEA-Net-CR-H4K-Baseline-scout-20260520-101334/saved_model/best.pk` vs LF `DEA-Net-LF-H4K-scout-20260521-003100/saved_model/best.pk`，二者均为 step `90000`
+- 20 张按排序均匀抽取的固定 HAZE4K test 样例均值：基线 PSNR `31.5373` / SSIM `0.9835`，LF PSNR `31.2580` / SSIM `0.9829`
+- 固定样例子集上的均值差：`-0.2793 dB` / `-0.0006` SSIM
+- LF 正向样例：`195_0.61_1.47.png` `+2.1630 dB`，`241_0.85_0.72.png` `+1.1115 dB`，`80_0.74_1.76.png` `+0.9457 dB`
+- LF 负向样例：`384_0.97_0.82.png` `-3.2380 dB`，`715_0.63_1.36.png` `-1.9517 dB`，`9_0.85_1.67.png` `-1.9043 dB`
+
+解释边界：固定 20 张样例的平均值为负，但全量测试验证为正，因此不能用这组固定样例单独否定 LF，也不能只用全量 PSNR 直接宣称视觉质量稳定提升。下一步应先人工检查正负样例是否存在系统性颜色、亮度、halo 或纹理问题；如果负向样例集中体现为过度校正，应优先降低 LF gate 或 adapter 强度，再考虑与 CRPlus 组合。
+
 ## 7. 阶段三：改进对比正则 CRPlus
 
 模型名：
@@ -583,6 +604,8 @@ hazy input | DEA-Net-CR baseline | LF | CRPlus | LFCR | clear GT
 - 纹理恢复。
 - 过锐化。
 - 暗部噪声。
+
+当前固定对比集记录：`DEA-Net-CR-vs-LF-20260522` 已生成 `input/`、`baseline/`、`lf/`、`gt/`、`panels/`、`metrics.csv` 和 `summary.json`。该集合适合作为第一轮视觉诊断；若要写入论文或最终答辩材料，建议再补一组分层样例：5 张 LF 提升最大、5 张 LF 下降最大、10 张接近零增益或不同雾浓度的中性样例，避免均匀抽样偶然偏向某一类失败或成功案例。
 
 ## 11. 消融实验表
 
