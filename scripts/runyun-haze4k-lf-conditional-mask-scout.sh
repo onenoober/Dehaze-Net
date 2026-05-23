@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT="/root/workspace/Dehaze-Net"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT="${ROOT:-$(cd "$SCRIPT_DIR/.." && pwd)}"
 CODE_DIR="$ROOT/code"
 MODEL_NAME="${MODEL_NAME:-DEA-Net-LF-ConditionalMask-H4K-scout-$(date +%Y%m%d-%H%M%S)}"
 LOG_DIR="$ROOT/experiment/HAZE4K/_run_logs"
