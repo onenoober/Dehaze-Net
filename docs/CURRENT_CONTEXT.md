@@ -1,7 +1,8 @@
 # Current Project Context
 
-This is the short handoff page for future DEA-Net work. Keep it compact. Put
-detailed metrics in `docs/EXPERIMENT_LOG.md`, artifact policy in
+This is the short handoff page for future DEA-Net work. Keep it compact. Use
+`docs/README.md` to decide which deeper document to load next. Put detailed
+metrics in `docs/EXPERIMENT_LOG.md`, artifact policy in
 `docs/HAZE4K_RUN_MANIFEST.md`, and method reasoning in the dated analysis docs.
 
 ## Current State
@@ -109,20 +110,16 @@ For exact check/pause/resume templates, use `docs/WORKFLOW.md`.
 
 ## Documentation Map
 
-Read in this order:
+For load-on-demand rules and future writing boundaries, read
+`docs/README.md`.
 
-1. `docs/CURRENT_CONTEXT.md`: this short current-state handoff.
-2. `docs/WORKFLOW.md`: exact local/server/GitHub/tmux/check/pause/resume
+Most common next files:
+
+1. `docs/WORKFLOW.md`: exact local/server/GitHub/tmux/check/pause/resume
    command templates.
-3. `docs/EXPERIMENT_LOG.md`: chronological metrics and decisions.
-4. `docs/HAZE4K_RUN_MANIFEST.md`: artifact keep/delete policy.
-5. `docs/DEA_NET_LFCR_HAZE4K_PLAN.md`: thesis experiment plan and method
+2. `docs/EXPERIMENT_LOG.md`: chronological metrics and decisions.
+3. `docs/HAZE4K_RUN_MANIFEST.md`: artifact keep/delete policy.
+4. `docs/DEA_NET_LFCR_HAZE4K_PLAN.md`: thesis experiment plan and method
    ladder.
-6. `docs/HAZE4K_FAILURE_ANALYSIS_20260523.md`: route-level failure diagnosis.
-7. `docs/HAZE4K_OPTIMIZATION_WORKFLOW_REVIEW_20260523.md`: process review and
-   experiment discipline.
-8. `docs/HAZE4K_CONDITIONAL_LF_ROUTE_AUDIT_20260523.md`: Conditional LF
-   pre-implementation audit.
-9. `docs/HAZE4K_CLEANUP_PLAN_20260523.md`: dated cleanup audit trail only.
 
 Keep this file short; do not paste full experiment histories here.

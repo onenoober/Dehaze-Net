@@ -144,8 +144,8 @@ python eval.py \
 
 第一轮基线必须沿用上游 DEA-Net-CR 配置，只将数据集切换为 HAZE4K。后续所有改进实验采用“两阶段训练”：
 
-1. **scouting 短跑**：先跑 `50k` 到 `100k` step，用于判断 loss 是否稳定、PSNR 是否明显落后、视觉是否出现严重伪影。
-2. **full training 完整训练**：只给基线、最优单模块和最终候选 LFCR 跑完整训练，避免把大量时间消耗在明显无效的变体上。
+1. **公平 100k scout**：启动时固定 `100000` step horizon，在同一条 run 的 `10k` / `20k` / `50k` / `100k` checkpoint 判断 loss、PSNR/SSIM、视觉伪影和 stop/continue。
+2. **formal training / final reporting**：只给基线、最优单模块和最终候选 LFCR 做更完整报告或必要重跑，避免把大量时间消耗在明显无效的变体上。
 
 基线本身仍建议完整训练，因为它是所有后续提升幅度、视觉对比和复杂度报告的参照。
 
@@ -194,9 +194,9 @@ python train.py \
 - 固定挑选至少 20 张代表性测试图作为视觉对比集。
 - 记录失败样例，例如强雾残留、天空偏色、建筑边缘 halo、暗部噪声等。
 
-#### 当前短跑参照（已完成，2026-05-20）
+#### 当前公平 100k scout 参照（已完成，2026-05-20）
 
-短期对照训练已经完成，作为 LF、CRPlus 和 LFCR 第一轮筛选的同长度参照曲线。
+公平 100k 对照训练已经完成，作为 LF、CRPlus 和 LFCR 第一轮筛选的同协议参照曲线。
 
 - Run：`DEA-Net-CR-H4K-Baseline-scout-20260520-101334`
 - 远程路径：`/root/workspace/Dehaze-Net/experiment/HAZE4K/DEA-Net-CR-H4K-Baseline-scout-20260520-101334/`
@@ -218,7 +218,7 @@ python train.py \
 | 90000 | 0.9844 | 32.2255 |
 | 100000 | 0.9844 | 32.0952 |
 
-后续变体筛选时，优先比较 `50k` 和 `100k` 两个节点：`50k` 不应明显低于 PSNR `31.2384` / SSIM `0.9817`，`100k` 不应明显低于 PSNR `32.0952` / SSIM `0.9844`，并且固定视觉样例不能出现系统性偏色、halo、过锐化或大片雾残留。由于当前仓库训练输出是 `.pk` 训练态 checkpoint，正式论文表格前仍需使用训练态评测入口或导出/重参数化入口，不能把 `best.pk` 直接交给 `eval.py` 当作 `.pth` 使用。
+后续变体筛选时，优先比较同一公平 100k-target run 内的 `50k` 和 `100k` 节点：`50k` 不应明显低于 PSNR `31.2384` / SSIM `0.9817`，`100k` 不应明显低于 PSNR `32.0952` / SSIM `0.9844`，并且固定视觉样例不能出现系统性偏色、halo、过锐化或大片雾残留。由于当前仓库训练输出是 `.pk` 训练态 checkpoint，正式论文表格前仍需使用训练态评测入口或导出/重参数化入口，不能把 `best.pk` 直接交给 `eval.py` 当作 `.pth` 使用。
 
 ### 5.4 公平 100k scout 与中途 gate 规则
 
@@ -249,7 +249,7 @@ python train.py \
 中途 gate 条件：
 
 - `50k` step 前 loss 没有明显发散。
-- `50k` / `100k` step 时 PSNR/SSIM 不应明显低于上面的基线短跑曲线。
+- `50k` / `100k` step 时 PSNR/SSIM 不应明显低于上面的基线 scout 曲线。
 - 固定视觉样例中没有系统性偏色、halo、过锐化或大片雾残留。
 - 参数量和显存增长符合轻量改造预期。
 
@@ -347,7 +347,7 @@ python train.py \
 通过标准：
 
 - 前 50k step 训练稳定。
-- 100k step 附近验证 PSNR 不持续低于同等训练长度基线。
+- 100k step 附近验证 PSNR 不持续低于同协议基线。
 - 视觉结果没有更严重偏色、halo 或过度锐化。
 
 如果不稳定：
@@ -356,7 +356,7 @@ python train.py \
 - 只保留 bottleneck 位置，不在浅层多处插入。
 - 增加可学习 scalar gate，并将初始贡献设小。
 
-#### 当前 LF 短跑结果（已完成，2026-05-21/22）
+#### 当前 LF 公平 100k scout 结果（已完成，2026-05-21/22）
 
 - Run：`DEA-Net-LF-H4K-scout-20260521-003100`
 - 远程路径：`/root/workspace/Dehaze-Net/experiment/HAZE4K/DEA-Net-LF-H4K-scout-20260521-003100/`
@@ -364,7 +364,7 @@ python train.py \
 - `best.pk`：step `90000` / epoch `18`，PSNR `32.4281`，SSIM `0.9845`
 - `latest.pk`：step `100000` / epoch `20`，PSNR `32.3857`，SSIM `0.9845`
 
-与同长度基线短跑相比，LF 在全量 HAZE4K test 验证上有小幅收益：`best.pk` 对比 `32.2255` / `0.9844` 约为 `+0.2026 dB`，`latest.pk` 对比 `32.0952` / `0.9844` 约为 `+0.2905 dB`。这说明 LF prior 具备继续作为单模块候选的价值，但收益幅度仍属于轻量改动预期内，需要依赖视觉检查和后续完整训练确认稳定性。
+与同协议基线 scout 相比，LF 在全量 HAZE4K test 验证上有小幅收益：`best.pk` 对比 `32.2255` / `0.9844` 约为 `+0.2026 dB`，`latest.pk` 对比 `32.0952` / `0.9844` 约为 `+0.2905 dB`。这说明 LF prior 具备继续作为单模块候选的价值，但收益幅度仍属于轻量改动预期内，需要依赖视觉检查和后续完整训练确认稳定性。
 
 固定样例视觉对比已经完成：
 
@@ -391,7 +391,7 @@ python train.py \
 - 启用 gate 上限，例如 `--lf_prior_gate_max 0.02`，并用 `--w_loss_lf_gate 0.01` 给 scalar gate 加轻量 L2 约束。
 - 仍保持插入点为 `x8 -> mix1` 之前，不移动浅层、不增加多处 LF 注入。
 
-推荐下一轮短跑脚本：
+当时使用的 scout 脚本：
 
 ```bash
 cd /root/workspace/Dehaze-Net
@@ -564,7 +564,7 @@ CRPlus 必须保持为“仅损失函数改动”的独立消融，不依赖 LF 
 | CR-W010 | `0.1` | 上游默认值 |
 | CR-W020 | `0.2` | 扩展实验，约束更强，重点观察伪影 |
 
-示例短跑命令：
+示例公平 100k scout 命令：
 
 ```bash
 python train.py \
@@ -600,7 +600,7 @@ python train.py \
 
 ### 8.1 组合规则
 
-只有在单因素短跑结果明确后再组合：
+只有在单因素公平 scout 结果明确后再组合：
 
 - 如果 LF 有提升、CRPlus 中性，则采用 LF + 默认 CR。
 - 如果 CRPlus 有提升、LF 中性，则以 CRPlus 作为主模型。
@@ -833,7 +833,7 @@ bash scripts/runyun-haze4k-objective-analysis.sh
 以下情况应停止当前路线：
 
 - 多次训练出现 loss 不稳定。
-- 短跑到 `100k` step 后 PSNR 明显低于同等训练长度基线，且视觉无改善。
+- 公平 100k scout 到 `100k` step 后 PSNR 明显低于同协议基线，且视觉无改善。
 - 输出出现明显 halo、偏色或纹理伪影。
 - 复杂度增长过大但指标收益很小。
 - 训练态 checkpoint 无法形成可靠评测链路，导致结果不可复现。
@@ -850,9 +850,9 @@ bash scripts/runyun-haze4k-objective-analysis.sh
 | 阶段 | 工作 | 产出 |
 | --- | --- | --- |
 | 第 1 周 | HAZE4K 数据检查、官方权重评测、baseline smoke test | 确认基线可跑 |
-| 第 2 周 | 已完成 DEA-Net-CR HAZE4K `100k` 短跑参照；完整 baseline 训练保留给正式阶段 | 短跑参照曲线、`best.pk` / `latest.pk` 和筛选阈值 |
-| 第 3 周 | 实现 LF prior 并做 `50k/100k` scouting | A1 短跑指标、视觉结果和是否进入完整训练的结论 |
-| 第 4 周 | 实现独立 CRPlus P1，并搜索 `0.05/0.1` 权重短跑 | A2 短跑指标和最佳 CR 权重 |
+| 第 2 周 | 已完成 DEA-Net-CR HAZE4K 公平 `100k` scout 参照；完整 baseline 训练保留给正式阶段 | scout 参照曲线、`best.pk` / `latest.pk` 和筛选阈值 |
+| 第 3 周 | 实现 LF prior 并做公平 `100k` scout，在 `50k/100k` 节点判断 | A1 scout 指标、视觉结果和是否进入完整训练的结论 |
+| 第 4 周 | 实现独立 CRPlus P1，并在公平 `100k` scout 下搜索 `0.05/0.1` 权重 | A2 scout 指标和最佳 CR 权重 |
 | 第 5 周 | 训练通过筛选的 LF、CRPlus 或 LFCR 完整版 | 主模型 checkpoint |
 | 第 6 周 | 补齐 `.pk/.pth` 评测链路、完整测试、拼图、复杂度统计 | 可复现实验表 |
 | 第 7 周 | 可选 TTA 和真实域测试 | 扩展章节证据 |
@@ -865,7 +865,7 @@ bash scripts/runyun-haze4k-objective-analysis.sh
 - 为实现任务创建独立 feature branch。
 - 保持 `code/train.py` 和 `code/eval.py` 官方入口可用。
 - 新模型变体应通过明确命名的文件或显式选项启用。
-- LF prior、CRPlus negative 类型、CR 权重、短跑/完整训练标记都应写入 `args.txt` 或实验日志，保证后续能准确复现实验。
+- LF prior、CRPlus negative 类型、CR 权重、scout/formal 标记都应写入 `args.txt` 或实验日志，保证后续能准确复现实验。
 - 新增评测脚本或导出脚本时，应同时支持保存推理图像，便于固定视觉对比集复用同一输出路径。
 - checkpoint、TensorBoard、推理图像和临时结果放在 `experiment/` 或 `trained_models/`，不要提交。
 - 不提交数据集、权重、日志或临时输出。

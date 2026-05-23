@@ -20,7 +20,7 @@
 - `10k` 只看异常和明显崩溃，且必须来自同一条公平 `100k`-target run。
 - `20k` 必须接近 baseline/LF-v1 同步曲线，且必须来自同一条公平 `100k`-target run。
 - `50k` 若低于 baseline 50k `31.2384`，或明显低于 LF-v1 50k `31.3419` 且没有回退样本改善，停止；不要单独启动 50k horizon。
-- 只有 50k 接近或超过 LF-v1，才继续 100k。
+- 只有 50k 接近或超过 LF-v1，才让同一条 `100k`-target run 继续跑到 100k。
 
 ## 1.1 策略校准：从“最稳”改为“价值-风险平衡”
 
@@ -156,7 +156,7 @@ low-only mask 更稳，但信息价值不够高：
 - 如果没有 validation split，继续用 test 做路线筛选会引入选择偏差。
 - 如果 `target.detach()` 提示太强，mask 可能学成某种训练集特化的内容选择。
 
-综合判断：值得做，但必须把 50k 作为硬 gate，不直接承诺 100k。
+综合判断：值得做，但必须把同一条 `100k`-target run 的 50k checkpoint 作为硬 gate；不通过就停止，不能另开或修改短 horizon。
 
 ### 5.2 与主流研究方向的一致性
 
@@ -215,15 +215,15 @@ Control runs:
   LF-v1: DEA-Net-LF-H4K-scout-20260521-003100
 
 Training budget:
-  bs=16, patch_size=256, epochs=20, iters_per_epoch=5000, max 100k steps.
-  checkpoint/eval every 10k.
+  bs=16, patch_size=256, epochs=20, iters_per_epoch=5000.
+  The run must be launched as a 100k-target run, with checkpoint/eval every 10k.
 
 Stop gates:
   2-step smoke must pass.
   10k: stop only if clearly broken or >0.8 dB below both baseline and LF-v1.
   20k: if below both baseline and LF-v1 by >0.5 dB and no visual/diagnostic gain, stop.
   50k: must be >= baseline 50k 31.2384 and close to LF-v1 50k 31.3419; otherwise stop.
-  100k: run only if 50k gate passes.
+  100k: continue the same 100k-target run to 100k only if 50k gate passes.
 
 Primary metrics:
   PSNR, SSIM, per-image delta, better/worse counts, delta bins.
@@ -261,14 +261,14 @@ Failure:
 - 工程可行性：高。只改一个小模块，不影响数据加载、训练入口、checkpoint 格式和现有评估工具。
 - 训练稳定性：中等偏高。比 low-only mask 稍激进，但通过 `target.detach()` 控制共适配风险。
 - 正向收益概率：中高。因为它基于唯一正向候选 LF-v1，并补足 LF-v1 最明显的结构缺陷。
-- 资源风险：可控。50k gate 足以止损；不应直接跑满 100k。
+- 资源风险：可控。50k gate 是同一条 `100k`-target run 的止损点；不过关即停止，不另开或修改短 horizon。
 - 论文价值：高于继续调 loss，也高于 low-only mask。它能自然解释为“从低频先验到内容感知的条件化低频融合”，有清晰消融逻辑。
 
-所以可以继续，但必须先实现最小版本并执行 smoke/early gate。下一步不应启动长训练，而应：
+所以可以继续，但必须先实现最小版本并执行 smoke/early gate。本审计作为立项依据保留；当前执行状态以 `docs/CURRENT_CONTEXT.md` 和 `docs/EXPERIMENT_LOG.md` 为准。若重新开启同路线，应：
 
 1. 创建 `codex/haze4k-conditional-lf` 分支。
 2. 实现 content-aware Conditional LF mask。
 3. 本地 `compileall`。
-4. 同步远端。
+4. 在用户明确要求后再同步远端。
 5. 远端 `dry_run` 和 `2-step smoke`。
-6. smoke 通过后再决定是否启动 10k/20k scout。
+6. smoke 通过后启动公平 `100k`-target scout，并只把 10k/20k/50k 作为中途 gate。

@@ -1,6 +1,10 @@
 # Experiment Log Template
 
-Use one row per run.
+Use one row per run. This file is the chronological ledger for run facts:
+run id, branch/commit, dataset, changed mechanism, protocol, checkpoint,
+metric, stop/resume state, and decision. Put long method reasoning in the
+dated analysis docs, command templates in `docs/WORKFLOW.md`, and artifact
+keep/delete policy in `docs/HAZE4K_RUN_MANIFEST.md`.
 
 ## HAZE4K Fair-Comparison Rule
 

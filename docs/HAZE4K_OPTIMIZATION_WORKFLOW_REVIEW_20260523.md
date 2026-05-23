@@ -160,8 +160,11 @@ Decision:
 
 - 主假设：LF-v1 对 baseline 弱样本有帮助，但对强样本和局部区域过度介入；因此需要空间/样本条件化，而不是全局 scalar gate。
 - 最小结构：保留 LF-v1 的 `pre_mix` 插入点，新增一个轻量 mask/gate head，输入可以是 bottleneck feature、低通 hazy 或二者拼接，输出 spatial mask。
-- 初始化：mask/gate 接近 0 或接近 LF-v1 scalar gate，避免一开始破坏 baseline。
-- 正则：轻量 sparsity 或 TV，不要再加硬 lowfreq L1。
+- 初始化：scalar gate 仍保持 LF-v1 的 near-identity 风格；Conditional LF 的
+  spatial mask 第一版应接近 LF-v1 行为，而不是接近 0，避免重复 Conservative
+  LF 把收益也关掉的问题。
+- 正则：第一版不加 sparsity / TV / lowfreq L1。只有当 mask 统计显示长期接近
+  全 1 且指标没有改善时，才考虑轻量 regularization。
 - 对照：baseline、LF-v1、Conditional LF。不要同时叠 teacher guard。
 - 成功标准：至少 50k 不低于 LF-v1 同步曲线；full-test 平均 PSNR 高于 LF-v1 或回退样本显著减少；固定 20 样本不再扩大负面视觉风险。
 

@@ -2,6 +2,10 @@
 
 This project is meant to be edited in small, traceable steps.
 
+For document boundaries and where to write new analysis, start with
+`docs/README.md`. This file is only for repeatable workflow and command
+templates.
+
 ## Local loop
 1. Create a topic branch.
 2. Make a focused change.

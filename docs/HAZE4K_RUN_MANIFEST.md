@@ -115,6 +115,7 @@ Local `code/**/__pycache__` directories were deleted on 2026-05-23.
 
 ## Recommended Next State Before New Training
 
-1. Commit or otherwise snapshot the analysis tools and docs that should survive.
-2. Start the next experiment from a clean branch, ideally `codex/haze4k-lf-conditional-mask`.
-3. Consider replacing archived one-off failed launchers with one parameterized scout launcher.
+1. Re-check `docs/CURRENT_CONTEXT.md` and `docs/README.md` before deciding what to load or edit next.
+2. If resuming Conditional LF, resume the existing `DEA-Net-LF-ConditionalMask-H4K-scout100k-20260523-224315` run only with the same 100k horizon.
+3. If starting a new route, use a clean branch, commit/push local changes first, and launch the formal scout as a 100k-target run with 10k/20k/50k internal gates.
+4. Keep archived one-off failed launchers as reproducibility evidence; prefer maintained parameterized launchers for future runs.
