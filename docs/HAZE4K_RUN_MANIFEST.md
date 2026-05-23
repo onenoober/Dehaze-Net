@@ -17,6 +17,16 @@
 | `DELETE_AFTER_CONFIRM` | 误启动、半截、错误命名或无有效结果 | 需要用户确认后删除 |
 | `KEEP_SUMMARY_DELETE_MODEL_AFTER_CONFIRM` | benchmark 已有汇总，模型 checkpoint 价值低 | 保留 benchmark summary/log，确认后删大模型目录 |
 
+## Fair-Comparison Boundary
+
+HAZE4K 正式候选只承认从启动时就固定为 `100000` total steps 的 run：
+`epochs=20`, `iters_per_epoch=5000`, `bs=16`, `patch_size=256`,
+`w_loss_L1=1.0`, `w_loss_CR=0.1`, `start_lr=0.0001`,
+`end_lr=0.000001`, 每 `10000` step 保存和验证。`20k` / `50k` 只能是该
+`100k` run 内部的中途 gate。任何 `T=20000`、`T=50000` 或 resume 后改变
+`epochs * iters_per_epoch` 的记录，都只能保留为 smoke/诊断/误启动证据，不进入
+baseline、LF-v1 或新候选的公平对比表。
+
 ## Core Runs
 
 | Run ID | Size | Verdict | Best / Final | Evidence | Policy |
@@ -29,7 +39,9 @@
 | `DEA-Net-LF-LowFreqLoss-w001-H4K-scout-20260523-031600` | 182M | negative ablation | 50k `31.0707 / 0.9811` | LF-v1 + lowfreq loss failed | `KEEP_MINIMAL` |
 | `DEA-Net-LF-TeacherGuard-H4K-scout-20260523-112658` | 181M | negative ablation | 20k `27.7075 / 0.9704` | current teacher guard setting failed | `KEEP_MINIMAL` |
 | `DEA-Net-LF-PostMix-H4K-scout-20260523-133020` | 182M | negative ablation | 50k `30.7103 / 0.9814` | post-mix structure failed | `KEEP_MINIMAL` |
-| `DEA-Net-LF-ConditionalMask-H4K-gate20k-20260523-205312` | 181M | diagnostic only | 20k `29.0625 / 0.9734`; mask near-constant `mean~0.878735`, `std~6.85e-05` | short schedule `T=20000`; do not resume for formal 50k comparison | `KEEP_MINIMAL` |
+| `DEA-Net-LF-ConditionalMask-H4K-gate20k-20260523-205312` | 181M | invalid for fair comparison; diagnostic only | 20k `29.0625 / 0.9734`; mask near-constant `mean~0.878735`, `std~6.85e-05` | short schedule `T=20000`; exclude from candidate tables and never resume for formal 50k comparison | `KEEP_MINIMAL` |
+| `DEA-Net-LF-ConditionalMask-H4K-clean50k-20260523-224051` | small/partial | invalid launch | no formal metrics | launched with `T=50000`, then stopped after fairness correction; keep log only if needed | `DELETE_AFTER_CONFIRM` |
+| `DEA-Net-LF-ConditionalMask-H4K-scout100k-20260523-224315` | active | active fair candidate | pending | launched from commit `09880be` with `T=100000`; tmux `h4k_lf_condmask_100k_20260523_224315`; check only when requested | `KEEP` |
 
 ## Evaluation And Visual Evidence
 

@@ -40,11 +40,25 @@ cd /root/workspace/Dehaze-Net
 - Preferred method: configure a GitHub SSH key on the server.
 - Add only the public key `~/.ssh/id_ed25519.pub` to GitHub.
 - Never store the private key in the repository.
-- Test command:
+- Private repository access should use the SSH remote
+  `git@github.com:onenoober/Dehaze-Net.git` on the server, not HTTPS.
+- Test command; a healthy setup should authenticate as `onenoober`:
 
 ```bash
 ssh -T git@github.com
 ```
+
+- Pull command for the current Conditional LF checkout:
+
+```bash
+cd /root/workspace/Dehaze-Net-conditional-lf
+git fetch origin
+git pull --ff-only
+```
+
+- Do not switch or reset the dirty main checkout `/root/workspace/Dehaze-Net`
+  for Conditional LF. Use `/root/workspace/Dehaze-Net-conditional-lf` and pull
+  the pushed branch there.
 
 ### Windows to Cloud Server
 
@@ -258,6 +272,29 @@ PY
   `latest.pk` are not directly interchangeable with `eval.py` `.pth` weights.
   Final formal evaluation needs a train-checkpoint eval path or an explicit
   export/reparameterization path.
+
+## HAZE4K Fair Training Contract
+
+- Formal HAZE4K candidate/scout runs must be launched with `epochs=20`,
+  `iters_per_epoch=5000`, total `100000` steps, `bs=16`, `patch_size=256`,
+  `w_loss_L1=1.0`, `w_loss_CR=0.1`, `start_lr=0.0001`, `end_lr=0.000001`,
+  `checkpoint_interval_steps=10000`, `eval_interval_steps=10000`, and
+  `save_epoch_checkpoints=false`, unless the experiment is explicitly a loss,
+  batch-size, or schedule ablation.
+- The 20k and 50k numbers are intermediate gates inside the same 100k-target
+  run. Do not start a formal comparison with `epochs=4`, `epochs=10`, or any
+  other shorter horizon.
+- Early stopping is allowed only by stopping a 100k-target run after a gate
+  fails. If a run was launched with total `T=20000` or `T=50000`, label it
+  smoke/diagnostic/invalid-for-comparison and exclude it from candidate metric
+  tables.
+- Resume runs must keep the original `epochs * iters_per_epoch` horizon.
+  `train.py` uses that value as the cosine-LR `T`; changing `epochs` during
+  resume changes the LR schedule and makes the checkpoint incomparable.
+- Local Windows is for coding, docs, Git, and lightweight static checks only.
+  Dry-run, smoke, training, benchmark, and evaluation must run on the cloud
+  CUDA server.
+
 - Active LF prior scout:
   `DEA-Net-LF-H4K-scout-20260521-003100`, branch `codex/haze4k-lf-prior`,
   code commit `857661d`, tmux `h4k_lf_scout_20260521_003100`.
@@ -465,13 +502,14 @@ PY
   usage in `code/model/modules/deconv.py`. Do not treat local checks as
   training/smoke/evaluation; all dry-run, smoke, training, and benchmark checks
   must run on the remote CUDA environment.
-- Use `scripts/runyun-haze4k-lf-conditional-mask-scout.sh` for the next remote
-  checks. First run `--dry_run`, then a 2-step smoke with small train/test
-  batches, and only then consider a 10k/20k scout. Do not launch a 50k/100k
-  continuation unless the earlier gate is close to the baseline/LF-v1 curves
-  and the mask statistics are interpretable. Do not combine this first
-  Conditional LF run with TeacherGuard, LowFreqLoss, CRPlus, `post_mix`, or
-  extra regularization.
+- Use `scripts/runyun-haze4k-lf-conditional-mask-scout.sh` for remote checks.
+  Dry-run and 2-step smoke may use short limits because they only validate the
+  code path. Any formal Conditional LF candidate must be launched as a
+  100k-target run from the start; 20k/50k are only intermediate gates inside
+  that run. The launcher now refuses non-100k formal protocols unless
+  `ALLOW_NONFAIR_PROTOCOL=1` is set; that override is only for dry-run, smoke,
+  or diagnostic artifacts. Do not combine this first Conditional LF run with
+  TeacherGuard, LowFreqLoss, CRPlus, `post_mix`, or extra regularization.
 - Remote CUDA validation for commit `633dffd` was completed in the isolated
   server checkout `/root/workspace/Dehaze-Net-conditional-lf`, because the main
   `/root/workspace/Dehaze-Net` checkout still has unrelated local experiment
@@ -486,9 +524,8 @@ PY
   `LF_mask_min=[0.880797,0.880797]`, `LF_mask_max=[0.880797,0.880797]`.
   After validation, no matching Conditional LF train process remained and GPU
   usage was `0 MiB / 0%`.
-- Conditional LF 20k short-schedule scout completed on 2026-05-23 in the same
-  isolated
-  checkout:
+- Conditional LF 20k short-schedule diagnostic completed on 2026-05-23 in the
+  same isolated checkout:
   `DEA-Net-LF-ConditionalMask-H4K-gate20k-20260523-205312`, commit `7a4aa92`,
   log
   `/root/workspace/Dehaze-Net-conditional-lf/experiment/HAZE4K/_run_logs/DEA-Net-LF-ConditionalMask-H4K-gate20k-20260523-205312.log`,
@@ -510,17 +547,29 @@ PY
   LF-v1. Mask diagnostics are the important caution:
   the latest loss-log tail is approximately `LF_mask_mean=0.878735`,
   `LF_mask_std=6.85e-05`, `LF_mask_min=0.87832`, `LF_mask_max=0.87901`, so the
-  spatial mask is still almost constant and close to initialization. An attempted
+  spatial mask is still almost constant and close to initialization. This run is
+  invalid for fair comparison and must not be reported as a candidate 20k gate;
+  it is only evidence that the code path can train and that the mask had not
+  activated under the short horizon. An attempted
   resume of this run to 50k with `epochs=10` was stopped at about step `23163`
   before any new evaluation, because it changed the LR horizon to `T=50000` and
   would make the 50k comparison hard to interpret. `latest.pk`, `best.pk`,
   `psnrs.npy`, and `ssims.npy` remained at the 20k state. Decision: keep this
-  20k run as functionality/early diagnostic evidence only. For a formal 50k
-  gate, launch a new clean run with the target horizon fixed from the start.
-  At 50k, require at least baseline 50k
-  `31.2384 / 0.9817` and near LF-v1 50k `31.3419 / 0.9817`; if the mask remains
-  constant and metrics do not beat LF-v1, treat this as "conditional mechanism
-  not activated" rather than as a full Conditional LF success.
+  20k run as functionality/early diagnostic evidence only.
+- A follow-up `DEA-Net-LF-ConditionalMask-H4K-clean50k-20260523-224051` launch
+  used a `T=50000` horizon and was stopped shortly after launch once the
+  fairness issue was identified. Exclude it from all metric comparisons.
+- The first fair Conditional LF candidate is
+  `DEA-Net-LF-ConditionalMask-H4K-scout100k-20260523-224315`, commit
+  `09880be`, remote checkout `/root/workspace/Dehaze-Net-conditional-lf`,
+  tmux `h4k_lf_condmask_100k_20260523_224315`, log
+  `/root/workspace/Dehaze-Net-conditional-lf/experiment/HAZE4K/_run_logs/DEA-Net-LF-ConditionalMask-H4K-scout100k-20260523-224315.log`,
+  and launcher script
+  `/root/workspace/Dehaze-Net-conditional-lf/experiment/HAZE4K/_run_logs/DEA-Net-LF-ConditionalMask-H4K-scout100k-20260523-224315.sh`.
+  Launch config was verified as `epochs=20`, `iters_per_epoch=5000`, total
+  `100000`, `bs=16`, `patch_size=256`, `w_loss_CR=0.1`, and
+  `lf_conditional_mask=True`. User instruction: do not monitor this run
+  continuously; check it only when explicitly asked.
 
 ## Recommended First Run Order
 

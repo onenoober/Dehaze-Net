@@ -220,9 +220,14 @@ python train.py \
 
 后续变体筛选时，优先比较 `50k` 和 `100k` 两个节点：`50k` 不应明显低于 PSNR `31.2384` / SSIM `0.9817`，`100k` 不应明显低于 PSNR `32.0952` / SSIM `0.9844`，并且固定视觉样例不能出现系统性偏色、halo、过锐化或大片雾残留。由于当前仓库训练输出是 `.pk` 训练态 checkpoint，正式论文表格前仍需使用训练态评测入口或导出/重参数化入口，不能把 `best.pk` 直接交给 `eval.py` 当作 `.pth` 使用。
 
-### 5.4 短跑筛选规则
+### 5.4 公平 100k scout 与中途 gate 规则
 
-除基线外，LF、CRPlus 和 LFCR 的第一轮实验先使用短跑命令：
+除基线外，LF、CRPlus 和 LFCR 的第一轮正式候选都必须从启动时就使用同一套
+`100000` step 训练 horizon。这里的 `20k` / `50k` 是该 run 内部的中途 gate，
+不是单独启动 `epochs=4` 或 `epochs=10` 的短 schedule。这样做是为了让所有
+候选共享同一个 cosine LR horizon、batch size、loss 权重、验证间隔和数据顺序假设。
+
+正式 scout 命令骨架如下：
 
 ```bash
 python train.py \
@@ -241,16 +246,23 @@ python train.py \
   --save_epoch_checkpoints false
 ```
 
-短跑通过条件：
+中途 gate 条件：
 
 - `50k` step 前 loss 没有明显发散。
 - `50k` / `100k` step 时 PSNR/SSIM 不应明显低于上面的基线短跑曲线。
 - 固定视觉样例中没有系统性偏色、halo、过锐化或大片雾残留。
 - 参数量和显存增长符合轻量改造预期。
 
+提前停止是允许的，但只能停止一条从一开始就以 `100k` 为目标的 run。如果 run
+启动时使用了 `T=20000`、`T=50000` 或 resume 时改变了 `epochs * iters_per_epoch`，
+则该结果只能作为 smoke/诊断/无效比较记录，不能写入 baseline、LF-v1 或候选模型的公平指标表。
+原因是 `train.py` 用 `epochs * iters_per_epoch` 作为 cosine LR 的 `T`，短 horizon
+或修改 horizon 会改变学习率曲线。
+
 实测 batch-size 速度基准显示 `bs=16` 最合适：`bs=16` 为 `4.2868` step/s、`68.59` img/s；`bs=24` 为 `2.8391` step/s、`68.14` img/s；`bs=32` 为 `2.1166` step/s、`67.73` img/s。后续 HAZE4K scout 和 baseline 默认继续使用 `bs=16`，除非模型变体显存增长迫使再次调整。
 
-只有通过短跑的变体才进入完整训练。
+只有通过公平 100k scout 中途 gate 的变体，才进入更长 formal training、full
+per-image 评估或论文主表候选。
 
 ## 6. 阶段二：低频/小波退化先验
 
@@ -306,7 +318,8 @@ input image
 
 ### 6.3 训练命令
 
-先沿用基线训练策略，保证变量单一。LF 第一轮先短跑筛选，确认稳定后再完整训练。
+先沿用基线训练策略，保证变量单一。LF 第一轮使用公平 100k scout，并在 20k/50k
+中途 gate 判断是否止损；不能用单独短 schedule 作为正式对比。
 
 ```bash
 python train.py \
@@ -435,7 +448,10 @@ bash scripts/runyun-haze4k-lf-conservative-scout.sh
 
 服务器 dry-run 与 2-step smoke 已在独立 checkout `/root/workspace/Dehaze-Net-conditional-lf` 通过，验证 commit `633dffd` 可以在真实 RTX 5090 / `py310` / HAZE4K 路径上完成模型构建、CUDA forward/backward/eval/checkpoint。smoke run 为 `smoke-conditional-lf-20260523`，产物位于 `/root/workspace/Dehaze-Net/experiment/HAZE4K/smoke-conditional-lf-20260523/`；`latest.pk` 中记录了 `LF_mask_mean/std/min/max = 0.880797/0.0/0.880797/0.880797`，符合初始化预期。该 smoke 只用于入口验证，不代表训练结果。
 
-下一步若启动 10k/20k scout，使用以下基础命令或 `scripts/runyun-haze4k-lf-conditional-mask-scout.sh`：
+下一步正式 scout 必须从启动时就是 `100k` 目标。使用以下基础命令或
+`scripts/runyun-haze4k-lf-conditional-mask-scout.sh`，并把 `20k` / `50k`
+只作为中途检查点。该脚本默认拒绝非 `100k` 正式协议；只有 dry-run、2-step smoke
+或诊断运行可以显式设置 `ALLOW_NONFAIR_PROTOCOL=1`，且结果必须标记为无效公平对比：
 
 ```bash
 cd /root/workspace/Dehaze-Net/code
@@ -467,16 +483,17 @@ cd /root/workspace/Dehaze-Net/code
 止损门槛：
 
 - `2-step smoke` 必须先通过，且日志中能看到 LF 配置与 mask 统计。
-- `10k` 只在明显崩溃或显著低于 baseline/LF-v1 时停止。
+- `10k` 只在明显崩溃或显著低于 baseline/LF-v1 时停止，但它仍必须来自同一条
+  `100k` 目标 run。
 - `20k` 如果同时低于 baseline 与 LF-v1 超过约 `0.5 dB`，且 mask 统计没有显示有价值的条件化，应停止。
 - `50k` 必须不低于 baseline 50k `31.2384 / 0.9817`，并接近 LF-v1 50k `31.3419 / 0.9817`；否则停止。
 - 只有 50k 通过 gate，才继续到 100k 并做 full per-image 评估。
 
 失败诊断必须看 mask 统计：若 `mean` 接近 `1` 且 `std` 很小，说明条件化没有发生；若 `mean` 接近 `0`，说明 LF 被关掉；若 mask 有空间变化但指标下降，说明当前条件输入或融合机制与去雾质量不对齐。这样即使失败，也能明确下一步是调 mask bias、换 mask 输入，还是放弃 LF 条件化。
 
-#### Conditional LF 20k 短 schedule 结果（2026-05-23）
+#### Conditional LF 短 schedule 诊断（无效公平对比，2026-05-23）
 
-首轮 gated scout 已在云服务器独立 checkout `/root/workspace/Dehaze-Net-conditional-lf` 完成到 20k：
+以下 run 保留为诊断记录，但已从正式候选证据中剥离。它不能作为公平 20k gate：
 
 - Run：`DEA-Net-LF-ConditionalMask-H4K-gate20k-20260523-205312`
 - Commit：`7a4aa92`
@@ -485,9 +502,20 @@ cd /root/workspace/Dehaze-Net/code
 - Checkpoint：`best.pk` 与 `latest.pk` 均为 step `20000`，`max_psnr=29.062465`，`max_ssim=0.973354`
 - Mask 统计：20k 前后 tail 约为 `mean=0.878735`、`std=6.85e-05`、`min=0.87832`、`max=0.87901`
 
-判断：该结果有正向诊断价值，但不能作为严格 schedule-equivalent 的 20k gate。原因是 `train.py` 的余弦学习率使用 `T = epochs * iters_per_epoch`，该 run 的 `T=20000`，而 baseline/LF-v1 的短跑曲线使用更长训练 horizon。它在 PSNR 上高于 baseline 20k `28.9030 / 0.9713` 和 LF-v1 20k `28.8563 / 0.9751`，说明方向没有早期崩溃；但 mask 仍几乎是常数，接近初始化值，说明“内容感知空间选择”尚未真正发生，且当前收益可能混有短 schedule 的影响。
+判断：该结果只能说明代码路径可训练、早期没有直接崩溃，并暴露出 mask 近似常数的问题；不能说明 Conditional LF 通过了公平 20k gate。原因是 `train.py` 的余弦学习率使用 `T = epochs * iters_per_epoch`，该 run 的 `T=20000`，而 baseline/LF-v1 和后续候选必须使用 `T=100000`。它在 PSNR 上高于 baseline 20k `28.9030 / 0.9713` 和 LF-v1 20k `28.8563 / 0.9751`，但该数值混有短 LR horizon 影响，禁止进入候选对比表。mask 仍几乎是常数，接近初始化值，说明“内容感知空间选择”尚未真正发生。
 
-一次从该 20k checkpoint 修改 `epochs=10` 续跑到 50k 的尝试已在约 step `23163` 停止，原因是这样会把 LR horizon 改成 `T=50000`，导致 resume 后学习率重新抬高，50k 指标不可干净解释。后续正式 50k gate 应从头启动一条干净 run，并在启动时就固定目标 horizon；50k 若达不到 baseline 50k `31.2384 / 0.9817`，或明显低于 LF-v1 50k `31.3419 / 0.9817` 且 mask 仍无空间变化，应停止并记录为“条件 mask 未激活/退化为近似常数”的失败诊断；只有 50k 接近或超过 LF-v1，才考虑继续 100k 和 full per-image 评估。
+一次从该 20k checkpoint 修改 `epochs=10` 续跑到 50k 的尝试已在约 step `23163` 停止，原因是这样会把 LR horizon 改成 `T=50000`，导致 resume 后学习率重新抬高，50k 指标不可干净解释。随后一次 `DEA-Net-LF-ConditionalMask-H4K-clean50k-20260523-224051` 也因启动目标为 `T=50000` 而停止，不能作为正式 50k 证据。
+
+当前有效路线是从头启动 `T=100000` 的公平候选：
+
+- Run：`DEA-Net-LF-ConditionalMask-H4K-scout100k-20260523-224315`
+- Commit：`09880be`
+- 远程 checkout：`/root/workspace/Dehaze-Net-conditional-lf`
+- tmux：`h4k_lf_condmask_100k_20260523_224315`
+- 日志：`/root/workspace/Dehaze-Net-conditional-lf/experiment/HAZE4K/_run_logs/DEA-Net-LF-ConditionalMask-H4K-scout100k-20260523-224315.log`
+- 启动配置：`epochs=20`、`iters_per_epoch=5000`、total `100000`、`bs=16`、`patch_size=256`、`w_loss_CR=0.1`、`lf_conditional_mask=true`
+
+后续只有该公平 100k-target run 的 20k/50k/100k 节点可用于判断 Conditional LF 是否值得继续。
 
 ## 7. 阶段三：改进对比正则 CRPlus
 

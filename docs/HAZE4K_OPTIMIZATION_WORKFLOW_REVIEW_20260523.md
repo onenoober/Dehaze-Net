@@ -45,7 +45,7 @@
 | baseline 建立 | `DEA-Net-CR-H4K-Baseline-scout-20260520-101334` 100k，记录完整曲线 | 合理。后续所有 scout 都有参照物 |
 | 资源基准 | batch-size benchmark 后保留 `bs=16` | 合理。保护训练预算 |
 | smoke test | 多个 1-2 step smoke 用于启动验证，之后已清理 | 合理。smoke 不混入论文结果 |
-| 短跑 scout | 10k/20k/50k/100k 作为 stop/continue gate | 合理。适合有限 GPU 预算 |
+| 100k scout gate | 10k/20k/50k/100k 作为同一条 100k-target run 内部的 stop/continue gate | 合理。适合有限 GPU 预算；禁止把单独短 horizon 当公平比较 |
 | 早停 | CRPlus、LowFreqLoss、TeacherGuard、PostMix 按曲线止损 | 合理。避免失败路线消耗完整训练 |
 | full-test | LF-v1 对 baseline 做 1000 图 per-image eval | 很关键。纠正了固定样本的负面直觉 |
 | 固定样本分析 | visual compare + objective analysis + gate sweep | 合理。补充平均指标无法解释的视觉风险 |
