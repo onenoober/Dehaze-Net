@@ -62,7 +62,8 @@
 建议：
 
 - 从 HAZE4K train 中固定划出一个 validation subset，例如 300 张，命名并记录。
-- 后续 10k/20k/50k 的 stop/continue gate 尽量看 validation subset。
+- 后续 `10k/20k/50k` stop/continue gate 必须来自同一条公平
+  `100k`-target run，并尽量看 validation subset。
 - HAZE4K test 只用于阶段性确认和最终正式结果。
 
 如果短期不想改 loader，至少要在论文里诚实说明 HAZE4K test 被用于 scouting，并把最终结论降级为实验性改进而不是强泛化声明。
@@ -107,7 +108,8 @@ DEA-Net 的原始卖点包括轻量、速度和低复杂度。LF-v1 如果带来
 当前 LF-v1 的 `+0.2030 dB` 是有价值的，但单次训练不足以证明稳定。正式阶段至少应：
 
 - 对 LF-v1 或下一轮 Conditional LF 追加一个不同 seed 的 100k run。
-- 如果资源有限，至少对 top candidate 做一次 50k 复现，看是否同方向。
+- 如果资源有限，至少对 top candidate 做一次公平 `100k`-target run 的
+  `50k` 中途复查，看是否同方向；不要单独启动 50k horizon。
 - final claim 只使用经过复查的候选。
 
 ## 5. 对已尝试架构的流程审查
@@ -144,9 +146,9 @@ Decision:
 
 1. `dry_run`：检查参数、目录、checkpoint、teacher 路径。
 2. `2-step smoke`：只验证 train/eval 能跑，不保留为结果。
-3. `10k gate`：若比 baseline 10k 低 `>0.5 dB`，直接停止。
-4. `20k gate`：若低于 baseline 与 LF-v1 同步曲线，且没有明显视觉/分组优势，停止。
-5. `50k gate`：只有接近或超过 LF-v1 曲线才继续。
+3. `10k gate`：只能来自同一条公平 `100k`-target run；若比 baseline 10k 低 `>0.5 dB`，直接停止。
+4. `20k gate`：只能来自同一条公平 `100k`-target run；若低于 baseline 与 LF-v1 同步曲线，且没有明显视觉/分组优势，停止。
+5. `50k gate`：只能来自同一条公平 `100k`-target run；只有接近或超过 LF-v1 曲线才继续。
 6. `100k`：只给 baseline、LF-v1、最终候选或强正向候选。
 7. `full-test + per-image`：只给晋级候选，不给所有失败尝试。
 8. `complexity report`：晋级候选必须补。

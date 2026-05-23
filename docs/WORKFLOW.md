@@ -18,6 +18,12 @@ git commit -m "Add wavelet fusion prototype"
 git push -u origin feat/wavelet-fusion
 ```
 
+## Server Loop Boundary
+
+Current instruction: operate only on local files and GitHub unless the user
+explicitly asks to sync or run on the server. The server-side commands below are
+templates for later use, not permission to run them automatically.
+
 ## Server loop
 1. Pull the latest branch on the rented server.
 2. Run training or evaluation from `code/`.
@@ -58,6 +64,37 @@ For the older main checkout, use `/root/workspace/Dehaze-Net` only when that is
 the intended target. The historical `git -c http.version=HTTP/1.1 pull
 --ff-only` workaround is still useful if a host/network path hangs on plain
 HTTP(S), but the current private-repo path should be SSH.
+
+## Check A Run
+
+Template for later server-side checks:
+
+```powershell
+@'
+set -euo pipefail
+RUN='DEA-Net-LF-ConditionalMask-H4K-scout100k-20260523-224315'
+ROOT='/root/workspace/Dehaze-Net-conditional-lf'
+RUN_DIR="$ROOT/experiment/HAZE4K/$RUN"
+LOG="$ROOT/experiment/HAZE4K/_run_logs/$RUN.log"
+
+echo '=== process ==='
+pgrep -af "$RUN|train.py" || true
+echo '=== tmux ==='
+tmux ls 2>/dev/null || true
+echo '=== gpu ==='
+nvidia-smi --query-gpu=timestamp,name,utilization.gpu,memory.used,memory.total --format=csv,noheader || true
+echo '=== metrics ==='
+cat "$RUN_DIR/saved_data/log.txt" 2>/dev/null || true
+echo '=== last step in log ==='
+/opt/anaconda/envs/py310/bin/python - <<PY
+import re
+from pathlib import Path
+text = Path("$LOG").read_text(errors="ignore") if Path("$LOG").exists() else ""
+steps = [int(x) for x in re.findall(r"step :(\\d+)/100000", text)]
+print(max(steps) if steps else "no step found")
+PY
+'@ | ssh runyun-ts "tr -d '\r' | bash -s"
+```
 
 ## Reliable remote commands
 
@@ -177,6 +214,65 @@ pgrep -af "$MODEL|train.py" || true
 tmux ls || true
 nvidia-smi
 ```
+
+## Resume Current Conditional LF
+
+Template for later use only. Resume only if the user explicitly asks to
+continue training or sync the server. Keep the same 100k horizon and same model
+name so `train.py --resume` loads `saved_model/latest.pk` from the existing run
+directory:
+
+```powershell
+@'
+set -euo pipefail
+ROOT='/root/workspace/Dehaze-Net-conditional-lf'
+RUN='DEA-Net-LF-ConditionalMask-H4K-scout100k-20260523-224315'
+SESSION="h4k_lf_condmask_100k_resume_$(date +%Y%m%d_%H%M%S)"
+LOG_DIR="$ROOT/experiment/HAZE4K/_run_logs"
+LOG="$LOG_DIR/${RUN}-resume-$(date +%Y%m%d-%H%M%S).log"
+mkdir -p "$LOG_DIR"
+cd "$ROOT/code"
+tmux new-session -d -s "$SESSION" "bash -lc '
+  /opt/anaconda/envs/py310/bin/python train.py \
+    --resume \
+    --use_lf_prior \
+    --lf_prior_channels 8 \
+    --lf_prior_pool 8 \
+    --lf_prior_gate_init 0.0 \
+    --lf_prior_injection pre_mix \
+    --lf_conditional_mask \
+    --lf_mask_hidden_channels 8 \
+    --lf_mask_init_bias 2.0 \
+    --model_name \"$RUN\" \
+    --dataset HAZE4K \
+    --epochs 20 \
+    --iters_per_epoch 5000 \
+    --bs 16 \
+    --patch_size 256 \
+    --num_workers 12 \
+    --test_num_workers 4 \
+    --pin_memory \
+    --persistent_workers \
+    --prefetch_factor 2 \
+    --w_loss_L1 1.0 \
+    --w_loss_CR 0.1 \
+    --start_lr 0.0001 \
+    --end_lr 0.000001 \
+    --exp_dir ../experiment/ \
+    --checkpoint_interval_steps 10000 \
+    --eval_interval_steps 10000 \
+    --save_epoch_checkpoints false \
+    --no_pdf_plots \
+    --no_tqdm \
+    2>&1 | tee \"$LOG\"
+"
+echo "SESSION=$SESSION"
+echo "LOG=$LOG"
+'@ | ssh runyun-ts "tr -d '\r' | bash -s"
+```
+
+Do not resume the invalid short-horizon runs. Do not change `epochs` to 4, 10,
+or any value that changes the 100k LR horizon.
 
 ## Revert policy
 - Prefer `git revert` for undoing committed changes.

@@ -226,7 +226,8 @@ hazy low-pass
 
 通过标准：
 
-- 50k 不低于 baseline 50k `31.2384`，且最好接近 LF-v1 50k `31.3419`；
+- 50k gate 必须来自同一条公平 `100k`-target run；不低于 baseline 50k
+  `31.2384`，且最好接近 LF-v1 50k `31.3419`；
 - 100k 不低于 LF-v1 的 full-test delta；
 - strong-baseline 四分位的负 delta 要收窄；
 - 固定 20 样本不应继续大幅负于 baseline。
@@ -258,7 +259,9 @@ Teacher 思路不是完全无效，但当前设置太早太硬。若以后重试
 2. 用已有 full per-image evaluator 扩展一个 `baseline-weak/strong` 固定样本集，不再只用均匀抽样 20 张。
 3. 对 LF-v1 的最好/最坏/中性样本做可视化归因：低频 residual、mask 候选、dark-channel/luma/edge error。
 4. 只在上述诊断完成后，设计 `LF-v2 ConditionalMask`。
-5. 下一轮训练前设置硬 gate：10k 只看异常，50k 决定是否继续，100k 决定是否进入 full training。
+5. 下一轮训练前设置硬 gate：10k/20k/50k 只能来自同一条公平
+   `100k`-target run；10k 只看异常，50k 决定是否继续，100k 决定是否进入
+   full training。
 
 ## 9. 当前可写入论文的经验
 

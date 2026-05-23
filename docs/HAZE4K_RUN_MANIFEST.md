@@ -41,7 +41,7 @@ baseline、LF-v1 或新候选的公平对比表。
 | `DEA-Net-LF-PostMix-H4K-scout-20260523-133020` | 182M | negative ablation | 50k `30.7103 / 0.9814` | post-mix structure failed | `KEEP_MINIMAL` |
 | `DEA-Net-LF-ConditionalMask-H4K-gate20k-20260523-205312` | 181M | invalid for fair comparison; diagnostic only | 20k `29.0625 / 0.9734`; mask near-constant `mean~0.878735`, `std~6.85e-05` | short schedule `T=20000`; exclude from candidate tables and never resume for formal 50k comparison | `KEEP_MINIMAL` |
 | `DEA-Net-LF-ConditionalMask-H4K-clean50k-20260523-224051` | small/partial | invalid launch | no formal metrics | launched with `T=50000`, then stopped after fairness correction; keep log only if needed | `DELETE_AFTER_CONFIRM` |
-| `DEA-Net-LF-ConditionalMask-H4K-scout100k-20260523-224315` | active | active fair candidate | pending | launched from commit `09880be` with `T=100000`; tmux `h4k_lf_condmask_100k_20260523_224315`; check only when requested | `KEEP` |
+| `DEA-Net-LF-ConditionalMask-H4K-scout100k-20260523-224315` | 181M+ | paused fair candidate | 10k `27.1085 / 0.9638`; 20k `28.8571 / 0.9724`; latest/best at 20k | launched from commit `09880be` with `T=100000`; paused on 2026-05-24 around log step 21500; resume only with same 100k horizon | `KEEP` |
 
 ## Evaluation And Visual Evidence
 
@@ -99,9 +99,10 @@ baseline、LF-v1 或新候选的公平对比表。
 | `bench-H4K-speed-bs24-20260520-171257` | 180M | deleted 2026-05-23; generated checkpoint not needed after speed summary | `DELETED` |
 | `bench-H4K-speed-bs32-20260520-171827` | 180M | deleted 2026-05-23; generated checkpoint not needed after speed summary | `DELETED` |
 
-## Local Workspace Notes
+## Local Workspace Cleanup Snapshot
 
-Current untracked local files:
+Snapshot from the 2026-05-23 cleanup pass. Re-check `git status` before using
+this as current truth.
 
 - `code/evaluate_train_ckpt_per_image.py`: keep, useful analysis tool.
 - `docs/HAZE4K_FAILURE_ANALYSIS_20260523.md`: keep, failure analysis.
