@@ -433,7 +433,9 @@ bash scripts/runyun-haze4k-lf-conservative-scout.sh
 - 第一版不加 teacher、low-frequency reconstruction loss、CRPlus 或额外 regularization
 - 训练日志新增 `LF_mask_mean/std/min/max`，TensorBoard 同步记录 `train/lf_mask_*`
 
-推荐先做服务器 dry-run 与 2-step smoke，通过后再启动 10k/20k scout：
+服务器 dry-run 与 2-step smoke 已在独立 checkout `/root/workspace/Dehaze-Net-conditional-lf` 通过，验证 commit `633dffd` 可以在真实 RTX 5090 / `py310` / HAZE4K 路径上完成模型构建、CUDA forward/backward/eval/checkpoint。smoke run 为 `smoke-conditional-lf-20260523`，产物位于 `/root/workspace/Dehaze-Net/experiment/HAZE4K/smoke-conditional-lf-20260523/`；`latest.pk` 中记录了 `LF_mask_mean/std/min/max = 0.880797/0.0/0.880797/0.880797`，符合初始化预期。该 smoke 只用于入口验证，不代表训练结果。
+
+下一步若启动 10k/20k scout，使用以下基础命令或 `scripts/runyun-haze4k-lf-conditional-mask-scout.sh`：
 
 ```bash
 cd /root/workspace/Dehaze-Net/code

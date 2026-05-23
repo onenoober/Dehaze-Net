@@ -472,6 +472,20 @@ PY
   and the mask statistics are interpretable. Do not combine this first
   Conditional LF run with TeacherGuard, LowFreqLoss, CRPlus, `post_mix`, or
   extra regularization.
+- Remote CUDA validation for commit `633dffd` was completed in the isolated
+  server checkout `/root/workspace/Dehaze-Net-conditional-lf`, because the main
+  `/root/workspace/Dehaze-Net` checkout still has unrelated local experiment
+  edits. `dryrun-conditional-lf-20260523` passed with dataset paths resolved,
+  `lf_conditional_mask=True`, RTX 5090 detected, and `Total_params=7793115`.
+  The 2-step smoke run `smoke-conditional-lf-20260523` also passed
+  forward/backward/eval/checkpoint on remote CUDA. It wrote artifacts under
+  `/root/workspace/Dehaze-Net/experiment/HAZE4K/smoke-conditional-lf-20260523/`;
+  checkpoint `saved_model/latest.pk` has step `2`, max PSNR `6.9031`, max SSIM
+  `0.0682`, and loss-log mask stats
+  `LF_mask_mean=[0.880797,0.880797]`, `LF_mask_std=[0.0,0.0]`,
+  `LF_mask_min=[0.880797,0.880797]`, `LF_mask_max=[0.880797,0.880797]`.
+  After validation, no matching Conditional LF train process remained and GPU
+  usage was `0 MiB / 0%`. No 10k+ training has been launched yet.
 
 ## Recommended First Run Order
 
