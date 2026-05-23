@@ -18,7 +18,10 @@ class LowFrequencyPrior(nn.Module):
         gate_init=0.0,
         residual_center=False,
         train_dropout=0.0,
-        gate_max=0.0
+        gate_max=0.0,
+        conditional_mask=False,
+        mask_hidden_channels=8,
+        mask_init_bias=2.0
     ):
         super(LowFrequencyPrior, self).__init__()
         if pool_size <= 0:
@@ -27,15 +30,32 @@ class LowFrequencyPrior(nn.Module):
             raise ValueError('train_dropout must be in [0, 1)')
         if gate_max < 0:
             raise ValueError('gate_max must be non-negative')
+        if mask_hidden_channels <= 0:
+            raise ValueError('mask_hidden_channels must be positive')
         self.pool_size = pool_size
         self.residual_center = residual_center
         self.train_dropout = train_dropout
         self.gate_max = gate_max
+        self.conditional_mask = conditional_mask
+        self.last_mask_stats = None
         self.adapter = nn.Sequential(
             nn.Conv2d(3, adapter_channels, kernel_size=3, stride=1, padding=1, bias=True),
             nn.ReLU(True),
             nn.Conv2d(adapter_channels, out_channels, kernel_size=1, stride=1, padding=0, bias=True)
         )
+        if conditional_mask:
+            self.mask_low_encoder = nn.Sequential(
+                nn.Conv2d(3, mask_hidden_channels, kernel_size=3, stride=1, padding=1, bias=True),
+                nn.ReLU(True)
+            )
+            self.mask_target_hint = nn.Conv2d(out_channels, mask_hidden_channels, kernel_size=1, stride=1, padding=0, bias=True)
+            self.mask_head = nn.Sequential(
+                nn.Conv2d(mask_hidden_channels * 2, mask_hidden_channels, kernel_size=3, stride=1, padding=1, bias=True),
+                nn.ReLU(True),
+                nn.Conv2d(mask_hidden_channels, 1, kernel_size=1, stride=1, padding=0, bias=True)
+            )
+            nn.init.zeros_(self.mask_head[-1].weight)
+            nn.init.constant_(self.mask_head[-1].bias, float(mask_init_bias))
         self.gate = nn.Parameter(torch.tensor(float(gate_init)))
 
     def forward(self, hazy, target):
@@ -47,6 +67,21 @@ class LowFrequencyPrior(nn.Module):
         )
         low = F.interpolate(low, size=target.shape[-2:], mode='bilinear', align_corners=False)
         prior = self.adapter(low)
+        if self.conditional_mask:
+            mask_low = self.mask_low_encoder(low)
+            target_hint = self.mask_target_hint(target.detach())
+            mask = torch.sigmoid(self.mask_head(torch.cat([mask_low, target_hint], dim=1)))
+            with torch.no_grad():
+                detached_mask = mask.detach()
+                self.last_mask_stats = {
+                    'mean': detached_mask.mean(),
+                    'std': detached_mask.std(unbiased=False),
+                    'min': detached_mask.min(),
+                    'max': detached_mask.max()
+                }
+            prior = prior * mask
+        else:
+            self.last_mask_stats = None
         if self.residual_center:
             prior = prior - prior.mean(dim=(2, 3), keepdim=True)
         if self.training and self.train_dropout > 0:
@@ -74,7 +109,10 @@ class DEANet(nn.Module):
         lf_prior_residual_center=False,
         lf_prior_train_dropout=0.0,
         lf_prior_gate_max=0.0,
-        lf_prior_injection='pre_mix'
+        lf_prior_injection='pre_mix',
+        lf_conditional_mask=False,
+        lf_mask_hidden_channels=8,
+        lf_mask_init_bias=2.0
     ):
         super(DEANet, self).__init__()
         if lf_prior_injection not in ('pre_mix', 'post_mix'):
@@ -133,7 +171,10 @@ class DEANet(nn.Module):
                 gate_init=lf_prior_gate_init,
                 residual_center=lf_prior_residual_center,
                 train_dropout=lf_prior_train_dropout,
-                gate_max=lf_prior_gate_max
+                gate_max=lf_prior_gate_max,
+                conditional_mask=lf_conditional_mask,
+                mask_hidden_channels=lf_mask_hidden_channels,
+                mask_init_bias=lf_mask_init_bias
             )
         else:
             self.lf_prior = None

@@ -368,7 +368,7 @@ python train.py \
 
 已完成推理时 LF gate 强度扫参，不重新训练，只在加载 `DEA-Net-LF-H4K-scout-20260521-003100/saved_model/best.pk` 后将 `lf_prior.gate` 乘以 `0`、`0.25`、`0.5`、`0.75`、`1.0`。输出目录为 `/root/workspace/Dehaze-Net/experiment/HAZE4K/visual_compare/DEA-Net-CR-vs-LF-gate-sweep-20260522/`。原始 gate 为 `0.033890`。20 张固定样例的 mean delta PSNR 分别为 `-0.2694`、`-0.2683`、`-0.2695`、`-0.2732`、`-0.2793`，均未恢复到 baseline。`384`、`479`、`952` 随 gate 增大逐步变差，支持“LF residual 加重远景/低频过度去雾”的主观观察；但 `9` 随 gate 增大反而改善，`80` 在 PSNR/color 上随 gate 增大改善但 SSIM 仍下降。因此当前问题不能靠推理时简单削弱 gate 根治，更可能是 LF 分支参与训练后整网权重已经共同适配，下一轮应考虑训练期约束或结构改造，而不是只调推理 gate。
 
-#### 下一轮 LF 改进：保守训练约束版
+#### 已完成失败消融：保守训练约束版
 
 基于上述固定样本分析，当前 LF 的问题不是全量指标完全无效，而是收益具有场景选择性：边缘误差略有改善，但 delta-E、亮度、饱和度和暗通道偏差平均变差，且 gate 置零的推理结果仍低于 baseline，说明训练期共适配已经影响主干。因此下一轮不应继续单纯增大低频分支容量，也不应只做推理期 gate 缩放，而应先验证一个更保守的 LF 版本：
 
@@ -418,6 +418,59 @@ bash scripts/runyun-haze4k-lf-conservative-scout.sh
 - 结论：20k PSNR 短暂高于 baseline 和 LF-v1，但 50k 已低于 baseline `31.2384 / 0.9817` 与 LF-v1 `31.3419 / 0.9817`，因此在 50k gate 后停止，保留为失败结构消融。
 
 该结果说明，单纯把 LF residual 从 `pre_mix` 移到 `post_mix` 并不能保留 LF-v1 的全量收益；它可能减弱了低频先验参与 CGA 融合的有效性，却没有根治后期收敛不足。因此当前正向候选仍是纯 LF-v1，后续不建议继续围绕 `post_mix` 单点放大训练预算。
+
+#### 下一轮高价值尝试：Conditional LF 空间条件 mask（2026-05-23）
+
+在 Conservative LF、TeacherGuard、LowFreqLoss、CRPlus-P1 和 PostMix 相继失败后，下一轮不应继续做“更保守的 LF”或继续叠训练损失。当前最有价值的方向是保留 LF-v1 已验证的 `pre_mix` 低频先验，同时把全局 scalar gate 改成“scalar gate + 内容感知空间 mask”的融合方式，让模型学习何处需要低频 residual、何处应减少介入。
+
+本路线已经在 `docs/HAZE4K_CONDITIONAL_LF_ROUTE_AUDIT_20260523.md` 中完成训练前核查，并在分支 `codex/haze4k-conditional-lf` 实现为可选开关：
+
+- 新开关：`--lf_conditional_mask`
+- mask 形状：`B,1,H,W`
+- mask 输入：低频图像分支特征 + `target.detach()` 的 bottleneck 内容提示
+- mask 初始化：最后一层 weight 为 `0`，bias 默认为 `2.0`，初始 `sigmoid` 约 `0.88`，使早期行为接近 LF-v1 而不是把 LF 关掉
+- 保持不变：`lf_prior_injection=pre_mix`、`lf_prior_channels=8`、`lf_prior_pool=8`、`w_loss_CR=0.1`
+- 第一版不加 teacher、low-frequency reconstruction loss、CRPlus 或额外 regularization
+- 训练日志新增 `LF_mask_mean/std/min/max`，TensorBoard 同步记录 `train/lf_mask_*`
+
+推荐先做服务器 dry-run 与 2-step smoke，通过后再启动 10k/20k scout：
+
+```bash
+cd /root/workspace/Dehaze-Net/code
+/opt/anaconda/envs/py310/bin/python train.py \
+  --use_lf_prior \
+  --lf_prior_channels 8 \
+  --lf_prior_pool 8 \
+  --lf_prior_gate_init 0.0 \
+  --lf_prior_injection pre_mix \
+  --lf_conditional_mask \
+  --lf_mask_hidden_channels 8 \
+  --lf_mask_init_bias 2.0 \
+  --epochs 20 \
+  --iters_per_epoch 5000 \
+  --bs 16 \
+  --patch_size 256 \
+  --w_loss_L1 1.0 \
+  --w_loss_CR 0.1 \
+  --start_lr 0.0001 \
+  --end_lr 0.000001 \
+  --exp_dir ../experiment/ \
+  --model_name DEA-Net-LF-ConditionalMask-H4K-scout-20260523 \
+  --dataset HAZE4K \
+  --checkpoint_interval_steps 10000 \
+  --eval_interval_steps 10000 \
+  --save_epoch_checkpoints false
+```
+
+止损门槛：
+
+- `2-step smoke` 必须先通过，且日志中能看到 LF 配置与 mask 统计。
+- `10k` 只在明显崩溃或显著低于 baseline/LF-v1 时停止。
+- `20k` 如果同时低于 baseline 与 LF-v1 超过约 `0.5 dB`，且 mask 统计没有显示有价值的条件化，应停止。
+- `50k` 必须不低于 baseline 50k `31.2384 / 0.9817`，并接近 LF-v1 50k `31.3419 / 0.9817`；否则停止。
+- 只有 50k 通过 gate，才继续到 100k 并做 full per-image 评估。
+
+失败诊断必须看 mask 统计：若 `mean` 接近 `1` 且 `std` 很小，说明条件化没有发生；若 `mean` 接近 `0`，说明 LF 被关掉；若 mask 有空间变化但指标下降，说明当前条件输入或融合机制与去雾质量不对齐。这样即使失败，也能明确下一步是调 mask bias、换 mask 输入，还是放弃 LF 条件化。
 
 ## 7. 阶段三：改进对比正则 CRPlus
 

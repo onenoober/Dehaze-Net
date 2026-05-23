@@ -33,6 +33,9 @@ def parse_args():
     parser.add_argument('--lf_prior_residual_center', action='store_true')
     parser.add_argument('--lf_prior_gate_max', type=float, default=0.0)
     parser.add_argument('--lf_prior_injection', type=str, default='pre_mix', choices=['pre_mix', 'post_mix'])
+    parser.add_argument('--lf_conditional_mask', action='store_true')
+    parser.add_argument('--lf_mask_hidden_channels', type=int, default=8)
+    parser.add_argument('--lf_mask_init_bias', type=float, default=2.0)
     parser.add_argument('--lf_gate_scale', type=float, default=1.0)
     parser.add_argument('--lf_label', type=str, default='DEA-Net-LF')
     return parser.parse_args()
@@ -61,7 +64,10 @@ def load_model(checkpoint_path, use_lf_prior, args):
         lf_prior_gate_init=args.lf_prior_gate_init,
         lf_prior_residual_center=args.lf_prior_residual_center,
         lf_prior_gate_max=args.lf_prior_gate_max,
-        lf_prior_injection=args.lf_prior_injection
+        lf_prior_injection=args.lf_prior_injection,
+        lf_conditional_mask=args.lf_conditional_mask,
+        lf_mask_hidden_channels=args.lf_mask_hidden_channels,
+        lf_mask_init_bias=args.lf_mask_init_bias
     )
     checkpoint = load_checkpoint(checkpoint_path)
     model.load_state_dict(checkpoint['model'])
@@ -229,6 +235,9 @@ def main():
         'lf_prior_residual_center': args.lf_prior_residual_center,
         'lf_prior_gate_max': args.lf_prior_gate_max,
         'lf_prior_injection': args.lf_prior_injection,
+        'lf_conditional_mask': args.lf_conditional_mask,
+        'lf_mask_hidden_channels': args.lf_mask_hidden_channels,
+        'lf_mask_init_bias': args.lf_mask_init_bias,
         'mean_baseline_psnr': float(np.mean([row['baseline_psnr'] for row in rows])),
         'mean_baseline_ssim': float(np.mean([row['baseline_ssim'] for row in rows])),
         'mean_lf_psnr': float(np.mean([row['lf_psnr'] for row in rows])),

@@ -442,6 +442,36 @@ PY
   artifacts include `saved_data/log.txt`, `saved_model/best.pk`, and
   `saved_model/latest.pk`. Treat post-mix as a negative structure ablation; it
   does not replace LF-v1 as the current positive candidate.
+- Current active implementation branch is `codex/haze4k-conditional-lf`.
+  It implements the next high-value LF route, not another conservative
+  constraint stack. The only new mechanism is an optional content-aware
+  Conditional LF mask inside `LowFrequencyPrior`: enable it with
+  `--lf_conditional_mask`. It keeps `lf_prior_injection=pre_mix`, keeps the
+  original `lf_prior.adapter.*` state-dict keys for non-conditional LF-v1
+  compatibility, and adds a `B,1,H,W` spatial mask from low-frequency input
+  features plus a detached bottleneck target hint. Defaults are
+  `--lf_mask_hidden_channels 8` and `--lf_mask_init_bias 2.0`, so the initial
+  mask is near `sigmoid(2.0)=0.880797` rather than near zero. Training now logs
+  `LF_mask_mean`, `LF_mask_std`, `LF_mask_min`, and `LF_mask_max` to the loss
+  log and TensorBoard `train/lf_mask_*`.
+- Local coding checks for the Conditional LF implementation only: `python -m
+  compileall code` passed. A direct `LowFrequencyPrior` CPU forward check showed
+  conditional disabled -> no mask stats, conditional enabled -> output shape
+  preserved and mask mean/min/max `0.880797`. Non-conditional `DEANet`
+  state-dict LF keys remain exactly `lf_prior.adapter.0.*`,
+  `lf_prior.adapter.2.*`, and `lf_prior.gate`; conditional mode adds only
+  `mask_low_encoder`, `mask_target_hint`, and `mask_head` keys. Full local CPU
+  `DEANet` forward is still blocked by the existing `torch.cuda.FloatTensor`
+  usage in `code/model/modules/deconv.py`. Do not treat local checks as
+  training/smoke/evaluation; all dry-run, smoke, training, and benchmark checks
+  must run on the remote CUDA environment.
+- Use `scripts/runyun-haze4k-lf-conditional-mask-scout.sh` for the next remote
+  checks. First run `--dry_run`, then a 2-step smoke with small train/test
+  batches, and only then consider a 10k/20k scout. Do not launch a 50k/100k
+  continuation unless the earlier gate is close to the baseline/LF-v1 curves
+  and the mask statistics are interpretable. Do not combine this first
+  Conditional LF run with TeacherGuard, LowFreqLoss, CRPlus, `post_mix`, or
+  extra regularization.
 
 ## Recommended First Run Order
 

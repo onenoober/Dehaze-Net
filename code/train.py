@@ -151,7 +151,10 @@ def create_teacher_model():
         lf_prior_residual_center=opt.lf_prior_residual_center,
         lf_prior_train_dropout=0.0,
         lf_prior_gate_max=opt.lf_prior_gate_max,
-        lf_prior_injection=opt.lf_prior_injection
+        lf_prior_injection=opt.lf_prior_injection,
+        lf_conditional_mask=opt.lf_conditional_mask if opt.teacher_use_lf_prior else False,
+        lf_mask_hidden_channels=opt.lf_mask_hidden_channels,
+        lf_mask_init_bias=opt.lf_mask_init_bias
     )
     checkpoint = load_checkpoint_file(checkpoint_path)
     teacher.load_state_dict(strip_module_prefix(checkpoint['model']))
@@ -327,7 +330,7 @@ def train(net, loader_train, loader_test, optim, criterion, writer=None, trainin
     loss_log_tmp = {'L1': [], 'CR': [], 'total': []}
     if 'loss_log' in training_state:
         loss_log = training_state['loss_log']
-    for key in ('LF_gate', 'LowFreq', 'TeacherGuard'):
+    for key in ('LF_gate', 'LowFreq', 'TeacherGuard', 'LF_mask_mean', 'LF_mask_std', 'LF_mask_min', 'LF_mask_max'):
         loss_log.setdefault(key, [])
         loss_log_tmp.setdefault(key, [])
     psnr_log = list(training_state.get('psnr_log', training_state.get('psnrs', [])))
@@ -381,6 +384,7 @@ def train(net, loader_train, loader_test, optim, criterion, writer=None, trainin
             loss.backward()
             optim.step()
             optim.zero_grad()
+            lf_mask_stats = lf_prior_mask_stats(net)
             losses.append(loss.item())
             loss_log_tmp['L1'].append(loss_L1.item())
             loss_log_tmp['CR'].append(loss_CR.item())
@@ -391,6 +395,9 @@ def train(net, loader_train, loader_test, optim, criterion, writer=None, trainin
                 loss_log_tmp['LowFreq'].append(loss_lowfreq.item())
             if loss_teacher_guard is not None:
                 loss_log_tmp['TeacherGuard'].append(loss_teacher_guard.item())
+            if lf_mask_stats is not None:
+                for key, value in lf_mask_stats.items():
+                    loss_log_tmp['LF_mask_' + key].append(value)
 
             if writer is not None and opt.tb_log_interval > 0 and (step == 1 or step % opt.tb_log_interval == 0):
                 writer.add_scalar('train/loss_total', loss.item(), step)
@@ -406,6 +413,9 @@ def train(net, loader_train, loader_test, optim, criterion, writer=None, trainin
                 if loss_teacher_guard is not None:
                     writer.add_scalar('train/loss_teacher_guard', loss_teacher_guard.item(), step)
                     writer.add_scalar('train/loss_teacher_guard_weighted', opt.w_loss_teacher_guard * loss_teacher_guard.item(), step)
+                if lf_mask_stats is not None:
+                    for key, value in lf_mask_stats.items():
+                        writer.add_scalar('train/lf_mask_' + key, value, step)
                 writer.add_scalar('train/lr', lr, step)
 
             if opt.no_tqdm:
@@ -517,6 +527,17 @@ def lf_gate_regularization(net):
         return None
     return lf_prior.gate.pow(2)
 
+
+def lf_prior_mask_stats(net):
+    lf_prior = resolve_lf_prior_module(net)
+    if lf_prior is None:
+        return None
+    stats = getattr(lf_prior, 'last_mask_stats', None)
+    if stats is None:
+        return None
+    return {key: float(value.detach().cpu().item()) for key, value in stats.items()}
+
+
 def pad_img(x, patch_size):
     _, _, h, w = x.size()
     mod_pad_h = (patch_size - h % patch_size) % patch_size
@@ -625,12 +646,15 @@ if __name__ == "__main__":
         lf_prior_residual_center=opt.lf_prior_residual_center,
         lf_prior_train_dropout=opt.lf_prior_train_dropout,
         lf_prior_gate_max=opt.lf_prior_gate_max,
-        lf_prior_injection=opt.lf_prior_injection
+        lf_prior_injection=opt.lf_prior_injection,
+        lf_conditional_mask=opt.lf_conditional_mask,
+        lf_mask_hidden_channels=opt.lf_mask_hidden_channels,
+        lf_mask_init_bias=opt.lf_mask_init_bias
     )
     net = net.to(opt.device)
     if opt.use_lf_prior:
         print(
-            'Using LF prior: channels={} pool={} gate_init={} residual_center={} train_dropout={} gate_max={} injection={} gate_l2={}'.format(
+            'Using LF prior: channels={} pool={} gate_init={} residual_center={} train_dropout={} gate_max={} injection={} conditional_mask={} mask_hidden={} mask_init_bias={} gate_l2={}'.format(
                 opt.lf_prior_channels,
                 opt.lf_prior_pool,
                 opt.lf_prior_gate_init,
@@ -638,6 +662,9 @@ if __name__ == "__main__":
                 opt.lf_prior_train_dropout,
                 opt.lf_prior_gate_max,
                 opt.lf_prior_injection,
+                opt.lf_conditional_mask,
+                opt.lf_mask_hidden_channels,
+                opt.lf_mask_init_bias,
                 opt.w_loss_lf_gate
             )
         )

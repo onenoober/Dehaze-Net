@@ -36,6 +36,9 @@ def parse_args():
     parser.add_argument('--lf_prior_residual_center', action='store_true')
     parser.add_argument('--lf_prior_gate_max', type=float, default=0.0)
     parser.add_argument('--lf_prior_injection', type=str, default='pre_mix', choices=['pre_mix', 'post_mix'])
+    parser.add_argument('--lf_conditional_mask', action='store_true')
+    parser.add_argument('--lf_mask_hidden_channels', type=int, default=8)
+    parser.add_argument('--lf_mask_init_bias', type=float, default=2.0)
     return parser.parse_args()
 
 
@@ -62,7 +65,10 @@ def load_model(checkpoint_path, use_lf_prior, args):
         lf_prior_gate_init=args.lf_prior_gate_init,
         lf_prior_residual_center=args.lf_prior_residual_center,
         lf_prior_gate_max=args.lf_prior_gate_max,
-        lf_prior_injection=args.lf_prior_injection
+        lf_prior_injection=args.lf_prior_injection,
+        lf_conditional_mask=args.lf_conditional_mask,
+        lf_mask_hidden_channels=args.lf_mask_hidden_channels,
+        lf_mask_init_bias=args.lf_mask_init_bias
     )
     checkpoint = load_checkpoint(checkpoint_path)
     model.load_state_dict(checkpoint['model'])
@@ -398,6 +404,9 @@ def main():
         'current_checkpoint_max_psnr': current_ckpt.get('max_psnr'),
         'baseline_lf_gate': lf_gate_value(baseline_model),
         'current_lf_gate': lf_gate_value(current_model),
+        'lf_conditional_mask': args.lf_conditional_mask,
+        'lf_mask_hidden_channels': args.lf_mask_hidden_channels,
+        'lf_mask_init_bias': args.lf_mask_init_bias,
         'mean_input_psnr': mean([row['input_psnr'] for row in rows]),
         'mean_input_ssim': mean([row['input_ssim'] for row in rows]),
         'mean_baseline_psnr': mean([row['baseline_psnr'] for row in rows]),
