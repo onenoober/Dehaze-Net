@@ -94,6 +94,32 @@ ssh runyun "bash /root/workspace/tailscale-ssh/start.sh"
 - Experiment log template: `docs/EXPERIMENT_LOG.md`
 - Agent working notes: `AGENTS.md`
 
+### HAZE4K Document Roles
+
+Use these files in this order for the current HAZE4K thesis workflow:
+
+1. `docs/CURRENT_CONTEXT.md`: handoff entry point, server state, active paths,
+   and current documentation map.
+2. `docs/DEA_NET_LFCR_HAZE4K_PLAN.md`: main HAZE4K training and testing plan;
+   use this before starting or changing an experiment.
+3. `docs/EXPERIMENT_LOG.md`: chronological run ledger with metrics, run IDs,
+   and stop/continue decisions.
+4. `docs/HAZE4K_RUN_MANIFEST.md`: current artifact index and keep/delete
+   policy for remote `experiment/HAZE4K` outputs.
+5. `docs/HAZE4K_FAILURE_ANALYSIS_20260523.md`: route-level failure analysis
+   after LF-v1, Conservative LF, CRPlus, LowFreqLoss, TeacherGuard, and PostMix.
+6. `docs/HAZE4K_OPTIMIZATION_WORKFLOW_REVIEW_20260523.md`: review of whether
+   the current architecture optimization process is methodologically sound,
+   mainstream, reliable, and sufficient for the next experiment.
+7. `docs/HAZE4K_CLEANUP_PLAN_20260523.md`: cleanup audit trail; keep it as a
+   dated maintenance record rather than a general experiment guide.
+
+Do not delete HAZE4K documents just to reduce count. Prefer keeping
+`CURRENT_CONTEXT.md` as the navigation layer, `EXPERIMENT_LOG.md` as the
+chronological evidence layer, and `HAZE4K_RUN_MANIFEST.md` as the artifact
+lookup layer. If documents are merged later, merge only after their unique
+roles are already represented elsewhere.
+
 ## Data And Weight Locations
 
 Expected server layout:
@@ -324,6 +350,95 @@ PY
   improvement `-0.0026`, and edge-error improvement `-0.00063`. Compared with
   LF-v1 (`-0.2782` PSNR, better/worse/mixed `5/9/6`), the Conservative variant
   did not reduce fixed-sample risk and should not be promoted.
+- Full per-image train-checkpoint evaluation was completed on 2026-05-23 with
+  `code/evaluate_train_ckpt_per_image.py`. Remote output:
+  `/root/workspace/Dehaze-Net/experiment/HAZE4K/per_image_eval/CR-vs-LF-v1-full-20260523/`.
+  It compares baseline
+  `DEA-Net-CR-H4K-Baseline-scout-20260520-101334/saved_model/best.pk` with
+  LF-v1 `DEA-Net-LF-H4K-scout-20260521-003100/saved_model/best.pk`, both at
+  step `90000`. On all 1000 HAZE4K test images, baseline is
+  `32.2253 / 0.9844`, LF-v1 is `32.4283 / 0.9845`, mean delta is
+  `+0.2030` PSNR / `+0.000037` SSIM, and median delta is `+0.1567` PSNR.
+  Better/worse by PSNR is `549/451`; `>=+0.3 dB` cases are `453`, and
+  `<=-0.3 dB` cases are `351`. This confirms LF-v1 has a real full-test gain
+  but high per-image variance, so it is the current positive candidate, not a
+  finished robust final method.
+- Three follow-up training routes were tested and stopped early on 2026-05-23
+  because they did not beat the established baseline/LF-v1 curves:
+  `DEA-Net-CRPlus-P1-w005-H4K-scout-20260523-011100` used a low-pass hazy
+  negative (`w_loss_CR=0.05`, `cr_negative_mode=hazy_lowpass`) and reached only
+  `24.9623 / 0.9504` at 10k, far below baseline 10k `27.1101 / 0.9615`.
+  `DEA-Net-LowFreqLoss-w005-H4K-scout-20260523-015600` used only a
+  low-frequency reconstruction loss (`w_loss_lowfreq=0.05`) and reached
+  `27.8852 / 0.9716` at 20k, below baseline 20k `28.9030 / 0.9713`.
+  `DEA-Net-LF-LowFreqLoss-w001-H4K-scout-20260523-031600` combined LF-v1 with
+  weak low-frequency reconstruction (`w_loss_lowfreq=0.01`) and reached
+  `31.0707 / 0.9811` at 50k, below baseline 50k `31.2384 / 0.9817` and LF-v1
+  50k `31.3419 / 0.9817`. Do not continue these exact settings unless the goal
+  is to document failed ablations.
+- LF-v1 root-cause follow-up tested a frozen baseline no-regression guard.
+  Rationale: full per-image eval showed LF-v1 improves weak-baseline samples
+  but regresses many strong-baseline samples; a training-only baseline teacher
+  can penalize LF outputs only when they are worse than the frozen DEA-Net-CR
+  teacher on the same supervised crop, without adding inference cost. The
+  implemented switches are `--w_loss_teacher_guard`, `--teacher_checkpoint`,
+  `--teacher_guard_warmup_steps`, `--teacher_guard_max_weight`, and optional
+  local weighting through `--teacher_guard_patch_pool`. `--lf_prior_injection`
+  also supports `pre_mix` and `post_mix`.
+- LF teacher-guard scout failed the 20k decision gate and was stopped on
+  2026-05-23:
+  `DEA-Net-LF-TeacherGuard-H4K-scout-20260523-112658`, tmux
+  `h4k_lf_teacher_guard_20260523_112658`, log
+  `/root/workspace/Dehaze-Net/experiment/HAZE4K/_run_logs/DEA-Net-LF-TeacherGuard-H4K-scout-20260523-112658.log`,
+  artifacts
+  `/root/workspace/Dehaze-Net/experiment/HAZE4K/DEA-Net-LF-TeacherGuard-H4K-scout-20260523-112658/`.
+  Config: `bs=16`, `patch_size=256`, `epochs=20`, `iters_per_epoch=5000`,
+  `use_lf_prior=true`, `lf_prior_channels=8`, `lf_prior_pool=8`,
+  `lf_prior_injection=pre_mix`, `w_loss_CR=0.1`,
+  `w_loss_teacher_guard=0.05`, teacher checkpoint
+  `DEA-Net-CR-H4K-Baseline-scout-20260520-101334/saved_model/best.pk`,
+  guard warmup `20000` steps, max guard weight `2.0`. A dry-run and 2-step
+  smoke test passed before launch. A malformed one-shot launch named
+  `DEA-Net-LF-TeacherGuard-H4K-scout-20260523-` was stopped with
+  `kill -TERM -- -2807`; do not use that partial artifact.
+  The valid run reached step 10000 `24.8283 / 0.9425` and step 20000
+  `27.7075 / 0.9704`, below baseline 20k `28.9030 / 0.9713` and LF-v1 20k
+  `28.8563 / 0.9751`. It was stopped by process group after the failed 20k
+  gate: confirmed train process PGID `3151`, ran `kill -TERM -- -3151`,
+  then verified no matching run process, tmux session absent, and GPU
+  `0 MiB / 0%`. Retained artifacts include `saved_data/log.txt`,
+  `saved_model/best.pk`, and `saved_model/latest.pk`. Treat
+  `w_loss_teacher_guard=0.05 + warmup=20000 + max_weight=2.0` as a failed
+  over-constrained LF-v1 ablation. Do not continue this exact setting; if the
+  teacher route is revisited, use a much weaker/later guard such as `0.01`
+  with warmup around `50000`, or test the separate `post_mix` structural
+  ablation first.
+- LF `post_mix` structure ablation was launched and stopped on 2026-05-23:
+  `DEA-Net-LF-PostMix-H4K-scout-20260523-133020`, tmux
+  `h4k_lf_postmix_20260523_133020`, log
+  `/root/workspace/Dehaze-Net/experiment/HAZE4K/_run_logs/DEA-Net-LF-PostMix-H4K-scout-20260523-133020.log`,
+  artifacts
+  `/root/workspace/Dehaze-Net/experiment/HAZE4K/DEA-Net-LF-PostMix-H4K-scout-20260523-133020/`.
+  Config: same as LF-v1 except `lf_prior_injection=post_mix`; no teacher
+  guard, no low-frequency reconstruction loss, `w_loss_CR=0.1`, `bs=16`,
+  `patch_size=256`, `epochs=20`, `iters_per_epoch=5000`, checkpoint/eval every
+  `10000` steps. Rationale: LF-v1's fixed-sample failures and the gate-sweep
+  result suggest the LF residual has co-adapted with the main trunk before
+  `mix1`; moving it after `mix1` tests whether preserving CGA's original
+  skip/deep fusion before adding low-frequency residual can keep LF-v1's full
+  test gain while reducing low-frequency over-correction. A 2-step post-mix
+  smoke test passed. During launch debugging, an unintended `MODEL_NAME=probe`
+  process was started and then stopped with `kill -TERM -- -9491`; do not use
+  the `probe` artifact. Valid PostMix curve: 10k `25.9303 / 0.9640`, 20k
+  `29.0681 / 0.9740`, 30k `29.9618 / 0.9767`, 40k `30.1842 / 0.9790`, 50k
+  `30.7103 / 0.9814`. Although 20k PSNR briefly exceeded baseline/LF-v1, the
+  50k result was below baseline 50k `31.2384 / 0.9817` and LF-v1 50k
+  `31.3419 / 0.9817`. It was stopped at the failed 50k gate on user request:
+  confirmed train process PGID `9758`, ran `kill -TERM -- -9758`, then verified
+  no matching process, tmux session absent, and GPU `0 MiB / 0%`. Retained
+  artifacts include `saved_data/log.txt`, `saved_model/best.pk`, and
+  `saved_model/latest.pk`. Treat post-mix as a negative structure ablation; it
+  does not replace LF-v1 as the current positive candidate.
 
 ## Recommended First Run Order
 

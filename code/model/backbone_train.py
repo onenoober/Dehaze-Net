@@ -73,10 +73,14 @@ class DEANet(nn.Module):
         lf_prior_gate_init=0.0,
         lf_prior_residual_center=False,
         lf_prior_train_dropout=0.0,
-        lf_prior_gate_max=0.0
+        lf_prior_gate_max=0.0,
+        lf_prior_injection='pre_mix'
     ):
         super(DEANet, self).__init__()
+        if lf_prior_injection not in ('pre_mix', 'post_mix'):
+            raise ValueError('Unsupported lf_prior_injection: {}'.format(lf_prior_injection))
         self.use_lf_prior = use_lf_prior
+        self.lf_prior_injection = lf_prior_injection
         # down-sample
         self.down1 = nn.Sequential(nn.Conv2d(3, base_dim, kernel_size=3, stride = 1, padding=1))
         self.down2 = nn.Sequential(nn.Conv2d(base_dim, base_dim*2, kernel_size=3, stride=2, padding=1),
@@ -159,9 +163,11 @@ class DEANet(nn.Module):
         x6 = self.level3_block6(x5)
         x7 = self.level3_block7(x6)
         x8 = self.level3_block8(x7)
-        if self.lf_prior is not None:
+        if self.lf_prior is not None and self.lf_prior_injection == 'pre_mix':
             x8 = self.lf_prior(hazy, x8)
         x_level3_mix = self.mix1(x_down3, x8)
+        if self.lf_prior is not None and self.lf_prior_injection == 'post_mix':
+            x_level3_mix = self.lf_prior(hazy, x_level3_mix)
 
         x_up1 = self.up1(x_level3_mix)
         x_up1 = self.up_level2_block1(x_up1)

@@ -111,6 +111,67 @@ def load_training_state(net, optimizer):
     return checkpoint
 
 
+def resolve_checkpoint_path(checkpoint_name, base_dir=None):
+    if checkpoint_name == 'null':
+        return None
+    if os.path.isabs(checkpoint_name):
+        candidates = [checkpoint_name]
+    else:
+        candidates = [checkpoint_name]
+        if base_dir is not None:
+            candidates.append(os.path.join(base_dir, checkpoint_name))
+        candidates.append(os.path.join(opt.model_dir, checkpoint_name))
+        candidates.append(os.path.join(opt.saved_model_dir, checkpoint_name))
+
+    for path in candidates:
+        if os.path.isfile(path):
+            return path
+    raise FileNotFoundError('No checkpoint found. Tried: {}'.format(', '.join(candidates)))
+
+
+def strip_module_prefix(state_dict):
+    if not any(key.startswith('module.') for key in state_dict.keys()):
+        return state_dict
+    return {key.replace('module.', '', 1): value for key, value in state_dict.items()}
+
+
+def create_teacher_model():
+    if opt.w_loss_teacher_guard <= 0:
+        return None
+    checkpoint_path = resolve_checkpoint_path(opt.teacher_checkpoint)
+    if checkpoint_path is None:
+        raise ValueError('--teacher_checkpoint is required when --w_loss_teacher_guard > 0')
+
+    teacher = DEANet(
+        base_dim=32,
+        use_lf_prior=opt.teacher_use_lf_prior,
+        lf_prior_channels=opt.lf_prior_channels,
+        lf_prior_pool=opt.lf_prior_pool,
+        lf_prior_gate_init=opt.lf_prior_gate_init,
+        lf_prior_residual_center=opt.lf_prior_residual_center,
+        lf_prior_train_dropout=0.0,
+        lf_prior_gate_max=opt.lf_prior_gate_max,
+        lf_prior_injection=opt.lf_prior_injection
+    )
+    checkpoint = load_checkpoint_file(checkpoint_path)
+    teacher.load_state_dict(strip_module_prefix(checkpoint['model']))
+    teacher.to(opt.device)
+    teacher.eval()
+    for param in teacher.parameters():
+        param.requires_grad = False
+    print('Using teacher guard checkpoint:', checkpoint_path)
+    print(
+        'Teacher guard: weight={} margin={} warmup_steps={} max_weight={} patch_pool={}'.format(
+            opt.w_loss_teacher_guard,
+            opt.teacher_guard_margin,
+            opt.teacher_guard_warmup_steps,
+            opt.teacher_guard_max_weight,
+            opt.teacher_guard_patch_pool
+        )
+    )
+    return teacher
+
+
 def should_evaluate(step, loader_train_len):
     if opt.eval_interval_steps > 0:
         return step % opt.eval_interval_steps == 0 or step == steps
@@ -172,6 +233,75 @@ def update_early_stop_state(state, step, psnr_eval, ssim_eval):
     return False
 
 
+def low_frequency_loss(out, target):
+    if opt.w_loss_lowfreq <= 0:
+        return None
+    if opt.lowfreq_pool <= 0:
+        raise ValueError('lowfreq_pool must be positive')
+    low_out = F.avg_pool2d(
+        out,
+        kernel_size=opt.lowfreq_pool,
+        stride=opt.lowfreq_pool,
+        ceil_mode=True
+    )
+    low_target = F.avg_pool2d(
+        target,
+        kernel_size=opt.lowfreq_pool,
+        stride=opt.lowfreq_pool,
+        ceil_mode=True
+    )
+    return F.l1_loss(low_out, low_target)
+
+
+def per_sample_l1(a, b, pool_size=0):
+    if pool_size < 0:
+        raise ValueError('teacher_guard_patch_pool must be non-negative')
+    diff = torch.abs(a - b)
+    if pool_size > 0:
+        diff = F.avg_pool2d(
+            diff,
+            kernel_size=pool_size,
+            stride=pool_size,
+            ceil_mode=True
+        )
+    return diff.mean(dim=(1, 2, 3))
+
+
+def teacher_guard_loss(out, hazy, target, step, teacher_net):
+    if teacher_net is None or opt.w_loss_teacher_guard <= 0:
+        return None
+    if opt.teacher_guard_warmup_steps > 0 and step < opt.teacher_guard_warmup_steps:
+        return None
+    with torch.no_grad():
+        teacher_out = teacher_net(hazy).clamp(0, 1)
+        if opt.teacher_guard_patch_pool > 0:
+            teacher_err = torch.abs(teacher_out - target).mean(dim=1, keepdim=True)
+            current_err = torch.abs(out - target).mean(dim=1, keepdim=True)
+            teacher_err = F.avg_pool2d(
+                teacher_err,
+                kernel_size=opt.teacher_guard_patch_pool,
+                stride=opt.teacher_guard_patch_pool,
+                ceil_mode=True
+            )
+            current_err = F.avg_pool2d(
+                current_err,
+                kernel_size=opt.teacher_guard_patch_pool,
+                stride=opt.teacher_guard_patch_pool,
+                ceil_mode=True
+            )
+            weight = (current_err - teacher_err - opt.teacher_guard_margin).clamp(min=0)
+            weight = F.interpolate(weight, size=out.shape[-2:], mode='nearest')
+        else:
+            teacher_l1 = per_sample_l1(teacher_out, target)
+            current_l1 = per_sample_l1(out, target)
+            weight = (current_l1 - teacher_l1 - opt.teacher_guard_margin).clamp(min=0)
+            weight = weight.view(-1, 1, 1, 1)
+        weight = weight / (weight.detach().mean() + 1e-6)
+        if opt.teacher_guard_max_weight > 0:
+            weight = weight.clamp(max=opt.teacher_guard_max_weight)
+    return torch.mean(weight * torch.abs(out - teacher_out.detach()))
+
+
 def build_checkpoint(epoch, step, max_psnr, max_ssim, ssims, psnrs, losses, loss_log, psnr_log, net, optimizer, early_stop_state=None):
     return {
         'epoch': epoch,
@@ -189,7 +319,7 @@ def build_checkpoint(epoch, step, max_psnr, max_ssim, ssims, psnrs, losses, loss
     }
 
 
-def train(net, loader_train, loader_test, optim, criterion, writer=None, training_state=None):
+def train(net, loader_train, loader_test, optim, criterion, writer=None, training_state=None, teacher_net=None):
     training_state = training_state or {}
     losses = list(training_state.get('losses', []))
 
@@ -197,6 +327,9 @@ def train(net, loader_train, loader_test, optim, criterion, writer=None, trainin
     loss_log_tmp = {'L1': [], 'CR': [], 'total': []}
     if 'loss_log' in training_state:
         loss_log = training_state['loss_log']
+    for key in ('LF_gate', 'LowFreq', 'TeacherGuard'):
+        loss_log.setdefault(key, [])
+        loss_log_tmp.setdefault(key, [])
     psnr_log = list(training_state.get('psnr_log', training_state.get('psnrs', [])))
 
     start_step = int(training_state.get('step', 0))
@@ -236,9 +369,15 @@ def train(net, loader_train, loader_test, optim, criterion, writer=None, trainin
             if opt.w_loss_CR > 0:
                 loss_CR = criterion[1](out, y, x)
             loss_lf_gate = lf_gate_regularization(net)
+            loss_lowfreq = low_frequency_loss(out, y)
+            loss_teacher_guard = teacher_guard_loss(out, x, y, step, teacher_net)
             loss = opt.w_loss_L1 * loss_L1 + opt.w_loss_CR * loss_CR
             if loss_lf_gate is not None:
                 loss = loss + opt.w_loss_lf_gate * loss_lf_gate
+            if loss_lowfreq is not None:
+                loss = loss + opt.w_loss_lowfreq * loss_lowfreq
+            if loss_teacher_guard is not None:
+                loss = loss + opt.w_loss_teacher_guard * loss_teacher_guard
             loss.backward()
             optim.step()
             optim.zero_grad()
@@ -246,6 +385,12 @@ def train(net, loader_train, loader_test, optim, criterion, writer=None, trainin
             loss_log_tmp['L1'].append(loss_L1.item())
             loss_log_tmp['CR'].append(loss_CR.item())
             loss_log_tmp['total'].append(loss.item())
+            if loss_lf_gate is not None:
+                loss_log_tmp['LF_gate'].append(loss_lf_gate.item())
+            if loss_lowfreq is not None:
+                loss_log_tmp['LowFreq'].append(loss_lowfreq.item())
+            if loss_teacher_guard is not None:
+                loss_log_tmp['TeacherGuard'].append(loss_teacher_guard.item())
 
             if writer is not None and opt.tb_log_interval > 0 and (step == 1 or step % opt.tb_log_interval == 0):
                 writer.add_scalar('train/loss_total', loss.item(), step)
@@ -255,6 +400,12 @@ def train(net, loader_train, loader_test, optim, criterion, writer=None, trainin
                 if loss_lf_gate is not None:
                     writer.add_scalar('train/loss_lf_gate', loss_lf_gate.item(), step)
                     writer.add_scalar('train/loss_lf_gate_weighted', opt.w_loss_lf_gate * loss_lf_gate.item(), step)
+                if loss_lowfreq is not None:
+                    writer.add_scalar('train/loss_lowfreq', loss_lowfreq.item(), step)
+                    writer.add_scalar('train/loss_lowfreq_weighted', opt.w_loss_lowfreq * loss_lowfreq.item(), step)
+                if loss_teacher_guard is not None:
+                    writer.add_scalar('train/loss_teacher_guard', loss_teacher_guard.item(), step)
+                    writer.add_scalar('train/loss_teacher_guard_weighted', opt.w_loss_teacher_guard * loss_teacher_guard.item(), step)
                 writer.add_scalar('train/lr', lr, step)
 
             if opt.no_tqdm:
@@ -273,7 +424,8 @@ def train(net, loader_train, loader_test, optim, criterion, writer=None, trainin
             if step % len(loader_train) == 0:
                 loader_train_iter = iter(loader_train)
                 for key in loss_log.keys():
-                    loss_log[key].append(np.average(np.array(loss_log_tmp[key])))
+                    if loss_log_tmp[key]:
+                        loss_log[key].append(np.average(np.array(loss_log_tmp[key])))
                     loss_log_tmp[key] = []
                 if not opt.no_pdf_plots:
                     plot_loss_log(loss_log, int(step / len(loader_train)), opt.saved_plot_dir)
@@ -472,18 +624,20 @@ if __name__ == "__main__":
         lf_prior_gate_init=opt.lf_prior_gate_init,
         lf_prior_residual_center=opt.lf_prior_residual_center,
         lf_prior_train_dropout=opt.lf_prior_train_dropout,
-        lf_prior_gate_max=opt.lf_prior_gate_max
+        lf_prior_gate_max=opt.lf_prior_gate_max,
+        lf_prior_injection=opt.lf_prior_injection
     )
     net = net.to(opt.device)
     if opt.use_lf_prior:
         print(
-            'Using LF prior: channels={} pool={} gate_init={} residual_center={} train_dropout={} gate_max={} gate_l2={}'.format(
+            'Using LF prior: channels={} pool={} gate_init={} residual_center={} train_dropout={} gate_max={} injection={} gate_l2={}'.format(
                 opt.lf_prior_channels,
                 opt.lf_prior_pool,
                 opt.lf_prior_gate_init,
                 opt.lf_prior_residual_center,
                 opt.lf_prior_train_dropout,
                 opt.lf_prior_gate_max,
+                opt.lf_prior_injection,
                 opt.w_loss_lf_gate
             )
         )
@@ -503,12 +657,18 @@ if __name__ == "__main__":
 
     criterion = []
     criterion.append(nn.L1Loss().to(opt.device))
-    criterion.append(ContrastLoss(ablation=False))
+    criterion.append(ContrastLoss(
+        ablation=False,
+        negative_mode=opt.cr_negative_mode,
+        lowpass_pool=opt.cr_lowpass_pool,
+        lowpass_weight=opt.cr_lowpass_weight
+    ))
 
     optimizer = optim.Adam(params=filter(lambda x: x.requires_grad, net.parameters()), lr=opt.start_lr, betas=(0.9, 0.999),
                            eps=1e-08)
     optimizer.zero_grad()
     training_state = load_training_state(net, optimizer)
+    teacher_net = create_teacher_model()
     if opt.dry_run:
         print('Dry run complete.')
         print('Training target steps: {}'.format(steps))
@@ -516,7 +676,7 @@ if __name__ == "__main__":
         raise SystemExit(0)
     writer = create_summary_writer(int(training_state.get('step', 0)))
     try:
-        train(net, loader_train, loader_test, optimizer, criterion, writer, training_state)
+        train(net, loader_train, loader_test, optimizer, criterion, writer, training_state, teacher_net)
     finally:
         if writer is not None:
             writer.close()

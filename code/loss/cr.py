@@ -38,16 +38,38 @@ class Vgg19(torch.nn.Module):
         return [h_relu1, h_relu2, h_relu3, h_relu4, h_relu5]
 
 class ContrastLoss(nn.Module):
-    def __init__(self, ablation=False):
+    def __init__(self, ablation=False, negative_mode='hazy', lowpass_pool=8, lowpass_weight=1.0):
 
         super(ContrastLoss, self).__init__()
         self.vgg = Vgg19().cuda()
         self.l1 = nn.L1Loss()
         self.weights = [1.0/32, 1.0/16, 1.0/8, 1.0/4, 1.0]
         self.ab = ablation
+        self.negative_mode = negative_mode
+        self.lowpass_pool = lowpass_pool
+        self.lowpass_weight = lowpass_weight
+        if self.negative_mode not in ('hazy', 'hazy_lowpass'):
+            raise ValueError('Unsupported CR negative_mode: {}'.format(self.negative_mode))
+        if self.lowpass_pool <= 0:
+            raise ValueError('lowpass_pool must be positive')
+        if self.lowpass_weight < 0:
+            raise ValueError('lowpass_weight must be non-negative')
+
+    def lowpass(self, x):
+        low = F.avg_pool2d(
+            x,
+            kernel_size=self.lowpass_pool,
+            stride=self.lowpass_pool,
+            ceil_mode=True
+        )
+        return F.interpolate(low, size=x.shape[-2:], mode='bilinear', align_corners=False)
 
     def forward(self, a, p, n):
         a_vgg, p_vgg, n_vgg = self.vgg(a), self.vgg(p), self.vgg(n)
+        lowpass_vgg = None
+        if self.negative_mode == 'hazy_lowpass':
+            lowpass_n = self.lowpass(n).detach()
+            lowpass_vgg = self.vgg(lowpass_n)
         loss = 0
 
         d_ap, d_an = 0, 0
@@ -56,6 +78,12 @@ class ContrastLoss(nn.Module):
             if not self.ab:
                 d_an = self.l1(a_vgg[i], n_vgg[i].detach())
                 contrastive = d_ap / (d_an + 1e-7)
+                if lowpass_vgg is not None and self.lowpass_weight > 0:
+                    d_an_lowpass = self.l1(a_vgg[i], lowpass_vgg[i].detach())
+                    contrastive_lowpass = d_ap / (d_an_lowpass + 1e-7)
+                    contrastive = (
+                        contrastive + self.lowpass_weight * contrastive_lowpass
+                    ) / (1.0 + self.lowpass_weight)
             else:
                 contrastive = d_ap
 

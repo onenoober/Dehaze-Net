@@ -396,6 +396,29 @@ bash scripts/runyun-haze4k-lf-conservative-scout.sh
 
 固定 20 张样例分析也未通过筛选。Conservative 相对 baseline 的子集均值为 `-0.7850 dB` / `-0.0005` SSIM，客观分析为更好 `4`、更差 `14`、混合 `2`；mean delta-E improvement `-0.1479`，dark-channel abs-bias improvement `-0.0026`，edge-error improvement `-0.00063`。相比第一版 LF 的 `-0.2782 dB`、更好/更差/混合 `5/9/6`，保守约束没有解决视觉退化，反而损失更多正向样例。因此该版本只保留为“过约束导致收益不足”的失败消融证据。后续不建议继续沿 `channels=4 + dropout + gate clamp + gate L2` 加强约束；如果继续改 LF，应改成更温和的训练期约束，或优先转向 CRPlus 独立损失路线。
 
+#### 失败消融：LF-v1 + TeacherGuard（2026-05-23）
+
+基于全量 per-image 评测中 LF-v1 对强 baseline 样例存在回退的问题，尝试了冻结 baseline teacher 的训练期 no-regression guard。该设计不增加推理成本，但首轮参数过强：
+
+- Run：`DEA-Net-LF-TeacherGuard-H4K-scout-20260523-112658`
+- 配置：沿用 LF-v1 `lf_prior_channels=8`、`lf_prior_pool=8`、`lf_prior_injection=pre_mix`，并加入 `w_loss_teacher_guard=0.05`、teacher checkpoint `DEA-Net-CR-H4K-Baseline-scout-20260520-101334/saved_model/best.pk`、warmup `20000` steps、max guard weight `2.0`
+- 结果：10k `24.8283 / 0.9425`，20k `27.7075 / 0.9704`
+- 结论：20k 明显低于 baseline `28.9030 / 0.9713` 和 LF-v1 `28.8563 / 0.9751`，因此在 20k gate 后停止，保留为失败案例。
+
+该失败说明，在 LF-v1 已有 supervised L1/CR 约束时，过早、过强地用 baseline teacher 做逐 crop 保守约束，容易压制 LF 分支对困难样例的正向修正，并把优化目标拉回 baseline 的局部解。后续不要继续 `w_loss_teacher_guard=0.05 + warmup=20000 + max_weight=2.0` 这一路径；若重新验证 teacher 思路，应把它降级为弱约束/晚期约束（例如 `0.01`、warmup 约 `50000`），或先独立测试 `post_mix` 结构位置，避免把结构变量和强 teacher loss 绑定在一起。
+
+#### 失败消融：PostMix 结构位置（2026-05-23）
+
+下一步优先验证 `post_mix` 而不是继续 teacher loss。原因是 TeacherGuard 在 20k warmup 之前已经落后，说明失败不只来自 teacher loss 生效后的蒸馏项，更可能与强约束路线、初始化/数据序列扰动以及 LF 分支和 `mix1` 前融合共适配有关。`post_mix` 只改变 LF residual 的插入位置，不增加训练损失、不增加推理分支数量，是当前变量最干净的验证。
+
+- Run：`DEA-Net-LF-PostMix-H4K-scout-20260523-133020`
+- 配置：与 LF-v1 相同，保留 `lf_prior_channels=8`、`lf_prior_pool=8`、`w_loss_CR=0.1`，仅将 `lf_prior_injection` 从 `pre_mix` 改为 `post_mix`
+- 目的：先让原始 CGA 完成 skip/deep 特征融合，再加入低频 residual，降低 LF prior 在 `mix1` 前改变注意力融合权重、引发低频过校正和主干共适配的风险。
+- 结果：10k `25.9303 / 0.9640`，20k `29.0681 / 0.9740`，30k `29.9618 / 0.9767`，40k `30.1842 / 0.9790`，50k `30.7103 / 0.9814`。
+- 结论：20k PSNR 短暂高于 baseline 和 LF-v1，但 50k 已低于 baseline `31.2384 / 0.9817` 与 LF-v1 `31.3419 / 0.9817`，因此在 50k gate 后停止，保留为失败结构消融。
+
+该结果说明，单纯把 LF residual 从 `pre_mix` 移到 `post_mix` 并不能保留 LF-v1 的全量收益；它可能减弱了低频先验参与 CGA 融合的有效性，却没有根治后期收敛不足。因此当前正向候选仍是纯 LF-v1，后续不建议继续围绕 `post_mix` 单点放大训练预算。
+
 ## 7. 阶段三：改进对比正则 CRPlus
 
 模型名：
