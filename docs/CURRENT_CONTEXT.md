@@ -111,7 +111,10 @@ Use these files in this order for the current HAZE4K thesis workflow:
 6. `docs/HAZE4K_OPTIMIZATION_WORKFLOW_REVIEW_20260523.md`: review of whether
    the current architecture optimization process is methodologically sound,
    mainstream, reliable, and sufficient for the next experiment.
-7. `docs/HAZE4K_CLEANUP_PLAN_20260523.md`: cleanup audit trail; keep it as a
+7. `docs/HAZE4K_CONDITIONAL_LF_ROUTE_AUDIT_20260523.md`: pre-implementation
+   audit for the next Conditional LF route, including reliability judgment,
+   minimal design, stop gates, and experiment card.
+8. `docs/HAZE4K_CLEANUP_PLAN_20260523.md`: cleanup audit trail; keep it as a
    dated maintenance record rather than a general experiment guide.
 
 Do not delete HAZE4K documents just to reduce count. Prefer keeping

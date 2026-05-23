@@ -93,6 +93,7 @@ Current untracked local files:
 - `code/evaluate_train_ckpt_per_image.py`: keep, useful analysis tool.
 - `docs/HAZE4K_FAILURE_ANALYSIS_20260523.md`: keep, failure analysis.
 - `docs/HAZE4K_OPTIMIZATION_WORKFLOW_REVIEW_20260523.md`: keep, method/process review for future experiment discipline.
+- `docs/HAZE4K_CONDITIONAL_LF_ROUTE_AUDIT_20260523.md`: keep, pre-implementation route audit and experiment card for Conditional LF.
 - `scripts/archive/failed-ablation-launchers/`: archived failed-ablation launchers retained for reproducibility, not used as daily entrypoints.
 - `D:\Dehaze\reference\目前图像去雾基线模型深度研究与毕业论文改进方案建议.docx`: moved outside repo root on 2026-05-23.
 
