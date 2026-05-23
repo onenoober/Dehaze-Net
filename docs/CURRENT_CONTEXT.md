@@ -485,7 +485,32 @@ PY
   `LF_mask_mean=[0.880797,0.880797]`, `LF_mask_std=[0.0,0.0]`,
   `LF_mask_min=[0.880797,0.880797]`, `LF_mask_max=[0.880797,0.880797]`.
   After validation, no matching Conditional LF train process remained and GPU
-  usage was `0 MiB / 0%`. No 10k+ training has been launched yet.
+  usage was `0 MiB / 0%`.
+- Conditional LF 20k gated scout completed on 2026-05-23 in the same isolated
+  checkout:
+  `DEA-Net-LF-ConditionalMask-H4K-gate20k-20260523-205312`, commit `7a4aa92`,
+  log
+  `/root/workspace/Dehaze-Net-conditional-lf/experiment/HAZE4K/_run_logs/DEA-Net-LF-ConditionalMask-H4K-gate20k-20260523-205312.log`,
+  artifacts
+  `/root/workspace/Dehaze-Net-conditional-lf/experiment/HAZE4K/DEA-Net-LF-ConditionalMask-H4K-gate20k-20260523-205312/`.
+  The remote `experiment` path is a symlink into
+  `/root/workspace/Dehaze-Net/experiment`, so keep treating the main experiment
+  storage as shared. Config: same as the smoke route, with `epochs=4`,
+  `iters_per_epoch=5000`, `bs=16`, `patch_size=256`, checkpoint/eval every
+  `10000` steps, and no TeacherGuard, LowFreqLoss, CRPlus, `post_mix`, or extra
+  regularization. Validation curve: 10k `27.2822 / 0.9626`, 20k
+  `29.0625 / 0.9734`. `latest.pk` and `best.pk` are both step `20000`, with
+  `max_psnr=29.062465` and `max_ssim=0.973354`. This is PSNR-positive against
+  baseline 20k `28.9030 / 0.9713` and LF-v1 20k `28.8563 / 0.9751`, but SSIM
+  is still slightly below LF-v1. Mask diagnostics are the important caution:
+  the latest loss-log tail is approximately `LF_mask_mean=0.878735`,
+  `LF_mask_std=6.85e-05`, `LF_mask_min=0.87832`, `LF_mask_max=0.87901`, so the
+  spatial mask is still almost constant and close to initialization. Decision:
+  the 20k gate passes, but it only justifies continuing to the 50k gate, not
+  running blindly to 100k. At 50k, require at least baseline 50k
+  `31.2384 / 0.9817` and near LF-v1 50k `31.3419 / 0.9817`; if the mask remains
+  constant and metrics do not beat LF-v1, treat this as "conditional mechanism
+  not activated" rather than as a full Conditional LF success.
 
 ## Recommended First Run Order
 
