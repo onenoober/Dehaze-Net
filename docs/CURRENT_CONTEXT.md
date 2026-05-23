@@ -486,7 +486,8 @@ PY
   `LF_mask_min=[0.880797,0.880797]`, `LF_mask_max=[0.880797,0.880797]`.
   After validation, no matching Conditional LF train process remained and GPU
   usage was `0 MiB / 0%`.
-- Conditional LF 20k gated scout completed on 2026-05-23 in the same isolated
+- Conditional LF 20k short-schedule scout completed on 2026-05-23 in the same
+  isolated
   checkout:
   `DEA-Net-LF-ConditionalMask-H4K-gate20k-20260523-205312`, commit `7a4aa92`,
   log
@@ -498,16 +499,25 @@ PY
   storage as shared. Config: same as the smoke route, with `epochs=4`,
   `iters_per_epoch=5000`, `bs=16`, `patch_size=256`, checkpoint/eval every
   `10000` steps, and no TeacherGuard, LowFreqLoss, CRPlus, `post_mix`, or extra
-  regularization. Validation curve: 10k `27.2822 / 0.9626`, 20k
+  regularization. Important caveat: because `train.py` uses
+  `T = epochs * iters_per_epoch` for cosine LR, this run used a `T=20000`
+  learning-rate horizon rather than the baseline/LF-v1 scout horizon. Validation
+  curve: 10k `27.2822 / 0.9626`, 20k
   `29.0625 / 0.9734`. `latest.pk` and `best.pk` are both step `20000`, with
   `max_psnr=29.062465` and `max_ssim=0.973354`. This is PSNR-positive against
-  baseline 20k `28.9030 / 0.9713` and LF-v1 20k `28.8563 / 0.9751`, but SSIM
-  is still slightly below LF-v1. Mask diagnostics are the important caution:
+  baseline 20k `28.9030 / 0.9713` and LF-v1 20k `28.8563 / 0.9751`, but it is
+  not schedule-equivalent to those curves, and SSIM is still slightly below
+  LF-v1. Mask diagnostics are the important caution:
   the latest loss-log tail is approximately `LF_mask_mean=0.878735`,
   `LF_mask_std=6.85e-05`, `LF_mask_min=0.87832`, `LF_mask_max=0.87901`, so the
-  spatial mask is still almost constant and close to initialization. Decision:
-  the 20k gate passes, but it only justifies continuing to the 50k gate, not
-  running blindly to 100k. At 50k, require at least baseline 50k
+  spatial mask is still almost constant and close to initialization. An attempted
+  resume of this run to 50k with `epochs=10` was stopped at about step `23163`
+  before any new evaluation, because it changed the LR horizon to `T=50000` and
+  would make the 50k comparison hard to interpret. `latest.pk`, `best.pk`,
+  `psnrs.npy`, and `ssims.npy` remained at the 20k state. Decision: keep this
+  20k run as functionality/early diagnostic evidence only. For a formal 50k
+  gate, launch a new clean run with the target horizon fixed from the start.
+  At 50k, require at least baseline 50k
   `31.2384 / 0.9817` and near LF-v1 50k `31.3419 / 0.9817`; if the mask remains
   constant and metrics do not beat LF-v1, treat this as "conditional mechanism
   not activated" rather than as a full Conditional LF success.

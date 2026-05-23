@@ -29,7 +29,7 @@
 | `DEA-Net-LF-LowFreqLoss-w001-H4K-scout-20260523-031600` | 182M | negative ablation | 50k `31.0707 / 0.9811` | LF-v1 + lowfreq loss failed | `KEEP_MINIMAL` |
 | `DEA-Net-LF-TeacherGuard-H4K-scout-20260523-112658` | 181M | negative ablation | 20k `27.7075 / 0.9704` | current teacher guard setting failed | `KEEP_MINIMAL` |
 | `DEA-Net-LF-PostMix-H4K-scout-20260523-133020` | 182M | negative ablation | 50k `30.7103 / 0.9814` | post-mix structure failed | `KEEP_MINIMAL` |
-| `DEA-Net-LF-ConditionalMask-H4K-gate20k-20260523-205312` | 181M | active gated candidate | 20k `29.0625 / 0.9734`; mask near-constant `mean~0.878735`, `std~6.85e-05` | passes 20k gate; continue only to 50k before any 100k decision | `KEEP` |
+| `DEA-Net-LF-ConditionalMask-H4K-gate20k-20260523-205312` | 181M | diagnostic only | 20k `29.0625 / 0.9734`; mask near-constant `mean~0.878735`, `std~6.85e-05` | short schedule `T=20000`; do not resume for formal 50k comparison | `KEEP_MINIMAL` |
 
 ## Evaluation And Visual Evidence
 

@@ -474,20 +474,20 @@ cd /root/workspace/Dehaze-Net/code
 
 失败诊断必须看 mask 统计：若 `mean` 接近 `1` 且 `std` 很小，说明条件化没有发生；若 `mean` 接近 `0`，说明 LF 被关掉；若 mask 有空间变化但指标下降，说明当前条件输入或融合机制与去雾质量不对齐。这样即使失败，也能明确下一步是调 mask bias、换 mask 输入，还是放弃 LF 条件化。
 
-#### Conditional LF 20k gate 结果（2026-05-23）
+#### Conditional LF 20k 短 schedule 结果（2026-05-23）
 
 首轮 gated scout 已在云服务器独立 checkout `/root/workspace/Dehaze-Net-conditional-lf` 完成到 20k：
 
 - Run：`DEA-Net-LF-ConditionalMask-H4K-gate20k-20260523-205312`
 - Commit：`7a4aa92`
-- 配置：`lf_prior_channels=8`、`lf_prior_pool=8`、`lf_prior_injection=pre_mix`、`lf_conditional_mask=true`、`lf_mask_hidden_channels=8`、`lf_mask_init_bias=2.0`、`w_loss_CR=0.1`、`bs=16`、`patch_size=256`
+- 配置：`lf_prior_channels=8`、`lf_prior_pool=8`、`lf_prior_injection=pre_mix`、`lf_conditional_mask=true`、`lf_mask_hidden_channels=8`、`lf_mask_init_bias=2.0`、`w_loss_CR=0.1`、`bs=16`、`patch_size=256`、`epochs=4`、`iters_per_epoch=5000`
 - 结果：10k `27.2822 / 0.9626`，20k `29.0625 / 0.9734`
 - Checkpoint：`best.pk` 与 `latest.pk` 均为 step `20000`，`max_psnr=29.062465`，`max_ssim=0.973354`
 - Mask 统计：20k 前后 tail 约为 `mean=0.878735`、`std=6.85e-05`、`min=0.87832`、`max=0.87901`
 
-判断：该结果通过 20k gate。它在 PSNR 上高于 baseline 20k `28.9030 / 0.9713` 和 LF-v1 20k `28.8563 / 0.9751`，说明这个方向没有早期崩溃，值得继续观察到 50k。但 mask 仍几乎是常数，接近初始化值，说明“内容感知空间选择”尚未真正发生；当前收益更可能来自近似 LF-v1 的训练扰动/参数化差异，而不能直接宣称 Conditional LF 机制已经成功。
+判断：该结果有正向诊断价值，但不能作为严格 schedule-equivalent 的 20k gate。原因是 `train.py` 的余弦学习率使用 `T = epochs * iters_per_epoch`，该 run 的 `T=20000`，而 baseline/LF-v1 的短跑曲线使用更长训练 horizon。它在 PSNR 上高于 baseline 20k `28.9030 / 0.9713` 和 LF-v1 20k `28.8563 / 0.9751`，说明方向没有早期崩溃；但 mask 仍几乎是常数，接近初始化值，说明“内容感知空间选择”尚未真正发生，且当前收益可能混有短 schedule 的影响。
 
-下一步只续跑到 50k gate，不直接跑 100k。50k 若达不到 baseline 50k `31.2384 / 0.9817`，或明显低于 LF-v1 50k `31.3419 / 0.9817` 且 mask 仍无空间变化，应停止并记录为“条件 mask 未激活/退化为近似常数”的失败诊断；只有 50k 接近或超过 LF-v1，才考虑继续 100k 和 full per-image 评估。
+一次从该 20k checkpoint 修改 `epochs=10` 续跑到 50k 的尝试已在约 step `23163` 停止，原因是这样会把 LR horizon 改成 `T=50000`，导致 resume 后学习率重新抬高，50k 指标不可干净解释。后续正式 50k gate 应从头启动一条干净 run，并在启动时就固定目标 horizon；50k 若达不到 baseline 50k `31.2384 / 0.9817`，或明显低于 LF-v1 50k `31.3419 / 0.9817` 且 mask 仍无空间变化，应停止并记录为“条件 mask 未激活/退化为近似常数”的失败诊断；只有 50k 接近或超过 LF-v1，才考虑继续 100k 和 full per-image 评估。
 
 ## 7. 阶段三：改进对比正则 CRPlus
 
