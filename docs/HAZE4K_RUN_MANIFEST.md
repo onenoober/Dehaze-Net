@@ -49,6 +49,7 @@ baseline、LF-v1 或新候选的公平对比表。
 | Path | Verdict | Contents | Policy |
 | --- | --- | --- | --- |
 | `experiment/HAZE4K/per_image_eval/CR-vs-LF-v1-full-20260523` | core full-test analysis | `summary.json`, `per_image_metrics.csv`, `group_summary.csv`, `hard_cases.json`, `analysis_report.md` | `KEEP` |
+| `experiment/HAZE4K/residual_diagnostic/CR-vs-LF-v1-20260524` | LF-v1 root-cause diagnostic | residual direction/magnitude `summary.json`, `per_image_residual_metrics.csv`, `group_summary.csv`, `hard_cases.json`, `analysis_report.md`; corr(delta PSNR, residual cosine) `0.8775` | `KEEP` |
 | `experiment/HAZE4K/visual_compare/DEA-Net-CR-vs-LF-20260522` | fixed-sample LF-v1 diagnosis | fixed samples, metrics, selected panels, objective analysis | `KEEP` |
 | `experiment/HAZE4K/visual_compare/DEA-Net-CR-vs-LF-Conservative-20260522` | Conservative LF visual failure | fixed-sample comparison and objective analysis | `KEEP_MINIMAL` |
 | `experiment/HAZE4K/visual_compare/DEA-Net-CR-vs-LF-gate-sweep-20260522` | gate sweep diagnosis | scale summaries, panels, objective metrics | `KEEP_MINIMAL` |

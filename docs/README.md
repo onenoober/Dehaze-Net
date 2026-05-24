@@ -22,6 +22,7 @@
 | 已失败路线的原因、架构层诊断 | `docs/HAZE4K_FAILURE_ANALYSIS_20260523.md` | 操作命令、artifact 清单、最新 run 状态 |
 | 模型优化流程是否合理、gate 纪律 | `docs/HAZE4K_OPTIMIZATION_WORKFLOW_REVIEW_20260523.md` | 单个 run 的详细日志 |
 | Conditional LF 立项理由、实现约束、实验卡 | `docs/HAZE4K_CONDITIONAL_LF_ROUTE_AUDIT_20260523.md` | 已发生 run 的最新状态、完整流水账 |
+| LF-v1 低频 residual 方向/幅度根因诊断 | `docs/HAZE4K_LF_RESIDUAL_DIRECTION_DIAGNOSIS_20260524.md` | 可复制命令、每次 run 的完整流水账 |
 | 历史清理过程和删除确认记录 | `docs/archive/HAZE4K_CLEANUP_PLAN_20260523.md` | 日常运行入口、当前路线结论 |
 | 服务器环境、数据集布局、运行环境恢复 | `docs/CORE_SERVER_RUNBOOK.md` | 当前实验结论、论文路线判断 |
 | 下载来源和复现基础说明 | `docs/DOWNLOADS.md`, `docs/REPRODUCTION.md` | 当前 HAZE4K 路线决策 |

@@ -143,6 +143,7 @@ dataset/HAZE4K/
 2. 不再继续“更保守 LF”或“推理时缩小 scalar gate”这种低信息量路线。
 3. Conditional LF 的当前设置已在 30k hard gate 停止；它没有证明内容感知空间 mask 已有效激活。
 4. LF-v2 Haze-Aware Mask 已在 30k hard gate 停止；它证明 mask 可以被激活，但简单低频 RGB + dark-channel + luma 线索没有把 LF-v1 的收益保住。
+5. LF-v1 residual 方向/幅度诊断已完成；`delta PSNR` 与低频 residual cosine 的相关系数为 `0.8775`，说明下一步应优先校准 residual 方向和幅度，而不是继续堆纯 mask。
 
 Conditional LF 的立项理由、结构约束和实验卡见 `docs/HAZE4K_CONDITIONAL_LF_ROUTE_AUDIT_20260523.md`。已发生 run 的最新状态见 `CURRENT_CONTEXT.md` 和 `EXPERIMENT_LOG.md`。
 
@@ -173,6 +174,18 @@ LF-v2 当前结论（2026-05-24）：
   说明它不是 Conditional LF 的“近似常数 mask”问题。
 - 结论：停止此设置，不继续到 50k 或 100k。根因判断需要前进一步：
   LF-v1 短板不是只缺空间选择，而是缺少能判断低频残差方向和幅度是否正确的约束或结构。
+
+LF-v1 residual 方向诊断见 `docs/HAZE4K_LF_RESIDUAL_DIRECTION_DIAGNOSIS_20260524.md`。
+核心事实：
+
+- read-only full-test 诊断路径：
+  `experiment/HAZE4K/residual_diagnostic/CR-vs-LF-v1-20260524/`。
+- `LF-v1` 相对 baseline 的 mean delta 仍为 `+0.2030 dB`，但
+  `corr(delta PSNR, residual cosine)=0.8775`。
+- 最差回退样本多为 residual cosine 为负，且 low-frequency MSE 变差；
+  最好收益样本 residual cosine 接近 `0.9`，且 low-frequency MSE 改善。
+- 结论：下一轮 LF 路线应命名为 residual calibration / direction-magnitude
+  control。纯空间 mask 只有在同时预测 residual 方向和幅度时才值得重启。
 
 已删除的晋级假设：当前 Conditional LF 和 LF-v2 Haze-Aware Mask 都不再作为活动候选排队长训。
 
