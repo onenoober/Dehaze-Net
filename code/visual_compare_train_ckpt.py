@@ -33,9 +33,14 @@ def parse_args():
     parser.add_argument('--lf_prior_residual_center', action='store_true')
     parser.add_argument('--lf_prior_gate_max', type=float, default=0.0)
     parser.add_argument('--lf_prior_injection', type=str, default='pre_mix', choices=['pre_mix', 'post_mix'])
+    parser.add_argument('--baseline_use_lf_prior', action='store_true')
     parser.add_argument('--lf_conditional_mask', action='store_true')
+    parser.add_argument('--baseline_lf_conditional_mask', action='store_true')
+    parser.add_argument('--baseline_lf_haze_aware_mask', action='store_true')
     parser.add_argument('--lf_mask_hidden_channels', type=int, default=8)
     parser.add_argument('--lf_mask_init_bias', type=float, default=2.0)
+    parser.add_argument('--lf_haze_aware_mask', action='store_true')
+    parser.add_argument('--lf_haze_mask_strength', type=float, default=1.0)
     parser.add_argument('--lf_gate_scale', type=float, default=1.0)
     parser.add_argument('--lf_label', type=str, default='DEA-Net-LF')
     return parser.parse_args()
@@ -55,7 +60,7 @@ def load_checkpoint(path):
         return torch.load(path, map_location='cpu')
 
 
-def load_model(checkpoint_path, use_lf_prior, args):
+def load_model(checkpoint_path, use_lf_prior, args, conditional_mask=False, haze_aware_mask=False):
     model = DEANet(
         base_dim=32,
         use_lf_prior=use_lf_prior,
@@ -65,9 +70,11 @@ def load_model(checkpoint_path, use_lf_prior, args):
         lf_prior_residual_center=args.lf_prior_residual_center,
         lf_prior_gate_max=args.lf_prior_gate_max,
         lf_prior_injection=args.lf_prior_injection,
-        lf_conditional_mask=args.lf_conditional_mask,
+        lf_conditional_mask=conditional_mask,
         lf_mask_hidden_channels=args.lf_mask_hidden_channels,
-        lf_mask_init_bias=args.lf_mask_init_bias
+        lf_mask_init_bias=args.lf_mask_init_bias,
+        lf_haze_aware_mask=haze_aware_mask,
+        lf_haze_mask_strength=args.lf_haze_mask_strength
     )
     checkpoint = load_checkpoint(checkpoint_path)
     model.load_state_dict(checkpoint['model'])
@@ -155,8 +162,20 @@ def main():
     hazy_names = list_image_files(hazy_dir)
     sample_names = choose_samples(hazy_names, args.num_samples, args.sample_list)
 
-    baseline_model, baseline_ckpt = load_model(args.baseline_checkpoint, False, args)
-    lf_model, lf_ckpt = load_model(args.lf_checkpoint, True, args)
+    baseline_model, baseline_ckpt = load_model(
+        args.baseline_checkpoint,
+        args.baseline_use_lf_prior,
+        args,
+        conditional_mask=args.baseline_lf_conditional_mask,
+        haze_aware_mask=args.baseline_lf_haze_aware_mask
+    )
+    lf_model, lf_ckpt = load_model(
+        args.lf_checkpoint,
+        True,
+        args,
+        conditional_mask=args.lf_conditional_mask,
+        haze_aware_mask=args.lf_haze_aware_mask
+    )
     lf_original_gate, lf_effective_gate = apply_lf_gate_scale(lf_model, args.lf_gate_scale)
 
     to_tensor = ToTensor()
@@ -229,6 +248,9 @@ def main():
         'lf_checkpoint': args.lf_checkpoint,
         'baseline_checkpoint_step': baseline_ckpt.get('step'),
         'lf_checkpoint_step': lf_ckpt.get('step'),
+        'baseline_use_lf_prior': args.baseline_use_lf_prior,
+        'baseline_lf_conditional_mask': args.baseline_lf_conditional_mask,
+        'baseline_lf_haze_aware_mask': args.baseline_lf_haze_aware_mask,
         'lf_gate_scale': args.lf_gate_scale,
         'lf_original_gate': lf_original_gate,
         'lf_effective_gate': lf_effective_gate,
@@ -238,6 +260,8 @@ def main():
         'lf_conditional_mask': args.lf_conditional_mask,
         'lf_mask_hidden_channels': args.lf_mask_hidden_channels,
         'lf_mask_init_bias': args.lf_mask_init_bias,
+        'lf_haze_aware_mask': args.lf_haze_aware_mask,
+        'lf_haze_mask_strength': args.lf_haze_mask_strength,
         'mean_baseline_psnr': float(np.mean([row['baseline_psnr'] for row in rows])),
         'mean_baseline_ssim': float(np.mean([row['baseline_ssim'] for row in rows])),
         'mean_lf_psnr': float(np.mean([row['lf_psnr'] for row in rows])),

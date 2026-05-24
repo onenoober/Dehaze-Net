@@ -9,7 +9,7 @@
 `Conditional LF` 是当前证据下最有价值、最可控、最值得继续的一条路线，但不能保证必然正收益。它的价值来自三点：
 
 1. `LF-v1` 已有同长度 baseline 上的全量正收益：1000 张 HAZE4K test 上 mean delta `+0.2030 dB`，说明低频先验方向不是无效方向。
-2. 已失败路线共同排除了更粗暴的补救手段：减小/压硬 LF、加 low-frequency L1、加当前强 teacher guard、移动到 `post_mix` 都没有保留 LF-v1 收益。
+2. 已失败路线共同排除了更粗暴的补救手段：减小/压硬 LF、加 low-frequency L1、当前 TeacherGuard run、移动到 `post_mix` 都没有保留 LF-v1 收益。
 3. 失败诊断指向同一个机制缺陷：当前 LF-v1 是全局 scalar gate，无法决定“何时、何地、对哪些区域使用低频 residual”。
 
 因此，下一轮不应继续堆 loss 或继续调全局 gate，而应做有诊断价值的条件化：保留 LF-v1 的 `pre_mix` 插入点，给 LF residual 增加一个内容感知的轻量空间 mask。这个 mask 不只是为了“少改一点”，而是为了直接回答核心问题：低频收益能不能通过区域/内容选择被保留并放大。
@@ -40,7 +40,7 @@
 | Conservative LF | 100k `32.1083 / 0.9843`，低于 baseline 和 LF-v1；固定样本更差 | 不继续 |
 | CRPlus-P1 lowpass negative | 10k `24.9623 / 0.9504`，明显低于 baseline 10k | 不继续 |
 | LowFreqLoss | 20k 低于 baseline；LF+LowFreqLoss 到 50k 仍低于 baseline 和 LF-v1 | 不继续 |
-| TeacherGuard | 当前 `0.05 + warmup 20k + max 2.0` 20k 失败，且容易拉回 baseline 局部解 | 不继续当前设置 |
+| TeacherGuard | 当前 `0.05 + warmup 20k + max 2.0` run 在 20k 失败；10k 已落后，不能把早期劣化全归因于 guard loss | 不继续当前 run |
 | PostMix | 20k 短暂好看，50k 掉到 `30.7103 / 0.9814` | 不继续 |
 | 继续调 scalar gate | gate sweep 置零到原始 gate 都无法解决固定样本退化 | 不继续 |
 | Conditional LF | 针对 LF-v1 的核心缺陷：全局 gate 不具备区域选择性 | 推荐 |

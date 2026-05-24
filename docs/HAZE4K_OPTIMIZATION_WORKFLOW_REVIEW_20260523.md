@@ -86,7 +86,7 @@
 
 - 单纯减小 scalar gate。
 - 继续加 lowfreq L1。
-- 继续调当前 hard TeacherGuard。
+- 继续调当前 TeacherGuard run 的同一设置。
 - 在 `pre_mix/post_mix` 上继续平移而不引入条件选择。
 
 这些已经被当前证据基本排除。
@@ -121,7 +121,7 @@ DEA-Net 的原始卖点包括轻量、速度和低复杂度。LF-v1 如果带来
 | CRPlus-P1 lowpass negative | 直觉可理解，但 ratio loss denominator 被扰动 | 较干净 | 10k 明显失败，结论可靠 | 不继续同设计 |
 | LowFreqLoss | 直觉可理解，但与 L1 重叠 | 干净 | 20k 失败可信 | 不继续单独路线 |
 | LF + LowFreqLoss | 检验“LF+低频损失”是否互补 | 干净 | 50k 失败可信 | 不继续 |
-| TeacherGuard | 方向可理解，但当前设置太硬 | 中等；10k 已落后，不能全归因于 guard | 当前设置失败可靠，teacher 思路未完全排除 | 不继续当前参数 |
+| TeacherGuard | 方向可理解，但当前 run 失败 | 中等；10k 已落后，且 guard loss 在 20k 前关闭，不能全归因于 teacher penalty | 当前设置失败可靠，teacher 思路未完全排除 | 不继续当前 run |
 | PostMix | 非常干净的结构消融 | 干净 | 50k 失败可信 | 不继续 |
 
 ## 6. 推荐的下一轮标准流程

@@ -1,6 +1,6 @@
 # Core Training Server Runbook
 
-Last updated: 2026-05-15
+Last updated: 2026-05-24
 
 This document records the current core DEA-Net training and evaluation server.
 Read it before changing dataset links, environment assumptions, or training and
@@ -31,6 +31,10 @@ code --remote ssh-remote+runyun-ts /root/workspace/Dehaze-Net
 ssh -N -L 6006:127.0.0.1:6006 runyun-ts
 ```
 
+Local Windows commands are PowerShell commands. The `bash` blocks in this file
+are for the Ubuntu server shell, or for the PowerShell here-string-over-SSH
+pattern documented in `docs/WORKFLOW.md`.
+
 This server environment does not expose `/dev/net/tun` and does not use
 systemd, so Tailscale is currently run in userspace mode. If the server
 restarts, restore `runyun-ts` from the public SSH fallback:
@@ -52,7 +56,9 @@ source /opt/anaconda/etc/profile.d/conda.sh && conda activate py310
 
 ## Expected Environment
 
-Use a conda environment such as `py310`.
+Use a conda environment such as `py310`. The current verified interpreter path
+is `/opt/anaconda/envs/py310/bin/python`; prefer that absolute path in
+non-interactive commands.
 
 ```bash
 conda create -n py310 python=3.10 -y
@@ -78,7 +84,7 @@ Environment verification:
 ```bash
 cd /root/workspace/Dehaze-Net
 
-python - <<'PY'
+/opt/anaconda/envs/py310/bin/python - <<'PY'
 import torch, torchvision, cv2, numpy
 print("torch:", torch.__version__)
 print("torchvision:", torchvision.__version__)
@@ -129,6 +135,8 @@ Important mapping decisions:
 ## Recreate Symlinks
 
 Run this after copying the project to a new absolute path.
+This block deletes and recreates symlinks, so treat it as a migration/recovery
+operation rather than a routine check.
 
 ```bash
 ROOT=/root/workspace/Dehaze-Net
@@ -221,12 +229,16 @@ for DATA in ITS OTS HAZE4K; do
 done
 ```
 
+Use `find -L` because several dataset entry points are symlinks. Without `-L`,
+HAZE4K `hazy` and `clear` count as link files rather than directories and can
+misleadingly report `0`.
+
 Dataset loader check:
 
 ```bash
 cd /root/workspace/Dehaze-Net/code
 
-python - <<'PY'
+/opt/anaconda/envs/py310/bin/python - <<'PY'
 from data.data_loader import TrainDataset, TestDataset, ValDataset
 from pathlib import Path
 
@@ -255,7 +267,7 @@ Model forward check:
 ```bash
 cd /root/workspace/Dehaze-Net/code
 
-python - <<'PY'
+/opt/anaconda/envs/py310/bin/python - <<'PY'
 import torch
 from model import Backbone, DEANet
 
@@ -276,9 +288,9 @@ Full pretrained evaluation checks:
 ```bash
 cd /root/workspace/Dehaze-Net/code
 
-python eval.py --dataset ITS --model_name eval-ITS-newserver --pre_trained_model PSNR4131_SSIM9945.pth
-python eval.py --dataset OTS --model_name eval-OTS-newserver --pre_trained_model PSNR3659_SSIM9897.pth
-python eval.py --dataset HAZE4K --model_name eval-HAZE4K-newserver --pre_trained_model PSNR3426_SSIM9885.pth
+/opt/anaconda/envs/py310/bin/python eval.py --dataset ITS --model_name eval-ITS-newserver --pre_trained_model PSNR4131_SSIM9945.pth
+/opt/anaconda/envs/py310/bin/python eval.py --dataset OTS --model_name eval-OTS-newserver --pre_trained_model PSNR3659_SSIM9897.pth
+/opt/anaconda/envs/py310/bin/python eval.py --dataset HAZE4K --model_name eval-HAZE4K-newserver --pre_trained_model PSNR3426_SSIM9885.pth
 ```
 
 Training smoke checks:
@@ -287,7 +299,7 @@ Training smoke checks:
 cd /root/workspace/Dehaze-Net/code
 
 for DATA in ITS OTS HAZE4K; do
-  CUDA_VISIBLE_DEVICES=0 python train.py \
+  CUDA_VISIBLE_DEVICES=0 /opt/anaconda/envs/py310/bin/python train.py \
     --epochs 1 \
     --iters_per_epoch 2 \
     --finer_eval_step 2 \
@@ -317,9 +329,9 @@ Full evaluation:
 ```bash
 cd /root/workspace/Dehaze-Net/code
 
-python eval.py --dataset ITS --model_name eval-ITS --pre_trained_model PSNR4131_SSIM9945.pth
-python eval.py --dataset OTS --model_name eval-OTS --pre_trained_model PSNR3659_SSIM9897.pth
-python eval.py --dataset HAZE4K --model_name eval-HAZE4K --pre_trained_model PSNR3426_SSIM9885.pth
+/opt/anaconda/envs/py310/bin/python eval.py --dataset ITS --model_name eval-ITS --pre_trained_model PSNR4131_SSIM9945.pth
+/opt/anaconda/envs/py310/bin/python eval.py --dataset OTS --model_name eval-OTS --pre_trained_model PSNR3659_SSIM9897.pth
+/opt/anaconda/envs/py310/bin/python eval.py --dataset HAZE4K --model_name eval-HAZE4K --pre_trained_model PSNR3426_SSIM9885.pth
 ```
 
 Full ITS training:
@@ -327,7 +339,7 @@ Full ITS training:
 ```bash
 cd /root/workspace/Dehaze-Net/code
 
-CUDA_VISIBLE_DEVICES=0 python train.py \
+CUDA_VISIBLE_DEVICES=0 /opt/anaconda/envs/py310/bin/python train.py \
   --epochs 300 \
   --iters_per_epoch 5000 \
   --finer_eval_step 1400000 \
@@ -346,7 +358,7 @@ Full OTS training:
 ```bash
 cd /root/workspace/Dehaze-Net/code
 
-CUDA_VISIBLE_DEVICES=0 python train.py \
+CUDA_VISIBLE_DEVICES=0 /opt/anaconda/envs/py310/bin/python train.py \
   --epochs 300 \
   --iters_per_epoch 5000 \
   --finer_eval_step 1400000 \
@@ -365,7 +377,7 @@ Full HAZE4K training:
 ```bash
 cd /root/workspace/Dehaze-Net/code
 
-CUDA_VISIBLE_DEVICES=0 python train.py \
+CUDA_VISIBLE_DEVICES=0 /opt/anaconda/envs/py310/bin/python train.py \
   --epochs 300 \
   --iters_per_epoch 5000 \
   --finer_eval_step 1400000 \
@@ -384,7 +396,7 @@ Background training example:
 ```bash
 cd /root/workspace/Dehaze-Net/code
 
-nohup bash -c 'CUDA_VISIBLE_DEVICES=0 python train.py \
+nohup bash -c 'CUDA_VISIBLE_DEVICES=0 /opt/anaconda/envs/py310/bin/python train.py \
   --epochs 300 \
   --iters_per_epoch 5000 \
   --finer_eval_step 1400000 \

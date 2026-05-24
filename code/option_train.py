@@ -1,6 +1,7 @@
 import torch,os,sys,torchvision,argparse
 import torch,warnings
 import json
+from datetime import datetime, timezone
 
 # warnings.filterwarnings('ignore')
 
@@ -55,6 +56,8 @@ parser.add_argument('--lf_prior_injection', type=str, default='pre_mix', choices
 parser.add_argument('--lf_conditional_mask', action='store_true', help='enable content-aware spatial mask for LF prior fusion')
 parser.add_argument('--lf_mask_hidden_channels', type=int, default=8, help='hidden channels in the conditional LF mask branch')
 parser.add_argument('--lf_mask_init_bias', type=float, default=2.0, help='initial bias for conditional LF mask logits')
+parser.add_argument('--lf_haze_aware_mask', action='store_true', help='add dark-channel and luma low-frequency cues to the conditional LF mask')
+parser.add_argument('--lf_haze_mask_strength', type=float, default=1.0, help='scale applied to haze-aware LF mask cues')
 parser.add_argument('--w_loss_lf_gate', type=float, default=0.0, help='L2 penalty weight for the LF scalar gate; 0 disables')
 parser.add_argument('--w_loss_teacher_guard', type=float, default=0.0, help='weight of frozen-teacher no-regression guard loss; 0 disables')
 parser.add_argument('--teacher_checkpoint', type=str, default='null', help='training checkpoint used by teacher guard')
@@ -124,5 +127,15 @@ print('model_dir:', model_dir)
 print('tensorboard_log_dir:', opt.tensorboard_log_dir)
 
 if not opt.dry_run:
+    args_payload = dict(opt.__dict__)
+    args_payload['recorded_at_utc'] = datetime.now(timezone.utc).isoformat()
+    args_payload['argv'] = sys.argv
+
+    args_initial_path = os.path.join(model_dir, 'args_initial.txt')
+    if not os.path.exists(args_initial_path):
+        with open(args_initial_path, 'w') as f:
+            json.dump(args_payload, f, indent=2)
     with open(os.path.join(model_dir, 'args.txt'), 'w') as f:
-        json.dump(opt.__dict__, f, indent=2)
+        json.dump(args_payload, f, indent=2)
+    with open(os.path.join(model_dir, 'args_history.jsonl'), 'a') as f:
+        f.write(json.dumps(args_payload) + '\n')

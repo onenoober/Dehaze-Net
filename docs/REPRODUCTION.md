@@ -8,6 +8,11 @@ The upstream project was tested with:
 - torchaudio 0.10.0
 - CUDA 11.3
 
+For the current HAZE4K workflow, local Windows is for coding/docs/Git/static
+checks only. Training, smoke, benchmark, and evaluation run on the cloud Ubuntu
+CUDA server; use `docs/WORKFLOW.md` for the current PowerShell-to-SSH command
+templates and `/opt/anaconda/envs/py310/bin/python` for server-side Python.
+
 Install the Python dependencies:
 
 ```powershell
@@ -27,14 +32,17 @@ Place checkpoints under `trained_models/` following `trained_models/README.md`.
 The HAZE4K checkpoint name is inconsistent in the upstream docs, so match the actual downloaded filename when you run evaluation.
 
 ## Train
-Run from the `code/` directory:
+Upstream-style local command, run from the `code/` directory only when the local
+environment and dataset are deliberately prepared:
 
 ```powershell
 python train.py --epochs 300 --iters_per_epoch 5000 --finer_eval_step 1400000 --w_loss_L1 1.0 --w_loss_CR 0.1 --start_lr 0.0001 --end_lr 0.000001 --exp_dir ../experiment/ --model_name DEA-Net-CR --dataset ITS
 ```
 
 ## Evaluate
-Run from the `code/` directory:
+Upstream-style local command, run from the `code/` directory only when the local
+environment, checkpoints, and dataset are deliberately prepared. For current
+server evaluation, use the templates in `docs/WORKFLOW.md`.
 
 ```powershell
 python eval.py --dataset HAZE4K --model_name DEA-Net-CR --pre_trained_model <HAZE4K-checkpoint-name>

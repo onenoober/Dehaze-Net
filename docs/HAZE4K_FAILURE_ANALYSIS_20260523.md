@@ -12,7 +12,7 @@
 2. `LF-v1` 的核心问题不是均值无效，而是方差过大：PSNR 最差个案 `-6.2238 dB`，最好个案 `+6.4500 dB`，`>= +0.3 dB` 有 `453` 张，`<= -0.3 dB` 也有 `351` 张。
 3. A/beta 雾参数不是主要解释变量。全量评估中 `corr(A, delta PSNR)=-0.0687`，`corr(beta, delta PSNR)=0.0224`。更有解释力的是 baseline 本身是否已经强：baseline 最弱四分位平均 `+0.4921 dB`，最强四分位平均 `-0.0520 dB`。
 4. 后续失败变体大多试图压低 `LF-v1` 的回退风险，但采用了过硬或过粗的约束，导致有效自由度也被压掉。
-5. 下一轮不应继续简单减小 LF gate、加 lowfreq L1、加硬 teacher guard，或者移动到 `post_mix`。更值得做的是“条件化 LF”：让模型学习何时、何地、以多大幅度使用低频先验。
+5. 下一轮不应继续简单减小 LF gate、加 lowfreq L1、复用当前 TeacherGuard run 设置，或者移动到 `post_mix`。更值得做的是“条件化 LF”：让模型学习何时、何地、以多大幅度使用低频先验。
 
 ## 2. 已核验结果矩阵
 
@@ -181,7 +181,7 @@ DEA-Net 原始优势是：
 - Conservative LF 的 `channels=4 + dropout + gate clamp + gate L2` 组合；
 - CRPlus-P1 的 `hazy_lowpass` equal-weight negative；
 - 单独或组合的 avgpool LowFreqLoss；
-- 当前强度的 TeacherGuard；
+- 当前 TeacherGuard run 设置；
 - 单点 `post_mix` 结构放大训练预算。
 
 这些路线已有足够失败证据，继续跑完整训练大概率只是消耗预算。
@@ -234,7 +234,8 @@ hazy low-pass
 
 ### 7.4 如果重试 TeacherGuard，必须改成晚期弱约束
 
-Teacher 思路不是完全无效，但当前设置太早太硬。若以后重试：
+Teacher 思路不是完全无效；当前 run 的 10k 劣化发生在 guard loss 启用前，
+所以不能把早期失败完全归因于 teacher penalty。若以后重试：
 
 - warmup 至少推到 `50000` step；
 - `w_loss_teacher_guard` 从 `0.005` 或 `0.01` 起；
@@ -269,7 +270,7 @@ Teacher 思路不是完全无效，但当前设置太早太硬。若以后重试
 
 - DEA-Net-CR 是强 baseline。
 - 简单 LF-v1 确认低频先验有价值，但它具有场景选择性。
-- 过度保守的 LF、简单低频损失、直接低通 negative、强 teacher guard 都失败，说明低频信息不能被粗粒度地全局加入或硬约束。
+- 过度保守的 LF、简单低频损失、直接低通 negative、当前 TeacherGuard run 都失败，说明低频信息不能被粗粒度地全局加入或硬约束。
 - 后续改进应从“是否加入低频”转向“何时何地加入低频”，即条件化、区域化、可解释的低频融合。
 
 这条经验对毕业论文是有价值的：它不是单纯堆实验失败，而是把失败收束成下一步方法设计的依据。

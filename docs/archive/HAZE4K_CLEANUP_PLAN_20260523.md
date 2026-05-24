@@ -2,6 +2,9 @@
 
 日期：2026-05-23
 
+归档状态：2026-05-24 已移入 `docs/archive/`。日常 artifact 保留/删除判断以
+`docs/HAZE4K_RUN_MANIFEST.md` 为入口；本文仅用于追溯 2026-05-23 的清理过程和确认记录。
+
 目标：为下一轮 HAZE4K 训练、测试和结果分析提供更干净、更可追溯的环境。本文只规划整理动作；真正删除、移动或压缩数据前，必须再次确认。
 
 ## 1. 流程复核结论
@@ -169,7 +172,7 @@
 - `EXPERIMENT_LOG.md`：按时间记录所有 run、指标和 stop/continue 决策。
 - `HAZE4K_RUN_MANIFEST.md`：远端 artifact 索引和保留策略。
 - `HAZE4K_FAILURE_ANALYSIS_20260523.md`：多轮失败原因和下一步路线依据。
-- `HAZE4K_CLEANUP_PLAN_20260523.md`：清理审计记录，后续只作为维护记录。
+- `docs/archive/HAZE4K_CLEANUP_PLAN_20260523.md`：清理审计记录，后续只作为维护记录。
 - `CORE_SERVER_RUNBOOK.md` / `WORKFLOW.md`：服务器操作和协作流程，仍有用。
 - `DOWNLOADS.md` / `REPRODUCTION.md`：上游复现和下载背景，低频使用但保留成本低。
 
@@ -177,7 +180,7 @@
 
 1. 不为减少文件数量而删除文档。
 2. 将 `CURRENT_CONTEXT.md` 作为唯一导航入口，已补充 HAZE4K 文档角色说明。
-3. 后续如果要压缩文档数量，优先把 `HAZE4K_CLEANUP_PLAN_20260523.md` 视为 dated audit，不再作为日常入口；等清理稳定后可以移动到 `docs/archive/`，但不建议现在删除。
+3. 后续如果要压缩文档数量，优先把 `docs/archive/HAZE4K_CLEANUP_PLAN_20260523.md` 视为 dated audit，不再作为日常入口；不建议删除。
 4. `EXPERIMENT_LOG.md` 仍保留，因为它是按时间追踪训练结果的证据链；不要被 `RUN_MANIFEST` 替代。
 
 ## 4. Stage 1 - Local Workspace Organization
@@ -189,7 +192,7 @@
 - `code/evaluate_train_ckpt_per_image.py`
 - `docs/HAZE4K_FAILURE_ANALYSIS_20260523.md`
 - `docs/HAZE4K_RUN_MANIFEST.md`
-- `docs/HAZE4K_CLEANUP_PLAN_20260523.md`
+- `docs/archive/HAZE4K_CLEANUP_PLAN_20260523.md`
 
 ### 4.2 建议确认后清理
 
@@ -370,7 +373,7 @@ Stage 2、Stage 3、Stage 4 和本地整理已完成。当前不再建议继续�
 如需下一步整理，建议只在用户确认后选择其一：
 
 1. 建立一个参数化 HAZE4K scout launcher，替代多个一次性 launcher。
-2. 将 `docs/HAZE4K_CLEANUP_PLAN_20260523.md` 移到 `docs/archive/`，前提是 `CURRENT_CONTEXT.md` 和 `HAZE4K_RUN_MANIFEST.md` 已覆盖日常入口信息。
+2. 本文件已移到 `docs/archive/`；前提是 `CURRENT_CONTEXT.md` 和 `HAZE4K_RUN_MANIFEST.md` 已覆盖日常入口信息。
 3. Stage 5：只对失败消融做轻量瘦身；但根据当前规则，所有 `10k+` 且与模型尝试有关的 run 暂不处理。
 
 收到进一步确认前，不应删除任何远端或本地数据。

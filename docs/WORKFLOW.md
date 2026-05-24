@@ -28,6 +28,12 @@ Current instruction: operate only on local files and GitHub unless the user
 explicitly asks to sync or run on the server. The server-side commands below are
 templates for later use, not permission to run them automatically.
 
+Command validation note from 2026-05-24: the local machine is Windows
+PowerShell, while the cloud server is Ubuntu/Linux. Run multi-line Linux
+commands through the PowerShell here-string pattern shown below, or run the
+`bash` snippets only after entering the server shell/tmux. Do not paste Linux
+syntax directly into local PowerShell.
+
 ## Server loop
 1. Pull the latest branch on the rented server.
 2. Run training or evaluation from `code/`.
@@ -50,6 +56,9 @@ ssh -T git@github.com
 
 The SSH test should authenticate as `onenoober`. Do not use HTTPS for the
 private repo on the server unless deliberately debugging credentials.
+Use `git fetch --dry-run origin` as a non-mutating connectivity check. Only run
+`git pull --ff-only` after confirming the server checkout is the intended target
+and `git status -sb` is clean enough for the operation.
 
 For Conditional LF work, use the independent checkout instead of changing the
 dirty main training checkout:
@@ -59,6 +68,7 @@ dirty main training checkout:
 set -euo pipefail
 cd /root/workspace/Dehaze-Net-conditional-lf
 git status -sb
+git fetch --dry-run origin
 git fetch origin
 git pull --ff-only
 '@ | ssh runyun-ts "tr -d '\r' | bash -s"
@@ -68,6 +78,33 @@ For the older main checkout, use `/root/workspace/Dehaze-Net` only when that is
 the intended target. The historical `git -c http.version=HTTP/1.1 pull
 --ff-only` workaround is still useful if a host/network path hangs on plain
 HTTP(S), but the current private-repo path should be SSH.
+
+## Three-Place Source Sync
+
+When the user asks to keep local, GitHub, and the cloud server unified, use this
+order:
+
+1. Commit locally after checks pass.
+2. Push the branch to GitHub.
+3. On each Git-backed server checkout, verify the target path, run
+   `git status -sb`, fetch the pushed branch, and only then `git pull
+   --ff-only`.
+4. Verify local/GitHub/server all point at the same commit hash.
+
+Do not edit source files directly on the server for experiment variants. If a
+server copy is intentionally not a Git checkout, either recreate it from the
+pushed Git source or record it as an isolated verification copy in
+`CURRENT_CONTEXT.md` and `EXPERIMENT_LOG.md`.
+
+Training run metadata has three layers:
+
+- `args_initial.txt`: first launch parameters for new runs.
+- `args.txt`: latest launch or resume parameters.
+- `args_history.jsonl`: append-only launch/resume history for new runs.
+
+For pre-existing runs created before this metadata split, treat `args.txt` as
+the latest-known launch state and use saved shell scripts, logs, and
+`EXPERIMENT_LOG.md` to reconstruct earlier starts.
 
 ## Check A Run
 
@@ -129,6 +166,22 @@ Tailscale Serve on `100.118.134.99:2222`, which forwards to the server-side SSH
 service inside the tailnet. Keep the original public SSH target only as a
 fallback for repairing Tailscale.
 
+Validated safe probes on 2026-05-24:
+
+- `ssh -G runyun-ts` resolves to user `root`, host `100.118.134.99`, port
+  `2222`.
+- `ssh -o BatchMode=yes -o ConnectTimeout=15 runyun-ts "hostname && whoami &&
+  pwd"` succeeds.
+- `/opt/anaconda/envs/py310/bin/python` is Python `3.10.13` with CUDA available
+  on the RTX 5090 server.
+- `tmux`, `git`, and `nvidia-smi` are available on the server.
+- `rsync` is not installed locally or on the current server; use `scp` or a
+  tar-over-SSH transfer unless rsync is deliberately installed later.
+
+Not run as casual validation: full training, full evaluation, resume, `kill`,
+package installation, symlink recreation, or `git pull` against a dirty training
+checkout.
+
 If the server restarts and `runyun-ts` times out, recover it from the public SSH
 fallback by running:
 
@@ -150,6 +203,62 @@ To open the remote project in VS Code:
 
 ```powershell
 code --remote ssh-remote+runyun-ts /root/workspace/Dehaze-Net
+```
+
+## Dataset and checkpoint sanity checks
+
+Use these before a new HAZE4K training or official checkpoint evaluation. They
+are checks only; fix dataset links or filenames before launching training if
+counts or paths look wrong.
+
+Local quick count, when the dataset is available on Windows:
+
+```powershell
+$paths = @(
+  "dataset\HAZE4K\train\hazy",
+  "dataset\HAZE4K\train\clear",
+  "dataset\HAZE4K\test\hazy",
+  "dataset\HAZE4K\test\clear"
+)
+foreach ($path in $paths) {
+  if (Test-Path $path) {
+    "{0}: {1}" -f $path, (Get-ChildItem -LiteralPath $path -File | Measure-Object).Count
+  } else {
+    "{0}: MISSING" -f $path
+  }
+}
+```
+
+Server count:
+
+```powershell
+@'
+set -euo pipefail
+ROOT=/root/workspace/Dehaze-Net
+find "$ROOT/dataset/HAZE4K" -maxdepth 3 -type d | sort
+find -L "$ROOT/dataset/HAZE4K/train/hazy" -type f | wc -l
+find -L "$ROOT/dataset/HAZE4K/train/clear" -type f | wc -l
+find -L "$ROOT/dataset/HAZE4K/test/hazy" -type f | wc -l
+find -L "$ROOT/dataset/HAZE4K/test/clear" -type f | wc -l
+'@ | ssh runyun-ts "tr -d '\r' | bash -s"
+```
+
+Use `find -L` for count checks because the current server exposes
+`HAZE4K/*/hazy` and `HAZE4K/*/clear` as symlinks to `haze` and `gt`.
+
+Official HAZE4K `.pth` checkpoint evaluation uses the actual downloaded
+filename under `trained_models/HAZE4K/`; upstream docs have used inconsistent
+names:
+
+```powershell
+@'
+set -euo pipefail
+cd /root/workspace/Dehaze-Net/code
+/opt/anaconda/envs/py310/bin/python eval.py \
+  --dataset HAZE4K \
+  --model_name eval-H4K-official-full-$(date +%Y%m%d-%H%M%S) \
+  --pre_trained_model <actual_haze4k_checkpoint>.pth
+'@ | ssh runyun-ts "tr -d '\r' | bash -s"
 ```
 
 ## Fair HAZE4K training protocol
@@ -176,10 +285,22 @@ eval_interval_steps=10000
 save_epoch_checkpoints=false
 ```
 
-The 20k and 50k numbers are gates inside that 100k-target run. Do not launch
-formal comparisons as `epochs=4`, `epochs=10`, or a separate 50k target. If a
-candidate fails at 20k or 50k, stop the 100k-target run and record the gate
-failure. If a shorter horizon is used for smoke or diagnosis, label it
+Validation still runs every `10000` steps so the curve is comparable and
+recoverable. Decision gates are not all equally strict:
+
+| Step | Role | Rule |
+| ---: | --- | --- |
+| 10000 | sanity gate | stop only if clearly broken, unstable, or more than about `0.8 dB` below both baseline and the direct predecessor |
+| 20000 | early trajectory gate | stop if more than about `0.5 dB` below both references with no diagnostic upside |
+| 30000 | first hard gate | for a route that is merely tied at 20k, require recovery toward the direct predecessor; stop if clearly below both or if diagnostics show degeneration |
+| 50000 | promotion gate | must be at least close to baseline and preferably close to the direct predecessor; otherwise stop |
+| 70000 | late confirmation | continue only if still competitive and diagnostics are not worsening |
+| 90000 | best-checkpoint check | compare against known best-step behavior; prepare full-test analysis if competitive |
+| 100000 | final scout point | run only if the 50k/70k gates justify the remaining compute |
+
+Do not launch formal comparisons as `epochs=4`, `epochs=10`, or a separate
+50k/70k target. If a candidate fails a gate, stop the 100k-target run and record
+the gate failure. If a shorter horizon is used for smoke or diagnosis, label it
 diagnostic/invalid-for-comparison and keep it out of candidate metric tables.
 
 When resuming, keep the original `epochs * iters_per_epoch` value. `train.py`
@@ -191,6 +312,89 @@ The Conditional LF launcher enforces this by default:
 protocols unless `ALLOW_NONFAIR_PROTOCOL=1` is set. Use that override only for
 dry-run/smoke/diagnostic artifacts and label the result accordingly.
 
+## Train Checkpoint Visual Compare
+
+For CR baseline versus an LF variant, the default baseline model is non-LF:
+
+```bash
+/opt/anaconda/envs/py310/bin/python visual_compare_train_ckpt.py \
+  --baseline_checkpoint <baseline-best.pk> \
+  --lf_checkpoint <lf-variant-best.pk> \
+  --output_dir <compare-dir> \
+  --lf_label <label>
+```
+
+For LF-v1 versus another LF variant, explicitly enable the baseline LF
+architecture so the baseline checkpoint is loaded with the correct module
+shape:
+
+```bash
+/opt/anaconda/envs/py310/bin/python visual_compare_train_ckpt.py \
+  --baseline_checkpoint <lf-v1-best.pk> \
+  --baseline_use_lf_prior \
+  --lf_checkpoint <lf-v2-best.pk> \
+  --lf_conditional_mask \
+  --lf_haze_aware_mask \
+  --output_dir <compare-dir> \
+  --lf_label <label>
+```
+
+## Candidate scout command skeleton
+
+Use this shape only after the source branch is committed/pushed and the server
+checkout is intentionally synced. Replace the feature flags and model name for
+the candidate being tested, but keep the fair HAZE4K protocol unchanged:
+
+```bash
+cd /root/workspace/Dehaze-Net/code
+/opt/anaconda/envs/py310/bin/python train.py \
+  --epochs 20 \
+  --iters_per_epoch 5000 \
+  --bs 16 \
+  --patch_size 256 \
+  --w_loss_L1 1.0 \
+  --w_loss_CR 0.1 \
+  --start_lr 0.0001 \
+  --end_lr 0.000001 \
+  --exp_dir ../experiment/ \
+  --model_name <candidate-scout100k-run-id> \
+  --dataset HAZE4K \
+  --checkpoint_interval_steps 10000 \
+  --eval_interval_steps 10000 \
+  --save_epoch_checkpoints false \
+  --no_pdf_plots \
+  --no_tqdm
+```
+
+For LF-v1 style candidates, add only the LF feature flags under test:
+
+```bash
+  --use_lf_prior \
+  --lf_prior_channels 8 \
+  --lf_prior_pool 8 \
+  --lf_prior_gate_init 0.0 \
+  --lf_prior_injection pre_mix
+```
+
+For Conditional LF, prefer the maintained launcher
+`scripts/runyun-haze4k-lf-conditional-mask-scout.sh`. If writing the command
+manually, add:
+
+```bash
+  --use_lf_prior \
+  --lf_prior_channels 8 \
+  --lf_prior_pool 8 \
+  --lf_prior_gate_init 0.0 \
+  --lf_prior_injection pre_mix \
+  --lf_conditional_mask \
+  --lf_mask_hidden_channels 8 \
+  --lf_mask_init_bias 2.0
+```
+
+After launch, record the run id, branch/commit, protocol, checkpoint path,
+metrics, and decision in `docs/EXPERIMENT_LOG.md`. Record important artifact
+directories in `docs/HAZE4K_RUN_MANIFEST.md`.
+
 ## Long runs and stopping
 
 For long HAZE4K runs, use `tmux` and write logs under
@@ -200,6 +404,11 @@ possible so the exact command survives.
 Do not continuously monitor long training unless the user asks. When asked to
 check, report the run id, checkpoint step, metrics, log path, and whether the
 GPU/process state matches the claim.
+
+For expensive candidate resumes, prefer "run to the next hard gate, then
+re-check" instead of letting the job run unattended to 100k. Use the same 100k
+horizon in `train.py`; the boundary is operational, enforced by a watcher that
+stops after the next evaluation point is written.
 
 To stop a run, identify the exact model name and process group first:
 
@@ -215,7 +424,7 @@ Then verify no matching process/tmux remains and GPU memory is released:
 
 ```bash
 pgrep -af "$MODEL|train.py" || true
-tmux ls || true
+tmux ls 2>/dev/null || true
 nvidia-smi
 ```
 
@@ -224,7 +433,11 @@ nvidia-smi
 Template for later use only. Resume only if the user explicitly asks to
 continue training or sync the server. Keep the same 100k horizon and same model
 name so `train.py --resume` loads `saved_model/latest.pk` from the existing run
-directory:
+directory.
+
+Current pre-resume rule: the 20k point is a soft pass only. If resumed, run only
+to the 30k hard gate first, then compare against baseline and LF-v1 before
+spending more compute.
 
 ```powershell
 @'
@@ -234,9 +447,12 @@ RUN='DEA-Net-LF-ConditionalMask-H4K-scout100k-20260523-224315'
 SESSION="h4k_lf_condmask_100k_resume_$(date +%Y%m%d_%H%M%S)"
 LOG_DIR="$ROOT/experiment/HAZE4K/_run_logs"
 LOG="$LOG_DIR/${RUN}-resume-$(date +%Y%m%d-%H%M%S).log"
+TARGET_STEP=30000
 mkdir -p "$LOG_DIR"
 cd "$ROOT/code"
 tmux new-session -d -s "$SESSION" "bash -lc '
+  set -euo pipefail
+  (
   /opt/anaconda/envs/py310/bin/python train.py \
     --resume \
     --use_lf_prior \
@@ -267,11 +483,24 @@ tmux new-session -d -s "$SESSION" "bash -lc '
     --eval_interval_steps 10000 \
     --save_epoch_checkpoints false \
     --no_pdf_plots \
-    --no_tqdm \
-    2>&1 | tee \"$LOG\"
+    --no_tqdm
+  ) 2>&1 | tee \"$LOG\" &
+  TRAIN_PID=\$!
+  while kill -0 \"\$TRAIN_PID\" 2>/dev/null; do
+    if [ -f \"$ROOT/experiment/HAZE4K/$RUN/saved_data/log.txt\" ] && grep -q \"step :$TARGET_STEP \" \"$ROOT/experiment/HAZE4K/$RUN/saved_data/log.txt\"; then
+      PGID=\$(ps -o pgid= -p \"\$TRAIN_PID\" | tr -d \" \")
+      echo \"Reached target gate step $TARGET_STEP; stopping PGID \$PGID for review.\" | tee -a \"$LOG\"
+      kill -TERM -- -\"\$PGID\" 2>/dev/null || kill -TERM \"\$TRAIN_PID\" 2>/dev/null || true
+      wait \"\$TRAIN_PID\" || true
+      exit 0
+    fi
+    sleep 60
+  done
+  wait \"\$TRAIN_PID\"
 "
 echo "SESSION=$SESSION"
 echo "LOG=$LOG"
+echo "TARGET_STEP=$TARGET_STEP"
 '@ | ssh runyun-ts "tr -d '\r' | bash -s"
 ```
 

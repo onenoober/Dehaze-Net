@@ -38,7 +38,9 @@ Use this as the primary source.
 
 1. Use the official Baidu mirror.
 2. If you have a browser on the server, open the share page there and download directly.
-3. If the server is headless, use a local download and then `rsync` to the server.
+3. If the server is headless, use a local download and then transfer to the
+   server with `scp`, tar-over-SSH, or `rsync` if it has been installed on both
+   sides.
 4. If you want a command-line Baidu workflow, use `BaiduPCS-Go` from its official GitHub repository and transfer the share link with the extraction code.
 
 ## Notes
@@ -73,13 +75,21 @@ Dehaze-Net/
 
 - `code/train.py` reads `../dataset/RESIDE/ITS/train` and `../dataset/RESIDE/ITS/test`.
 - `code/eval.py` reads `../dataset/<dataset>/test`.
-- To keep both scripts happy, you can store the real data under `dataset/RESIDE/...` and create symlinks:
+- To keep both scripts happy on Windows, you can store the real data under
+  `dataset/RESIDE/...` and create directory junctions from PowerShell:
 
 ```powershell
-mkdir dataset
-mkdir dataset\RESIDE
-mklink /D dataset\ITS dataset\RESIDE\ITS
-mklink /D dataset\OTS dataset\RESIDE\OTS
+New-Item -ItemType Directory -Force dataset, dataset\RESIDE
+New-Item -ItemType Junction -Path dataset\ITS -Target dataset\RESIDE\ITS
+New-Item -ItemType Junction -Path dataset\OTS -Target dataset\RESIDE\OTS
+```
+
+If you deliberately use `mklink`, run it through `cmd.exe` because `mklink` is
+a `cmd` built-in, not a PowerShell command:
+
+```powershell
+cmd /c mklink /D dataset\ITS dataset\RESIDE\ITS
+cmd /c mklink /D dataset\OTS dataset\RESIDE\OTS
 ```
 
 - If you do not want symlinks, you can duplicate the folder layout, but that wastes disk space.

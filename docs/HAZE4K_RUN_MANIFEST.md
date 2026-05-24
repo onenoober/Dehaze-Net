@@ -1,6 +1,6 @@
 # HAZE4K Run Manifest
 
-日期：2026-05-23
+日期：2026-05-24
 
 用途：作为 HAZE4K 训练、评估、可视化和失败消融的统一索引。后续删除或归档远端 `experiment/HAZE4K` 目录前，先查本文件，避免误删仍有分析价值的数据。
 
@@ -11,7 +11,7 @@
 | Policy | 含义 | 清理规则 |
 | --- | --- | --- |
 | `KEEP` | 当前主参考或正向候选 | 保留完整目录和 checkpoint |
-| `KEEP_MINIMAL` | 失败消融，但仍有论文/分析价值 | 至少保留 `args.txt`, `saved_data/log.txt`, `saved_model/best.pk`, `saved_model/latest.pk`; 可在确认后删 TensorBoard、plots、infer 临时图 |
+| `KEEP_MINIMAL` | 失败消融，但仍有论文/分析价值 | 至少保留 `args_initial.txt`（新 run）, `args_history.jsonl`（新 run）, `args.txt`, `saved_data/log.txt`, `saved_model/best.pk`, `saved_model/latest.pk`; 可在确认后删 TensorBoard、plots、infer 临时图 |
 | `KEEP_SUMMARY` | 官方评估或汇总证据 | 保留 log / args / summary，小目录可原样保留 |
 | `DELETE_AFTER_MANIFEST` | smoke 运行，只证明流程可启动 | 本 manifest 和日志记录充分后，可确认删除 |
 | `DELETE_AFTER_CONFIRM` | 误启动、半截、错误命名或无有效结果 | 需要用户确认后删除 |
@@ -41,7 +41,8 @@ baseline、LF-v1 或新候选的公平对比表。
 | `DEA-Net-LF-PostMix-H4K-scout-20260523-133020` | 182M | negative ablation | 50k `30.7103 / 0.9814` | post-mix structure failed | `KEEP_MINIMAL` |
 | `DEA-Net-LF-ConditionalMask-H4K-gate20k-20260523-205312` | 181M | invalid for fair comparison; diagnostic only | 20k `29.0625 / 0.9734`; mask near-constant `mean~0.878735`, `std~6.85e-05` | short schedule `T=20000`; exclude from candidate tables and never resume for formal 50k comparison | `KEEP_MINIMAL` |
 | `DEA-Net-LF-ConditionalMask-H4K-clean50k-20260523-224051` | small/partial | invalid launch | no formal metrics | launched with `T=50000`, then stopped after fairness correction; keep log only if needed | `DELETE_AFTER_CONFIRM` |
-| `DEA-Net-LF-ConditionalMask-H4K-scout100k-20260523-224315` | 181M+ | paused fair candidate | 10k `27.1085 / 0.9638`; 20k `28.8571 / 0.9724`; latest/best at 20k | launched from commit `09880be` with `T=100000`; paused on 2026-05-24 around log step 21500; resume only with same 100k horizon | `KEEP` |
+| `DEA-Net-LF-ConditionalMask-H4K-scout100k-20260523-224315` | 181M+ | negative fair ablation; stopped at 30k hard gate | 30k `30.1830 / 0.9783`; mask near-constant `mean~0.878747`, `std~0.000085` | launched from commit `09880be` with `T=100000`; resumed with same horizon on 2026-05-24; watcher stopped after 30k because it remained far below LF-v1 30k `30.6253 / 0.9783`; do not resume this exact setting | `KEEP_MINIMAL` |
+| `DEA-Net-LF-HazeAwareMask-H4K-scout100k-20260524-152758` | 181M+ | negative fair ablation; stopped at 30k hard gate | 30k `30.1157 / 0.9770`; mask active `std` last `0.001312` | isolated remote copy `/root/workspace/Dehaze-Net-lf-v2-verify`; fair `T=100000` launch with haze-aware conditional LF mask; 30k tied baseline but lagged LF-v1 by `-0.5096 dB`, so stopped by PGID `17326`; useful evidence that active dark-channel/luma selection alone is not enough | `KEEP_MINIMAL` |
 
 ## Evaluation And Visual Evidence
 
@@ -116,6 +117,6 @@ Local `code/**/__pycache__` directories were deleted on 2026-05-23.
 ## Recommended Next State Before New Training
 
 1. Re-check `docs/CURRENT_CONTEXT.md` and `docs/README.md` before deciding what to load or edit next.
-2. If resuming Conditional LF, resume the existing `DEA-Net-LF-ConditionalMask-H4K-scout100k-20260523-224315` run only with the same 100k horizon.
+2. Do not resume the current Conditional LF setting. If condition-aware LF is revisited, create a new explicit route/run after updating the experiment card.
 3. If starting a new route, use a clean branch, commit/push local changes first, and launch the formal scout as a 100k-target run with 10k/20k/50k internal gates.
 4. Keep archived one-off failed launchers as reproducibility evidence; prefer maintained parameterized launchers for future runs.

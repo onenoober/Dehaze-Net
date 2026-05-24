@@ -8,7 +8,8 @@ metrics in `docs/EXPERIMENT_LOG.md`, artifact policy in
 ## Current State
 
 - Local workspace: `D:\Dehaze\Dehaze-Net`
-- Active branch: `codex/haze4k-conditional-lf`
+- Local editing branch: `codex/docs-boundary-cleanup`
+- Conditional LF code branch/run lineage: `codex/haze4k-conditional-lf`
 - GitHub repo: `https://github.com/onenoober/Dehaze-Net` (private)
 - Server SSH alias: `runyun-ts`
 - Main server checkout: `/root/workspace/Dehaze-Net`
@@ -16,6 +17,8 @@ metrics in `docs/EXPERIMENT_LOG.md`, artifact policy in
 - Server env: `/opt/anaconda/envs/py310/bin/python`
 - Local machine is for coding, docs, Git, and static checks only. Dry-run,
   smoke, training, benchmark, and evaluation run on the cloud CUDA server.
+- Local commands are Windows PowerShell; server commands are Ubuntu/Linux. Use
+  the PowerShell here-string SSH pattern below for multi-line server commands.
 
 ## Non-Negotiable Training Rule
 
@@ -45,42 +48,151 @@ tables.
 When resuming, keep `epochs * iters_per_epoch = 100000`. `train.py` uses this
 as the cosine-LR horizon; changing it during resume changes the schedule.
 
-## Current Conditional LF Run
+## Stopped LF-v2 Haze-Aware Mask Run
+
+- Run ID: `DEA-Net-LF-HazeAwareMask-H4K-scout100k-20260524-152758`
+- Status: stopped on 2026-05-24 at the 30k hard gate; do not continue this
+  exact setting to 50k or 100k.
+- Remote checkout: `/root/workspace/Dehaze-Net-lf-v2-verify`
+  - This is an isolated copied checkout, not a Git repository.
+  - It symlinks `dataset` and `experiment` to the main server checkout.
+- tmux session: `h4k_lf_v2_hazeaware_100k_20260524-152758`
+- Log:
+  `/root/workspace/Dehaze-Net-lf-v2-verify/experiment/HAZE4K/_run_logs/DEA-Net-LF-HazeAwareMask-H4K-scout100k-20260524-152758.log`
+- Artifact dir:
+  `/root/workspace/Dehaze-Net-lf-v2-verify/experiment/HAZE4K/DEA-Net-LF-HazeAwareMask-H4K-scout100k-20260524-152758/`
+- Launch config verified:
+  `epochs=20`, `iters_per_epoch=5000`, total `100000`, `bs=16`,
+  `patch_size=256`, `w_loss_CR=0.1`, `lf_prior_injection=pre_mix`,
+  `lf_conditional_mask=True`, `lf_haze_aware_mask=True`,
+  `lf_haze_mask_strength=1.0`.
+- Startup health check: log, run dir, TensorBoard file, process, and GPU usage
+  were present; GPU showed about `12909 MiB` and `97%` utilization shortly
+  after launch.
+
+Gate rules for this run:
+
+| Step | Baseline Ref | LF-v1 Ref | Decision Rule |
+| ---: | --- | --- | --- |
+| 10000 | `27.1101 / 0.9615` | `26.2651 / 0.9631` | observed `27.5613 / 0.9571`; continue to 20k, but watch SSIM |
+| 20000 | `28.9030 / 0.9713` | `28.8563 / 0.9751` | observed `28.6961 / 0.9724`; continue only to 30k hard gate |
+| 30000 | `30.1143 / 0.9776` | `30.6253 / 0.9783` | observed `30.1157 / 0.9770`; stop, tied with baseline but far below LF-v1 |
+| 50000 | `31.2384 / 0.9817` | `31.3419 / 0.9817` | not reached |
+
+10k checkpoint diagnostics:
+
+- `saved_model/latest.pk` and `best.pk` are from step `10000`.
+- Metric: PSNR `27.5613`, SSIM `0.9571`.
+- Compared with baseline 10k: `+0.4512 dB`, `-0.0044 SSIM`.
+- Compared with LF-v1 10k: `+1.2962 dB`, `-0.0060 SSIM`.
+- Mask stats from `latest.pk`: mean last `0.874442`, std last `0.000480`,
+  min/max last `0.871182/0.875844`; tail-200 mean std `0.000190`.
+- Interpretation: PSNR and mask movement justify continuing, but SSIM is
+  worse than both references; 20k must show SSIM recovery or clear diagnostic
+  value.
+
+20k checkpoint diagnostics:
+
+- `saved_model/latest.pk` and `best.pk` are from step `20000`.
+- Metric: PSNR `28.6961`, SSIM `0.9724`.
+- Compared with baseline 20k: `-0.2069 dB`, `+0.0011 SSIM`.
+- Compared with LF-v1 20k: `-0.1602 dB`, `-0.0027 SSIM`.
+- Mask stats from `latest.pk`: mean last `0.873570`, std last `0.000883`,
+  min/max last `0.867528/0.875553`; tail-50 mean std `0.000724`.
+- Interpretation: mixed soft gate. It is not strong enough to continue
+  unattended, but mask selectivity is clearly more active than failed
+  Conditional LF. Continue to 30k hard gate, then stop unless the curve becomes
+  competitive with baseline and close enough to LF-v1.
+
+30k checkpoint diagnostics:
+
+- `saved_model/latest.pk` and `best.pk` are from step `30000`.
+- Metric: PSNR `30.1157`, SSIM `0.9770`.
+- Compared with baseline 30k: `+0.0014 dB`, `-0.0006 SSIM`.
+- Compared with LF-v1 30k: `-0.5096 dB`, `-0.0013 SSIM`.
+- Mask stats from `latest.pk`: mean last `0.873885`, std last `0.001312`,
+  min/max last `0.866170/0.876420`; tail-50 mean std `0.001059`.
+- Interpretation: haze-aware mask did activate, unlike failed Conditional LF,
+  but the active mask did not translate into LF-v1-level image restoration.
+  Record as useful negative evidence: simple dark-channel/luma mask selection
+  is not enough to fix LF-v1's low-frequency direction errors.
+
+Stop record:
+
+- Stopped after reading 30k checkpoint and mask stats.
+- Main train PID `17335`, PGID `17326`; stopped with `kill -TERM -- -17326`.
+- Follow-up checks showed no matching process/tmux and GPU memory `0 MiB`.
+
+## Stopped Conditional LF Run
 
 - Run ID: `DEA-Net-LF-ConditionalMask-H4K-scout100k-20260523-224315`
-- Status: paused on 2026-05-24 at about log step `21500/100000`
+- Status: stopped on 2026-05-24 at the 30k hard gate; do not continue this
+  exact setting to 50k or 100k.
 - Code used for the run: commit `09880be`
-- Local/GitHub docs may be ahead of the server checkout. Do not sync the server
-  until the user explicitly asks.
+- Docs were synced to both server checkouts on 2026-05-24 after command
+  validation. Do not change training code on the server outside a committed
+  source-sync step.
 - Remote checkout: `/root/workspace/Dehaze-Net-conditional-lf`
-- Log:
+- Original log:
   `/root/workspace/Dehaze-Net-conditional-lf/experiment/HAZE4K/_run_logs/DEA-Net-LF-ConditionalMask-H4K-scout100k-20260523-224315.log`
+- Resume-to-30k log:
+  `/root/workspace/Dehaze-Net-conditional-lf/experiment/HAZE4K/_run_logs/DEA-Net-LF-ConditionalMask-H4K-scout100k-20260523-224315-resume-20260524-114820.log`
 - Artifact dir:
   `/root/workspace/Dehaze-Net-conditional-lf/experiment/HAZE4K/DEA-Net-LF-ConditionalMask-H4K-scout100k-20260523-224315/`
-- Saved resume checkpoint: `saved_model/latest.pk` at step `20000`
+- Saved checkpoint: `saved_model/latest.pk` and `saved_model/best.pk` at step
+  `30000`
 - Current metric points:
 
 | Step | PSNR | SSIM | Note |
 | ---: | ---: | ---: | --- |
 | 10000 | 27.1085 | 0.9638 | fair 100k run |
-| 20000 | 28.8571 | 0.9724 | fair 100k run; latest/best saved |
+| 20000 | 28.8571 | 0.9724 | fair 100k run |
+| 30000 | 30.1830 | 0.9783 | 30k hard gate; latest/best saved |
 
-The run was stopped by process group after confirming `MAIN_PID=39377` and
-`PGID=39375`; follow-up checks showed no matching process/tmux and GPU memory
-released.
+Gate review on 2026-05-24:
+
+| Step | Conditional LF | vs baseline | vs LF-v1 | Decision |
+| ---: | --- | --- | --- | --- |
+| 10000 | `27.1085 / 0.9638` | `-0.0016 / +0.0023` | `+0.8434 / +0.0007` | pass; not broken |
+| 20000 | `28.8571 / 0.9724` | `-0.0459 / +0.0011` | `+0.0008 / -0.0027` | soft pass; only continue to the 30k hard gate |
+| 30000 | `30.1830 / 0.9783` | `+0.0687 / +0.0007` | `-0.4423 / ~0.0000` | stop current setting; below LF-v1 and mask remains non-selective |
+
+The 30k checkpoint does not justify continuing to 50k or 100k. It is slightly
+above the baseline 30k point, but clearly below LF-v1 30k in PSNR. Mask
+diagnostics from `latest.pk` still show an almost constant mask:
+`LF_mask_mean` near `0.878747`, `std` near `0.000085`, min/max about
+`0.877925/0.878916`, and scalar `lf_prior.gate` near `0.014778`. Record this
+as "conditional mask not active/selective enough"; LF-v1 remains the current
+positive LF candidate.
+
+Historical pause: the run was first stopped near log step 21500 by process
+group after confirming `MAIN_PID=39377` and `PGID=39375`. Resume-to-30k:
+tmux `h4k_lf_condmask_100k_resume_20260524_114820` stopped automatically after
+detecting `step :30000`; follow-up checks showed no matching process/tmux and
+GPU memory `0 MiB`.
 
 ## Baseline References
 
 - Baseline 100k scout:
   `DEA-Net-CR-H4K-Baseline-scout-20260520-101334`
+  - 10k: PSNR `27.1101`, SSIM `0.9615`
   - best step 90000: PSNR `32.2255`, SSIM `0.9844`
   - 20k: PSNR `28.9030`, SSIM `0.9713`
+  - 30k: PSNR `30.1143`, SSIM `0.9776`
   - 50k: PSNR `31.2384`, SSIM `0.9817`
+  - 70k: PSNR `31.7662`, SSIM `0.9826`
+  - 90k: PSNR `32.2255`, SSIM `0.9844`
+  - 100k: PSNR `32.0952`, SSIM `0.9844`
 - LF-v1 positive candidate:
   `DEA-Net-LF-H4K-scout-20260521-003100`
+  - 10k: PSNR `26.2651`, SSIM `0.9631`
   - best step 90000: PSNR `32.4281`, SSIM `0.9845`
   - 20k: PSNR `28.8563`, SSIM `0.9751`
+  - 30k: PSNR `30.6253`, SSIM `0.9783`
   - 50k: PSNR `31.3419`, SSIM `0.9817`
+  - 70k: PSNR `31.9069`, SSIM `0.9836`
+  - 90k: PSNR `32.4281`, SSIM `0.9845`
+  - 100k: PSNR `32.3857`, SSIM `0.9845`
 - Invalid Conditional LF short schedule:
   `DEA-Net-LF-ConditionalMask-H4K-gate20k-20260523-205312`
   used `T=20000`; keep only as diagnostic evidence.
@@ -99,12 +211,21 @@ git status -sb
 
 Server GitHub access should use SSH for the private repo:
 
-```bash
+```powershell
+@'
+set -euo pipefail
+cd /root/workspace/Dehaze-Net-conditional-lf
 git remote set-url origin git@github.com:onenoober/Dehaze-Net.git
 ssh -T git@github.com
+git fetch --dry-run origin
 git fetch origin
 git pull --ff-only
+'@ | ssh runyun-ts "tr -d '\r' | bash -s"
 ```
+
+Run `git pull --ff-only` only after confirming the target checkout and dirty
+state. For a non-mutating connectivity check, stop at `git fetch --dry-run
+origin`.
 
 For exact check/pause/resume templates, use `docs/WORKFLOW.md`.
 
@@ -116,10 +237,10 @@ For load-on-demand rules and future writing boundaries, read
 Most common next files:
 
 1. `docs/WORKFLOW.md`: exact local/server/GitHub/tmux/check/pause/resume
-   command templates.
+   command templates, including fair scout command skeletons.
 2. `docs/EXPERIMENT_LOG.md`: chronological metrics and decisions.
 3. `docs/HAZE4K_RUN_MANIFEST.md`: artifact keep/delete policy.
-4. `docs/DEA_NET_LFCR_HAZE4K_PLAN.md`: thesis experiment plan and method
-   ladder.
+4. `docs/DEA_NET_LFCR_HAZE4K_PLAN.md`: main thesis route, stage plan,
+   promotion rules, and reporting evidence chain.
 
 Keep this file short; do not paste full experiment histories here.

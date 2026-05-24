@@ -30,6 +30,8 @@ def parse_args():
     parser.add_argument('--top_k', type=int, default=30)
     parser.add_argument('--baseline_use_lf_prior', action='store_true')
     parser.add_argument('--current_use_lf_prior', action='store_true')
+    parser.add_argument('--baseline_lf_conditional_mask', action='store_true')
+    parser.add_argument('--baseline_lf_haze_aware_mask', action='store_true')
     parser.add_argument('--lf_prior_channels', type=int, default=8)
     parser.add_argument('--lf_prior_pool', type=int, default=8)
     parser.add_argument('--lf_prior_gate_init', type=float, default=0.0)
@@ -39,6 +41,8 @@ def parse_args():
     parser.add_argument('--lf_conditional_mask', action='store_true')
     parser.add_argument('--lf_mask_hidden_channels', type=int, default=8)
     parser.add_argument('--lf_mask_init_bias', type=float, default=2.0)
+    parser.add_argument('--lf_haze_aware_mask', action='store_true')
+    parser.add_argument('--lf_haze_mask_strength', type=float, default=1.0)
     return parser.parse_args()
 
 
@@ -56,7 +60,7 @@ def load_checkpoint(path):
         return torch.load(path, map_location='cpu')
 
 
-def load_model(checkpoint_path, use_lf_prior, args):
+def load_model(checkpoint_path, use_lf_prior, args, conditional_mask=False, haze_aware_mask=False):
     model = DEANet(
         base_dim=32,
         use_lf_prior=use_lf_prior,
@@ -66,9 +70,11 @@ def load_model(checkpoint_path, use_lf_prior, args):
         lf_prior_residual_center=args.lf_prior_residual_center,
         lf_prior_gate_max=args.lf_prior_gate_max,
         lf_prior_injection=args.lf_prior_injection,
-        lf_conditional_mask=args.lf_conditional_mask,
+        lf_conditional_mask=conditional_mask,
         lf_mask_hidden_channels=args.lf_mask_hidden_channels,
-        lf_mask_init_bias=args.lf_mask_init_bias
+        lf_mask_init_bias=args.lf_mask_init_bias,
+        lf_haze_aware_mask=haze_aware_mask,
+        lf_haze_mask_strength=args.lf_haze_mask_strength
     )
     checkpoint = load_checkpoint(checkpoint_path)
     model.load_state_dict(checkpoint['model'])
@@ -202,8 +208,20 @@ def build_group_rows(rows):
         row['beta_bin'] = make_bin(row['beta'], beta_edges, beta_labels)
         row['airlight_beta_bin'] = row['airlight_bin'] + ' | ' + row['beta_bin']
 
+    baseline_sorted = sorted(rows, key=lambda row: row['baseline_psnr'])
+    weak_cutoff = baseline_sorted[max(0, len(rows) // 4 - 1)]['baseline_psnr']
+    strong_cutoff = baseline_sorted[min(len(rows) - 1, (len(rows) * 3) // 4)]['baseline_psnr']
+    for row in rows:
+        if row['baseline_psnr'] <= weak_cutoff:
+            row['baseline_strength_bin'] = 'baseline_weakest_25'
+        elif row['baseline_psnr'] >= strong_cutoff:
+            row['baseline_strength_bin'] = 'baseline_strongest_25'
+        else:
+            row['baseline_strength_bin'] = 'baseline_middle_50'
+
     group_rows = [group_stats('all', 'all', rows)]
     for key, name in [
+        ('baseline_strength_bin', 'baseline_strength_bin'),
         ('airlight_bin', 'airlight_bin'),
         ('beta_bin', 'beta_bin'),
         ('airlight_beta_bin', 'airlight_beta_bin')
@@ -225,7 +243,7 @@ def compact_rows(rows):
     keep = [
         'filename', 'image_id', 'airlight', 'beta', 'baseline_psnr',
         'current_psnr', 'delta_psnr', 'baseline_ssim', 'current_ssim',
-        'delta_ssim', 'airlight_bin', 'beta_bin'
+        'delta_ssim', 'airlight_bin', 'beta_bin', 'baseline_strength_bin'
     ]
     return [{key: row[key] for key in keep} for row in rows]
 
@@ -290,6 +308,8 @@ def write_report(path, summary, group_rows, hard_cases):
         f"- Mean delta: PSNR `{summary['mean_delta_psnr']:.4f}`, SSIM `{summary['mean_delta_ssim']:.6f}`",
         f"- Better / worse by PSNR: `{summary['better_psnr_count']}` / `{summary['worse_psnr_count']}`",
         f"- Meaningful better / worse at 0.30 dB: `{summary['better_030db_count']}` / `{summary['worse_030db_count']}`",
+        f"- Baseline strongest 25% mean delta: `{summary['strong_baseline_mean_delta_psnr']:.4f}`; regressions <= -0.30 dB: `{summary['strong_baseline_worse_030db_count']}`",
+        f"- Baseline weakest 25% mean delta: `{summary['weak_baseline_mean_delta_psnr']:.4f}`; gains >= +0.30 dB: `{summary['weak_baseline_better_030db_count']}`",
         f"- Pearson corr(A, delta PSNR): `{summary['corr_airlight_delta_psnr']}`",
         f"- Pearson corr(beta, delta PSNR): `{summary['corr_beta_delta_psnr']}`",
         '',
@@ -298,7 +318,7 @@ def write_report(path, summary, group_rows, hard_cases):
     ]
 
     for group in group_rows:
-        if group['group_name'] in ('airlight_bin', 'beta_bin'):
+        if group['group_name'] in ('baseline_strength_bin', 'airlight_bin', 'beta_bin'):
             lines.append(
                 f"- `{group['group_value']}` n=`{group['num_images']}` "
                 f"mean delta PSNR `{group['mean_delta_psnr']:.4f}`, "
@@ -340,8 +360,20 @@ def main():
     if args.max_images > 0:
         hazy_names = hazy_names[:args.max_images]
 
-    baseline_model, baseline_ckpt = load_model(args.baseline_checkpoint, args.baseline_use_lf_prior, args)
-    current_model, current_ckpt = load_model(args.current_checkpoint, args.current_use_lf_prior, args)
+    baseline_model, baseline_ckpt = load_model(
+        args.baseline_checkpoint,
+        args.baseline_use_lf_prior,
+        args,
+        conditional_mask=args.baseline_lf_conditional_mask,
+        haze_aware_mask=args.baseline_lf_haze_aware_mask
+    )
+    current_model, current_ckpt = load_model(
+        args.current_checkpoint,
+        args.current_use_lf_prior,
+        args,
+        conditional_mask=args.lf_conditional_mask,
+        haze_aware_mask=args.lf_haze_aware_mask
+    )
 
     to_tensor = ToTensor()
     rows = []
@@ -389,6 +421,8 @@ def main():
 
     group_rows = build_group_rows(rows)
     hard_cases = build_hard_cases(rows, args.top_k)
+    weak_rows = [row for row in rows if row['baseline_strength_bin'] == 'baseline_weakest_25']
+    strong_rows = [row for row in rows if row['baseline_strength_bin'] == 'baseline_strongest_25']
 
     summary = {
         'dataset': args.dataset,
@@ -407,6 +441,8 @@ def main():
         'lf_conditional_mask': args.lf_conditional_mask,
         'lf_mask_hidden_channels': args.lf_mask_hidden_channels,
         'lf_mask_init_bias': args.lf_mask_init_bias,
+        'lf_haze_aware_mask': args.lf_haze_aware_mask,
+        'lf_haze_mask_strength': args.lf_haze_mask_strength,
         'mean_input_psnr': mean([row['input_psnr'] for row in rows]),
         'mean_input_ssim': mean([row['input_ssim'] for row in rows]),
         'mean_baseline_psnr': mean([row['baseline_psnr'] for row in rows]),
@@ -426,6 +462,14 @@ def main():
         'worse_030db_count': sum(1 for row in rows if row['delta_psnr'] <= -0.30),
         'better_100db_count': sum(1 for row in rows if row['delta_psnr'] >= 1.00),
         'worse_100db_count': sum(1 for row in rows if row['delta_psnr'] <= -1.00),
+        'weak_baseline_cutoff_psnr': max(row['baseline_psnr'] for row in weak_rows) if weak_rows else None,
+        'strong_baseline_cutoff_psnr': min(row['baseline_psnr'] for row in strong_rows) if strong_rows else None,
+        'weak_baseline_mean_delta_psnr': mean([row['delta_psnr'] for row in weak_rows]),
+        'strong_baseline_mean_delta_psnr': mean([row['delta_psnr'] for row in strong_rows]),
+        'weak_baseline_better_030db_count': sum(1 for row in weak_rows if row['delta_psnr'] >= 0.30),
+        'weak_baseline_worse_030db_count': sum(1 for row in weak_rows if row['delta_psnr'] <= -0.30),
+        'strong_baseline_better_030db_count': sum(1 for row in strong_rows if row['delta_psnr'] >= 0.30),
+        'strong_baseline_worse_030db_count': sum(1 for row in strong_rows if row['delta_psnr'] <= -0.30),
         'corr_airlight_delta_psnr': pearson([row['airlight'] for row in rows], [row['delta_psnr'] for row in rows]),
         'corr_beta_delta_psnr': pearson([row['beta'] for row in rows], [row['delta_psnr'] for row in rows]),
     }

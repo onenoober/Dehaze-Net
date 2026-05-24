@@ -154,7 +154,9 @@ def create_teacher_model():
         lf_prior_injection=opt.lf_prior_injection,
         lf_conditional_mask=opt.lf_conditional_mask if opt.teacher_use_lf_prior else False,
         lf_mask_hidden_channels=opt.lf_mask_hidden_channels,
-        lf_mask_init_bias=opt.lf_mask_init_bias
+        lf_mask_init_bias=opt.lf_mask_init_bias,
+        lf_haze_aware_mask=opt.lf_haze_aware_mask if opt.teacher_use_lf_prior else False,
+        lf_haze_mask_strength=opt.lf_haze_mask_strength
     )
     checkpoint = load_checkpoint_file(checkpoint_path)
     teacher.load_state_dict(strip_module_prefix(checkpoint['model']))
@@ -649,12 +651,14 @@ if __name__ == "__main__":
         lf_prior_injection=opt.lf_prior_injection,
         lf_conditional_mask=opt.lf_conditional_mask,
         lf_mask_hidden_channels=opt.lf_mask_hidden_channels,
-        lf_mask_init_bias=opt.lf_mask_init_bias
+        lf_mask_init_bias=opt.lf_mask_init_bias,
+        lf_haze_aware_mask=opt.lf_haze_aware_mask,
+        lf_haze_mask_strength=opt.lf_haze_mask_strength
     )
     net = net.to(opt.device)
     if opt.use_lf_prior:
         print(
-            'Using LF prior: channels={} pool={} gate_init={} residual_center={} train_dropout={} gate_max={} injection={} conditional_mask={} mask_hidden={} mask_init_bias={} gate_l2={}'.format(
+            'Using LF prior: channels={} pool={} gate_init={} residual_center={} train_dropout={} gate_max={} injection={} conditional_mask={} mask_hidden={} mask_init_bias={} haze_aware_mask={} haze_mask_strength={} gate_l2={}'.format(
                 opt.lf_prior_channels,
                 opt.lf_prior_pool,
                 opt.lf_prior_gate_init,
@@ -665,6 +669,8 @@ if __name__ == "__main__":
                 opt.lf_conditional_mask,
                 opt.lf_mask_hidden_channels,
                 opt.lf_mask_init_bias,
+                opt.lf_haze_aware_mask,
+                opt.lf_haze_mask_strength,
                 opt.w_loss_lf_gate
             )
         )
