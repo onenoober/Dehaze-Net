@@ -8,12 +8,17 @@ metrics in `docs/EXPERIMENT_LOG.md`, artifact policy in
 ## Current State
 
 - Local workspace: `D:\Dehaze\Dehaze-Net`
-- Local editing branch: `codex/docs-boundary-cleanup`
+- Local editing branch: `codex/haze4k-audit-sync`
 - Conditional LF code branch/run lineage: `codex/haze4k-conditional-lf`
 - GitHub repo: `https://github.com/onenoober/Dehaze-Net` (private)
 - Server SSH alias: `runyun-ts`
 - Main server checkout: `/root/workspace/Dehaze-Net`
 - Conditional LF checkout: `/root/workspace/Dehaze-Net-conditional-lf`
+- Clean synced source checkout: `/root/workspace/Dehaze-Net-audit-sync`
+  - Branch: `codex/haze4k-audit-sync`
+  - Purpose: Git-backed source truth for the audit/metadata/doc sync work.
+  - It symlinks `dataset/HAZE4K` and `experiment` to the main server checkout
+    for dry-run validation without touching the older dirty training checkouts.
 - Server env: `/opt/anaconda/envs/py310/bin/python`
 - Local machine is for coding, docs, Git, and static checks only. Dry-run,
   smoke, training, benchmark, and evaluation run on the cloud CUDA server.
