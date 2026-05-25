@@ -109,6 +109,10 @@ restart pure mask stacking as the next step.
 ## LF ResidualSelector Ready State
 
 - Local branch: `codex/haze4k-selector-oracle`
+- Local/GitHub commit: `7c93000`
+- Remote clean checkout: `/root/workspace/Dehaze-Net-audit-sync`
+  - Branch: `codex/haze4k-selector-oracle`
+  - Commit: `7c93000`
 - New route docs:
   - `docs/HAZE4K_NEXT_ROUTE_REVIEW_20260525.md`
   - `docs/HAZE4K_LF_RESIDUAL_SELECTOR_PLAN_20260525.md`
@@ -145,6 +149,36 @@ restart pure mask stacking as the next step.
 - Next action: after source sync, launch one fair 100k-target scout with
   standard internal 10k/20k/30k/50k gates. The run should not include
   Conditional LF, Haze-Aware Mask, TeacherGuard, LowFreqLoss, or CRPlus.
+
+## Active LF ResidualSelector Run
+
+- Run ID: `DEA-Net-LF-ResidualSelector-H4K-scout100k-20260525-223844`
+- Status: launched on 2026-05-25 from remote clean checkout commit `7c93000`;
+  running in tmux at the time this context was updated.
+- tmux session: `h4k_lf_resselector_100k_20260525_223844`
+- Launch script:
+  `/root/workspace/Dehaze-Net-audit-sync/experiment/HAZE4K/_run_logs/DEA-Net-LF-ResidualSelector-H4K-scout100k-20260525-223844.sh`
+- Log:
+  `/root/workspace/Dehaze-Net-audit-sync/experiment/HAZE4K/_run_logs/DEA-Net-LF-ResidualSelector-H4K-scout100k-20260525-223844.log`
+- Artifact dir:
+  `/root/workspace/Dehaze-Net-audit-sync/experiment/HAZE4K/DEA-Net-LF-ResidualSelector-H4K-scout100k-20260525-223844/`
+- Verified launch config:
+  `epochs=20`, `iters_per_epoch=5000`, total `100000`, `bs=16`,
+  `patch_size=256`, `w_loss_CR=0.1`, `start_lr=0.0001`,
+  `end_lr=0.000001`, checkpoint/eval every `10000`,
+  `save_epoch_checkpoints=false`, `lf_residual_calibration=True`,
+  `lf_residual_selector=True`, `lf_selector_init_bias=2.0`.
+- Startup health: process and tmux were present; GPU showed about `13919 MiB`
+  used and `87%` utilization shortly after launch.
+
+Gate references for this run:
+
+| Step | Baseline | LF-v1 | ResidualCalib | Decision Rule |
+| ---: | --- | --- | --- | --- |
+| 10000 | `27.1101 / 0.9615` | `26.2651 / 0.9631` | `26.5666 / 0.9621` | stop only if clearly broken or selector stats are unstable |
+| 20000 | `28.9030 / 0.9713` | `28.8563 / 0.9751` | `28.5005 / 0.9720` | stop if clearly below both LF-v1 and ResidualCalib and selector remains near-constant |
+| 30000 | `30.1143 / 0.9776` | `30.6253 / 0.9783` | `30.3852 / 0.9782` | hard gate; continue only if close to LF-v1 or diagnostically promising |
+| 50000 | `31.2384 / 0.9817` | `31.3419 / 0.9817` | `31.1396 / 0.9808` | if below baseline, stop |
 
 ## Stopped LF-v2 Haze-Aware Mask Run
 

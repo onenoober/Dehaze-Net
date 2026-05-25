@@ -34,6 +34,7 @@ baseline、LF-v1 或新候选的公平对比表。
 | `DEA-Net-CR-H4K-Baseline-scout-20260520-101334` | 186M | baseline reference | best 90k `32.2255 / 0.9844`; final 100k `32.0952 / 0.9844` | `args.txt`, `saved_data/log.txt`, `saved_model/best.pk`, `latest.pk` | `KEEP` |
 | `DEA-Net-LF-H4K-scout-20260521-003100` | 184M | positive candidate | best 90k `32.4281 / 0.9845`; final 100k `32.3857 / 0.9845` | LF-v1 main positive result | `KEEP` |
 | `DEA-Net-LF-ResidualCalib-H4K-scout100k-20260525-122654` | 182M+ | positive ablation; below LF-v1 | best 90k `32.3936 / 0.9845`; final 100k `32.3858 / 0.9846` | residual direction/amplitude calibration beat CR baseline by `+0.1682 dB` full-test mean delta but trailed LF-v1 by `-0.0347 dB`; alpha branch active; useful current mechanism evidence | `KEEP` |
+| `DEA-Net-LF-ResidualSelector-H4K-scout100k-20260525-223844` | active | active fair scout | no gate metrics yet | launched from commit `7c93000`; fair `100000`-step selector run with `lf_residual_calibration=True`, `lf_residual_selector=True`, `lf_selector_init_bias=2.0`; first gate at 10k | `KEEP` |
 | `DEA-Net-LF-Conservative-H4K-scout-20260522-145904` | 184M | negative ablation | best/final 100k `32.1083 / 0.9843` | over-constrained LF evidence | `KEEP_MINIMAL` |
 | `DEA-Net-CRPlus-P1-w005-H4K-scout-20260523-011100` | 180M | negative ablation | 10k `24.9623 / 0.9504` | low-pass hazy negative failed | `KEEP_MINIMAL` |
 | `DEA-Net-LowFreqLoss-w005-H4K-scout-20260523-015600` | 181M | negative ablation | 20k `27.8852 / 0.9716` | low-frequency reconstruction loss failed | `KEEP_MINIMAL` |
