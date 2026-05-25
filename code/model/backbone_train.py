@@ -26,7 +26,10 @@ class LowFrequencyPrior(nn.Module):
         haze_mask_strength=1.0,
         residual_calibration=False,
         calib_hidden_channels=8,
-        calib_alpha_max=1.0
+        calib_alpha_max=1.0,
+        residual_selector=False,
+        selector_hidden_channels=8,
+        selector_init_bias=2.0
     ):
         super(LowFrequencyPrior, self).__init__()
         if pool_size <= 0:
@@ -43,6 +46,10 @@ class LowFrequencyPrior(nn.Module):
             raise ValueError('calib_hidden_channels must be positive')
         if calib_alpha_max < 0:
             raise ValueError('calib_alpha_max must be non-negative')
+        if selector_hidden_channels <= 0:
+            raise ValueError('selector_hidden_channels must be positive')
+        if residual_selector and not residual_calibration:
+            raise ValueError('residual_selector requires residual_calibration')
         self.pool_size = pool_size
         self.residual_center = residual_center
         self.train_dropout = train_dropout
@@ -52,8 +59,10 @@ class LowFrequencyPrior(nn.Module):
         self.haze_mask_strength = haze_mask_strength
         self.residual_calibration = residual_calibration
         self.calib_alpha_max = calib_alpha_max
+        self.residual_selector = residual_selector
         self.last_mask_stats = None
         self.last_alpha_stats = None
+        self.last_selector_stats = None
         self.adapter = nn.Sequential(
             nn.Conv2d(3, adapter_channels, kernel_size=3, stride=1, padding=1, bias=True),
             nn.ReLU(True),
@@ -73,6 +82,19 @@ class LowFrequencyPrior(nn.Module):
             self.calib_alpha_head = nn.Conv2d(calib_hidden_channels, 1, kernel_size=1, stride=1, padding=0, bias=True)
             nn.init.zeros_(self.calib_alpha_head.weight)
             nn.init.zeros_(self.calib_alpha_head.bias)
+            if residual_selector:
+                self.selector_low_encoder = nn.Sequential(
+                    nn.Conv2d(3, selector_hidden_channels, kernel_size=3, stride=1, padding=1, bias=True),
+                    nn.ReLU(True)
+                )
+                self.selector_target_hint = nn.Conv2d(out_channels, selector_hidden_channels, kernel_size=1, stride=1, padding=0, bias=True)
+                self.selector_head = nn.Sequential(
+                    nn.Conv2d(selector_hidden_channels * 2, selector_hidden_channels, kernel_size=3, stride=1, padding=1, bias=True),
+                    nn.ReLU(True),
+                    nn.Conv2d(selector_hidden_channels, 1, kernel_size=1, stride=1, padding=0, bias=True)
+                )
+                nn.init.zeros_(self.selector_head[-1].weight)
+                nn.init.constant_(self.selector_head[-1].bias, float(selector_init_bias))
         if conditional_mask:
             mask_input_channels = 3
             if haze_aware_mask:
@@ -108,6 +130,7 @@ class LowFrequencyPrior(nn.Module):
         low = F.interpolate(low, size=target.shape[-2:], mode='bilinear', align_corners=False)
         prior = self.adapter(low)
         if self.residual_calibration:
+            lf_prior = prior
             calib_low = self.calib_low_encoder(low)
             target_hint = self.calib_target_hint(target.detach())
             calib_feat = self.calib_shared(torch.cat([calib_low, target_hint], dim=1))
@@ -121,9 +144,26 @@ class LowFrequencyPrior(nn.Module):
                     'min': detached_alpha.min(),
                     'max': detached_alpha.max()
                 }
-            prior = direction * alpha
+            calib_prior = direction * alpha
+            if self.residual_selector:
+                selector_low = self.selector_low_encoder(low)
+                selector_hint = self.selector_target_hint(target.detach())
+                selector = torch.sigmoid(self.selector_head(torch.cat([selector_low, selector_hint], dim=1)))
+                with torch.no_grad():
+                    detached_selector = selector.detach()
+                    self.last_selector_stats = {
+                        'mean': detached_selector.mean(),
+                        'std': detached_selector.std(unbiased=False),
+                        'min': detached_selector.min(),
+                        'max': detached_selector.max()
+                    }
+                prior = selector * lf_prior + (1.0 - selector) * calib_prior
+            else:
+                self.last_selector_stats = None
+                prior = calib_prior
         else:
             self.last_alpha_stats = None
+            self.last_selector_stats = None
         if self.conditional_mask:
             mask_input = low
             if self.haze_aware_mask:
@@ -177,7 +217,10 @@ class DEANet(nn.Module):
         lf_haze_mask_strength=1.0,
         lf_residual_calibration=False,
         lf_calib_hidden_channels=8,
-        lf_calib_alpha_max=1.0
+        lf_calib_alpha_max=1.0,
+        lf_residual_selector=False,
+        lf_selector_hidden_channels=8,
+        lf_selector_init_bias=2.0
     ):
         super(DEANet, self).__init__()
         if lf_prior_injection not in ('pre_mix', 'post_mix'):
@@ -244,7 +287,10 @@ class DEANet(nn.Module):
                 haze_mask_strength=lf_haze_mask_strength,
                 residual_calibration=lf_residual_calibration,
                 calib_hidden_channels=lf_calib_hidden_channels,
-                calib_alpha_max=lf_calib_alpha_max
+                calib_alpha_max=lf_calib_alpha_max,
+                residual_selector=lf_residual_selector,
+                selector_hidden_channels=lf_selector_hidden_channels,
+                selector_init_bias=lf_selector_init_bias
             )
         else:
             self.lf_prior = None

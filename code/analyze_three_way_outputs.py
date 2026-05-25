@@ -44,6 +44,9 @@ def parse_args():
     parser.add_argument('--lf_prior_injection', type=str, default='pre_mix', choices=['pre_mix', 'post_mix'])
     parser.add_argument('--lf_calib_hidden_channels', type=int, default=8)
     parser.add_argument('--lf_calib_alpha_max', type=float, default=1.0)
+    parser.add_argument('--residual_lf_residual_selector', action='store_true')
+    parser.add_argument('--lf_selector_hidden_channels', type=int, default=8)
+    parser.add_argument('--lf_selector_init_bias', type=float, default=2.0)
     return parser.parse_args()
 
 
@@ -61,7 +64,7 @@ def load_checkpoint(path):
         return torch.load(path, map_location='cpu')
 
 
-def load_model(checkpoint_path, args, use_lf_prior=False, residual_calibration=False):
+def load_model(checkpoint_path, args, use_lf_prior=False, residual_calibration=False, residual_selector=False):
     model = DEANet(
         base_dim=32,
         use_lf_prior=use_lf_prior,
@@ -74,6 +77,9 @@ def load_model(checkpoint_path, args, use_lf_prior=False, residual_calibration=F
         lf_residual_calibration=residual_calibration,
         lf_calib_hidden_channels=args.lf_calib_hidden_channels,
         lf_calib_alpha_max=args.lf_calib_alpha_max,
+        lf_residual_selector=residual_selector,
+        lf_selector_hidden_channels=args.lf_selector_hidden_channels,
+        lf_selector_init_bias=args.lf_selector_init_bias,
     )
     checkpoint = load_checkpoint(checkpoint_path)
     model.load_state_dict(checkpoint['model'])
@@ -749,6 +755,7 @@ def main():
         args,
         use_lf_prior=True,
         residual_calibration=True,
+        residual_selector=args.residual_lf_residual_selector,
     )
 
     rows = []

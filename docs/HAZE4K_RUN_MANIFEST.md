@@ -62,6 +62,8 @@ baseline、LF-v1 或新候选的公平对比表。
 | `experiment/HAZE4K/three_way_eval/Baseline-LFv1-ResidualCalib-full-20260525` | three-way final-output analysis | baseline/LF-v1/ResidualCalib 1000-image metrics, group summary, hard cases, selected panels and heatmaps; winner counts `295/322/383` | `KEEP` |
 | `experiment/HAZE4K/visual_compare/Baseline-LFv1-ResidualCalib-fixed20260522-20260525` | old fixed-sample three-way visual comparison | reruns the original `DEA-Net-CR-vs-LF-20260522/samples.txt` with ResidualCalib added; includes full outputs, all panels, heatmaps, and report | `KEEP` |
 | `experiment/HAZE4K/three_way_eval/Baseline-LFv1-ResidualCalib-preview-20260525` | compressed three-way preview | small JPEG contact sheet for quick visual review of representative full-test and fixed-sample patterns | `KEEP_SUMMARY` |
+| `experiment/HAZE4K/selector_oracle/Baseline-LFv1-ResidualCalib-full-20260525` | selector/oracle route decision | reads existing three-way CSV; full 1000-image two-way oracle LF-v1/ResidualCalib `33.0034 / 0.985299`, `+0.5751 dB` over LF-v1; three-way oracle `33.2538 / 0.985637`, `+0.8255 dB`; justifies learned selector but best simple rule is GT-aware | `KEEP` |
+| `experiment/HAZE4K/selector_oracle/Baseline-LFv1-ResidualCalib-fixed20260522-20260525` | selector/oracle old adverse subset check | old 20-sample subset two-way oracle `31.8019 / 0.983492`, `+0.5439 dB` over LF-v1; three-way oracle `32.1661 / 0.983806`; shows selector has value even on adverse visual triage samples | `KEEP` |
 | `experiment/HAZE4K/visual_compare/DEA-Net-CR-vs-LF-Conservative-20260522` | Conservative LF visual failure | fixed-sample comparison and objective analysis | `KEEP_MINIMAL` |
 | `experiment/HAZE4K/visual_compare/DEA-Net-CR-vs-LF-gate-sweep-20260522` | gate sweep diagnosis | scale summaries, panels, objective metrics | `KEEP_MINIMAL` |
 | `experiment/HAZE4K/eval-H4K-official-full-20260520-095415` | official checkpoint full eval | official `.pth` reference `34.2556 / 0.9885` | `KEEP_SUMMARY` |
@@ -97,6 +99,7 @@ baseline、LF-v1 或新候选的公平对比表。
 | `smoke-H4K-CRPlus-P1-20260523-011035` | 180M | deleted 2026-05-23; CRPlus smoke, max observed step 1 | `DELETED` |
 | `smoke-H4K-LowFreqLoss-20260523-015512` | 180M | deleted 2026-05-23; LowFreqLoss smoke, max observed step 1 | `DELETED` |
 | `smoke-H4K-LF-LowFreqLoss-20260523-031517` | 180M | deleted 2026-05-23; LF + LowFreqLoss smoke, max observed step 1 | `DELETED` |
+| `smoke-H4K-LF-ResidualSelector-20260525-223437` | TBD | selector code-path smoke; diagnostic `T=2`, wrote `latest.pk` at step 2 and logged selector/alpha stats; invalid for fair comparison | `KEEP_SUMMARY_DELETE_MODEL_AFTER_CONFIRM` |
 | `smoke-H4K-settings-20260519-230213` | 28K | deleted 2026-05-23; failed/early smoke, no valid training step | `DELETED` |
 | `smoke-H4K-settings-debug-20260519-230246` | 28K | deleted 2026-05-23; debug smoke, no valid training step | `DELETED` |
 | `smoke-H4K-CRPlus-P1-20260523-010932` | 28K | deleted 2026-05-23; dry/failed smoke, no valid training step | `DELETED` |

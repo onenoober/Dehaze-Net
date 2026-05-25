@@ -106,6 +106,46 @@ but it is not a replacement for LF-v1. The next LF optimization should directly
 reduce residual wrong-direction cases and strong-baseline regressions; do not
 restart pure mask stacking as the next step.
 
+## LF ResidualSelector Ready State
+
+- Local branch: `codex/haze4k-selector-oracle`
+- New route docs:
+  - `docs/HAZE4K_NEXT_ROUTE_REVIEW_20260525.md`
+  - `docs/HAZE4K_LF_RESIDUAL_SELECTOR_PLAN_20260525.md`
+- New read-only script:
+  `code/analyze_selector_oracle.py`
+- New launch script:
+  `scripts/runyun-haze4k-lf-residual-selector-scout.sh`
+- Selector/oracle diagnosis:
+  `experiment/HAZE4K/selector_oracle/Baseline-LFv1-ResidualCalib-full-20260525/`
+  - LF-v1 mean `32.4283 / 0.984454`
+  - ResidualCalib mean `32.3936 / 0.984500`
+  - LF-v1/ResidualCalib two-way oracle `33.0034 / 0.985299`,
+    `+0.5751 dB` over LF-v1
+  - baseline/LF-v1/ResidualCalib three-way oracle `33.2538 / 0.985637`,
+    `+0.8255 dB` over LF-v1
+- Old adverse 20-sample selector/oracle:
+  `experiment/HAZE4K/selector_oracle/Baseline-LFv1-ResidualCalib-fixed20260522-20260525/`
+  - LF-v1/ResidualCalib two-way oracle `31.8019 / 0.983492`,
+    `+0.5439 dB` over LF-v1
+  - three-way oracle `32.1661 / 0.983806`
+- Interpretation: selector headroom is strong, but the best simple rule is
+  GT-aware residual error ratio. Do not hard-code the oracle. Use it as evidence
+  for a learned bounded selector.
+- Implementation: `--lf_residual_selector` requires
+  `--lf_residual_calibration`, starts near LF-v1 with
+  `--lf_selector_init_bias 2.0`, and logs `LF_selector_*`.
+- Dry-run passed on remote:
+  `dryrun-H4K-LF-ResidualSelector-20260525`.
+- 2-step smoke passed on remote:
+  `smoke-H4K-LF-ResidualSelector-20260525-223437`.
+  It wrote `saved_model/latest.pk` at step 2 and logged
+  `LF_selector_mean/std/min/max =
+  0.8807968/0.0/0.8807970/0.8807970`, plus `LF_alpha_mean=0.5`.
+- Next action: after source sync, launch one fair 100k-target scout with
+  standard internal 10k/20k/30k/50k gates. The run should not include
+  Conditional LF, Haze-Aware Mask, TeacherGuard, LowFreqLoss, or CRPlus.
+
 ## Stopped LF-v2 Haze-Aware Mask Run
 
 - Run ID: `DEA-Net-LF-HazeAwareMask-H4K-scout100k-20260524-152758`

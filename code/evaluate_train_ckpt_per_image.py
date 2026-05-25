@@ -47,6 +47,10 @@ def parse_args():
     parser.add_argument('--lf_residual_calibration', action='store_true')
     parser.add_argument('--lf_calib_hidden_channels', type=int, default=8)
     parser.add_argument('--lf_calib_alpha_max', type=float, default=1.0)
+    parser.add_argument('--baseline_lf_residual_selector', action='store_true')
+    parser.add_argument('--lf_residual_selector', action='store_true')
+    parser.add_argument('--lf_selector_hidden_channels', type=int, default=8)
+    parser.add_argument('--lf_selector_init_bias', type=float, default=2.0)
     return parser.parse_args()
 
 
@@ -64,7 +68,7 @@ def load_checkpoint(path):
         return torch.load(path, map_location='cpu')
 
 
-def load_model(checkpoint_path, use_lf_prior, args, conditional_mask=False, haze_aware_mask=False, residual_calibration=False):
+def load_model(checkpoint_path, use_lf_prior, args, conditional_mask=False, haze_aware_mask=False, residual_calibration=False, residual_selector=False):
     model = DEANet(
         base_dim=32,
         use_lf_prior=use_lf_prior,
@@ -81,7 +85,10 @@ def load_model(checkpoint_path, use_lf_prior, args, conditional_mask=False, haze
         lf_haze_mask_strength=args.lf_haze_mask_strength,
         lf_residual_calibration=residual_calibration,
         lf_calib_hidden_channels=args.lf_calib_hidden_channels,
-        lf_calib_alpha_max=args.lf_calib_alpha_max
+        lf_calib_alpha_max=args.lf_calib_alpha_max,
+        lf_residual_selector=residual_selector,
+        lf_selector_hidden_channels=args.lf_selector_hidden_channels,
+        lf_selector_init_bias=args.lf_selector_init_bias
     )
     checkpoint = load_checkpoint(checkpoint_path)
     model.load_state_dict(checkpoint['model'])
@@ -373,7 +380,8 @@ def main():
         args,
         conditional_mask=args.baseline_lf_conditional_mask,
         haze_aware_mask=args.baseline_lf_haze_aware_mask,
-        residual_calibration=args.baseline_lf_residual_calibration
+        residual_calibration=args.baseline_lf_residual_calibration,
+        residual_selector=args.baseline_lf_residual_selector
     )
     current_model, current_ckpt = load_model(
         args.current_checkpoint,
@@ -381,7 +389,8 @@ def main():
         args,
         conditional_mask=args.lf_conditional_mask,
         haze_aware_mask=args.lf_haze_aware_mask,
-        residual_calibration=args.lf_residual_calibration
+        residual_calibration=args.lf_residual_calibration,
+        residual_selector=args.lf_residual_selector
     )
 
     to_tensor = ToTensor()
@@ -448,6 +457,7 @@ def main():
         'baseline_lf_gate': lf_gate_value(baseline_model),
         'current_lf_gate': lf_gate_value(current_model),
         'baseline_lf_residual_calibration': args.baseline_lf_residual_calibration,
+        'baseline_lf_residual_selector': args.baseline_lf_residual_selector,
         'lf_conditional_mask': args.lf_conditional_mask,
         'lf_mask_hidden_channels': args.lf_mask_hidden_channels,
         'lf_mask_init_bias': args.lf_mask_init_bias,
@@ -456,6 +466,9 @@ def main():
         'lf_residual_calibration': args.lf_residual_calibration,
         'lf_calib_hidden_channels': args.lf_calib_hidden_channels,
         'lf_calib_alpha_max': args.lf_calib_alpha_max,
+        'lf_residual_selector': args.lf_residual_selector,
+        'lf_selector_hidden_channels': args.lf_selector_hidden_channels,
+        'lf_selector_init_bias': args.lf_selector_init_bias,
         'mean_input_psnr': mean([row['input_psnr'] for row in rows]),
         'mean_input_ssim': mean([row['input_ssim'] for row in rows]),
         'mean_baseline_psnr': mean([row['baseline_psnr'] for row in rows]),
