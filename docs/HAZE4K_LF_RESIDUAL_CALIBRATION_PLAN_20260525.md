@@ -2,8 +2,11 @@
 
 Date: 2026-05-25
 
-Purpose: define the next LF candidate after the LF-v1 residual direction
-diagnosis. This card must be updated before training results are interpreted.
+Purpose: define and record the first LF residual direction/amplitude
+calibration candidate after the LF-v1 residual direction diagnosis.
+
+Status: completed on 2026-05-25. Keep this card as the route rationale and
+outcome record; detailed run facts live in `docs/EXPERIMENT_LOG.md`.
 
 ## Evidence
 
@@ -166,7 +169,70 @@ Promotion requires one of:
 
 ## Decision
 
-Proceed to implementation only as a single-mechanism structural candidate:
-`LF Residual Calibration`. Do not launch a formal scout until dry-run and
-2-step smoke pass on the remote CUDA environment and this card is referenced in
-`EXPERIMENT_LOG.md`.
+Completed as a single-mechanism structural candidate: `LF Residual
+Calibration`.
+
+## Outcome
+
+Run:
+
+```text
+DEA-Net-LF-ResidualCalib-H4K-scout100k-20260525-122654
+```
+
+Implementation branch and commits:
+
+- Local/GitHub branch: `codex/haze4k-lf-residual-calibration`
+- Local/GitHub commit: `3b52a2b`
+- Remote applied commit: `a474953`, same tree as local commit
+- Remote checkout: `/root/workspace/Dehaze-Net-audit-sync`
+
+The run used the standard fair HAZE4K `100000` step contract. It completed
+naturally.
+
+Main result:
+
+| Checkpoint | Step | PSNR | SSIM | Note |
+| --- | ---: | ---: | ---: | --- |
+| `best.pk` | 90000 | `32.3936` | `0.9845` | best PSNR |
+| `latest.pk` | 100000 | `32.3858` | `0.9846` | final eval; best values remain from 90k |
+
+Comparison:
+
+- Baseline best: `32.2255 / 0.9844`
+- LF-v1 best: `32.4281 / 0.9845`
+- ResidualCalib is above baseline but below LF-v1 in PSNR.
+
+Full per-image evaluation:
+
+| Comparison | Mean Delta PSNR | Median Delta PSNR | Better/Worse | Weak Ref Delta | Strong Ref Delta |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| CR -> ResidualCalib | `+0.1682` | `+0.2010` | `547/453` | `+0.6354` | `-0.1171` |
+| LF-v1 -> ResidualCalib | `-0.0347` | `+0.0271` | `509/491` | `+0.3970` | `-0.2374` |
+
+Residual diagnostics:
+
+| Comparison | Wrong Direction | LF MSE Improved/Regressed | Mean Residual Cosine | Interpretation |
+| --- | ---: | ---: | ---: | --- |
+| CR -> ResidualCalib | `163` | `554/446` | `0.3150` | positive baseline gain, but many direction errors remain |
+| LF-v1 -> ResidualCalib | `211` | `512/488` | `0.2592` | not a clean LF-v1 replacement |
+
+Artifact paths:
+
+- `experiment/HAZE4K/DEA-Net-LF-ResidualCalib-H4K-scout100k-20260525-122654/`
+- `experiment/HAZE4K/per_image_eval/CR-vs-ResidualCalib-full-20260525/`
+- `experiment/HAZE4K/per_image_eval/LF-v1-vs-ResidualCalib-full-20260525/`
+- `experiment/HAZE4K/residual_diagnostic/CR-vs-ResidualCalib-20260525/`
+- `experiment/HAZE4K/residual_diagnostic/LF-v1-vs-ResidualCalib-20260525/`
+- `experiment/HAZE4K/visual_compare/CR-vs-ResidualCalib-hardcases-20260525/`
+- `experiment/HAZE4K/visual_compare/LF-v1-vs-ResidualCalib-hardcases-20260525/`
+
+Conclusion:
+
+The optimization direction is valid, but the first implementation is not
+enough. ResidualCalib proves that residual direction/amplitude calibration can
+beat the CR baseline, while also proving that a bounded learned residual alone
+does not remove wrong-direction failures or strong-baseline regressions. Do not
+replace LF-v1 with this model. The next candidate should directly constrain or
+predict residual direction correctness and should include a guard for already
+strong baseline images; pure mask stacking should stay paused.

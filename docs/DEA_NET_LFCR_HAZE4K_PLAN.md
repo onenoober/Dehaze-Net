@@ -1,6 +1,6 @@
 # DEA-Net-LFCR HAZE4K 主线计划
 
-日期：2026-05-24
+日期：2026-05-25
 
 用途：记录 DEA-Net 在 HAZE4K 上的主路线、阶段计划、晋级规则和论文证据链。本文不保存完整运行流水账；具体 run 事实以 `docs/EXPERIMENT_LOG.md` 为准，artifact 保留策略以 `docs/HAZE4K_RUN_MANIFEST.md` 为准，当前可执行状态以 `docs/CURRENT_CONTEXT.md` 为准。
 
@@ -104,6 +104,7 @@ dataset/HAZE4K/
 | --- | --- | --- | --- |
 | DEA-Net-CR baseline | 有效基线 | `DEA-Net-CR-H4K-Baseline-scout-20260520-101334` best 90k `32.2255 / 0.9844` | 作为所有 candidate 的同协议参照 |
 | LF-v1 | 当前唯一正向单模块候选 | `DEA-Net-LF-H4K-scout-20260521-003100` best 90k `32.4281 / 0.9845`，full per-image mean delta `+0.2030 dB` | 保留为 LF 对照；需补稳定性、复杂度和视觉风险 |
+| ResidualCalib | 正向消融，但不替代 LF-v1 | `DEA-Net-LF-ResidualCalib-H4K-scout100k-20260525-122654` best 90k `32.3936 / 0.9845`；full per-image vs baseline `+0.1682 dB`，vs LF-v1 `-0.0347 dB`；wrong-direction vs CR `163`、vs LF-v1 `211` | 保留为 residual calibration 消融；下一步只做能直接减少 wrong-direction 和强 baseline 样本回退的候选 |
 | Conservative LF | 失败 | 100k `32.1083 / 0.9843`，低于 baseline/LF-v1 | 不继续此强约束组合 |
 | CRPlus-P1 lowpass negative | 失败 | 10k `24.9623 / 0.9504` | 不继续同一 negative 设计 |
 | LowFreqLoss / LF+LowFreqLoss | 失败 | 20k/50k 均低于对应参照 | 不继续简单低频 L1 路线 |
@@ -144,6 +145,7 @@ dataset/HAZE4K/
 3. Conditional LF 的当前设置已在 30k hard gate 停止；它没有证明内容感知空间 mask 已有效激活。
 4. LF-v2 Haze-Aware Mask 已在 30k hard gate 停止；它证明 mask 可以被激活，但简单低频 RGB + dark-channel + luma 线索没有把 LF-v1 的收益保住。
 5. LF-v1 residual 方向/幅度诊断已完成；`delta PSNR` 与低频 residual cosine 的相关系数为 `0.8775`，说明下一步应优先校准 residual 方向和幅度，而不是继续堆纯 mask。
+6. ResidualCalib 已完成公平 `100k` scout；它验证了 residual 方向/幅度路线有意义，但第一版仍低于 LF-v1，不能作为主替代路线。
 
 Conditional LF 的立项理由、结构约束和实验卡见 `docs/HAZE4K_CONDITIONAL_LF_ROUTE_AUDIT_20260523.md`。已发生 run 的最新状态见 `CURRENT_CONTEXT.md` 和 `EXPERIMENT_LOG.md`。
 
@@ -187,12 +189,22 @@ LF-v1 residual 方向诊断见 `docs/HAZE4K_LF_RESIDUAL_DIRECTION_DIAGNOSIS_2026
 - 结论：下一轮 LF 路线应命名为 residual calibration / direction-magnitude
   control。纯空间 mask 只有在同时预测 residual 方向和幅度时才值得重启。
 
-已删除的晋级假设：当前 Conditional LF 和 LF-v2 Haze-Aware Mask 都不再作为活动候选排队长训。
+ResidualCalib 的实验卡见 `docs/HAZE4K_LF_RESIDUAL_CALIBRATION_PLAN_20260525.md`。当前结论（2026-05-25）：
 
-下一轮活动候选：`DEA-Net-LF-ResidualCalib`。实验卡见
-`docs/HAZE4K_LF_RESIDUAL_CALIBRATION_PLAN_20260525.md`。第一版只允许做
-`pre_mix` 处的 residual direction/amplitude calibration，不叠加 teacher、
-lowfreq loss、CRPlus 或纯 mask 重启。
+- 公平 `100k` run `DEA-Net-LF-ResidualCalib-H4K-scout100k-20260525-122654`
+  已自然完成。
+- 最佳 checkpoint 为 90k：`32.3936 / 0.9845`；final 100k 为
+  `32.3858 / 0.9846`。
+- 相对 baseline full per-image mean delta 为 `+0.1682 dB`，说明不是无效结构；
+  相对 LF-v1 mean delta 为 `-0.0347 dB`，说明不能替代当前正向 LF-v1。
+- residual 诊断仍有 wrong-direction：vs CR 为 `163`，vs LF-v1 为 `211`；
+  低频 MSE 改善/回退仍接近对半分，强 baseline 样本仍有回退。
+- 结论：ResidualCalib 保留为“方向/幅度校准有效但不足”的正向消融。
+  下一轮若继续 LF，只能围绕 wrong-direction count、强 baseline 保护或显式 residual
+  方向约束推进；不再启动单纯空间 mask 或 mask 叠加路线。
+
+已删除的晋级假设：当前 Conditional LF、LF-v2 Haze-Aware Mask 和第一版
+ResidualCalib 都不再作为活动主候选排队长训。LF-v1 仍是当前主正向 LF 对照。
 
 ### 7.3 阶段三：CRPlus 独立损失路线
 
@@ -276,9 +288,10 @@ TTA / 真实域适配只作为扩展，不阻塞 HAZE4K 主结果。
 | A1 | DEA-Net-LF-v1 | Yes | No | No | TBD | TBD | TBD | TBD | TBD | 当前正向 LF 对照 |
 | A2 | DEA-Net-Conditional-LF | Yes | No | No | TBD | TBD | TBD | TBD | TBD | 30k gate 失败，放入失败消融 |
 | A3 | DEA-Net-LF-v2-HazeAwareMask | Yes | No | No | TBD | TBD | TBD | TBD | TBD | 30k gate 失败，mask 激活但指标不晋级 |
-| A4 | DEA-Net-CRPlus | No | Yes | No | TBD | TBD | TBD | TBD | TBD | 仅损失改动 |
-| A5 | DEA-Net-LFCR | Yes | Yes | No | TBD | TBD | TBD | TBD | TBD | 最终组合候选 |
-| A6 | DEA-Net-LFCR-TTA | Yes | Yes | Yes | TBD | TBD | TBD | TBD | TBD | 可选扩展 |
+| A4 | DEA-Net-LF-ResidualCalib | Yes | No | No | TBD | TBD | `32.3936` | `0.9845` | TBD | 正向消融但未超过 LF-v1；保留 residual calibration 证据 |
+| A5 | DEA-Net-CRPlus | No | Yes | No | TBD | TBD | TBD | TBD | TBD | 仅损失改动 |
+| A6 | DEA-Net-LFCR | Yes | Yes | No | TBD | TBD | TBD | TBD | TBD | 最终组合候选 |
+| A7 | DEA-Net-LFCR-TTA | Yes | Yes | Yes | TBD | TBD | TBD | TBD | TBD | 可选扩展 |
 
 如果某条路线没有通过公平 scout，不进入主结果表；可以进入失败消融表或讨论章节。
 
@@ -289,6 +302,7 @@ TTA / 真实域适配只作为扩展，不阻塞 HAZE4K 主结果。
 - 公平 `100k` scout 的 gate 明显低于同协议 baseline 和 LF-v1。
 - 当前 Conditional LF 已在 30k gate 停止：略高于 baseline 但明显低于 LF-v1，且 mask 仍近似常数，记录为“条件化未充分激活”。
 - LF-v2 Haze-Aware Mask 已在 30k gate 停止：mask 已激活，但指标只追平 baseline、明显低于 LF-v1，记录为“选择性不足以修正方向错误”。
+- ResidualCalib 已完成 100k：强于 baseline 但 full per-image 低于 LF-v1，wrong-direction 仍未消除，记录为“方向/幅度校准有效但不足”，不晋级为 LF-v1 替代主线。
 - loss 不稳定或训练异常无法解释。
 - 输出出现系统性 halo、偏色、过锐化或大片雾残留。
 - 复杂度增长明显，但指标或视觉收益很小。
@@ -304,9 +318,10 @@ TTA / 真实域适配只作为扩展，不阻塞 HAZE4K 主结果。
 回退顺序：
 
 1. 保留 LF-v1 作为正向轻量消融。
-2. Conditional LF 当前设置已失败；若再试，必须先判断是调 mask bias、换 mask 输入，还是放弃 LF 条件化。
-3. 若 CRPlus 继续失败，停止 loss 路线，把失败原因写入方法讨论。
-4. 若最终没有稳定超过 baseline 的候选，论文主线转为“强 baseline + 正向 LF-v1 小收益 + 系统失败分析 + 可复现证据链”。
+2. ResidualCalib 保留为正向但不足的机制证据；若再试，必须直接减少 wrong-direction 或强 baseline 回退。
+3. Conditional LF 当前设置已失败；若再试，必须先判断是调 mask bias、换 mask 输入，还是放弃 LF 条件化。
+4. 若 CRPlus 继续失败，停止 loss 路线，把失败原因写入方法讨论。
+5. 若最终没有稳定超过 baseline 的候选，论文主线转为“强 baseline + 正向 LF-v1 小收益 + 系统失败分析 + 可复现证据链”。
 
 ## 11. 推荐时间线
 
@@ -317,10 +332,11 @@ TTA / 真实域适配只作为扩展，不阻塞 HAZE4K 主结果。
 | 3 | LF-v1 公平 `100k` scout + full per-image | 正向 LF 对照和风险分析 |
 | 4 | Conditional LF 公平 `100k` scout | 已在 30k gate 停止，不晋级 |
 | 5 | LF-v2 Haze-Aware Mask 公平 `100k` scout | 已在 30k gate 停止，不晋级 |
-| 6 | CRPlus 重新设计或离线诊断 | 是否值得长训 |
-| 7 | 最终候选 full eval、复杂度、可视化 | 论文主表和图 |
-| 8 | 可选 TTA / 真实域测试 | 扩展章节证据 |
-| 9 | 汇总方法、消融、失败讨论和局限 | 毕业论文初稿 |
+| 6 | ResidualCalib 公平 `100k` scout + full per-image / residual 诊断 | 正向消融但不替代 LF-v1；后续只围绕方向/幅度约束继续 |
+| 7 | CRPlus 重新设计或离线诊断 | 是否值得长训 |
+| 8 | 最终候选 full eval、复杂度、可视化 | 论文主表和图 |
+| 9 | 可选 TTA / 真实域测试 | 扩展章节证据 |
+| 10 | 汇总方法、消融、失败讨论和局限 | 毕业论文初稿 |
 
 ## 12. 后续代码实现注意事项
 

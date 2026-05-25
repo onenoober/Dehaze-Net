@@ -8,14 +8,16 @@ metrics in `docs/EXPERIMENT_LOG.md`, artifact policy in
 ## Current State
 
 - Local workspace: `D:\Dehaze\Dehaze-Net`
-- Local editing branch: `codex/haze4k-audit-sync`
+- Local editing branch: `codex/haze4k-lf-residual-calibration`
 - Conditional LF code branch/run lineage: `codex/haze4k-conditional-lf`
+- ResidualCalib code branch/run lineage: `codex/haze4k-lf-residual-calibration`
 - GitHub repo: `https://github.com/onenoober/Dehaze-Net` (private)
 - Server SSH alias: `runyun-ts`
 - Main server checkout: `/root/workspace/Dehaze-Net`
 - Conditional LF checkout: `/root/workspace/Dehaze-Net-conditional-lf`
 - Clean synced source checkout: `/root/workspace/Dehaze-Net-audit-sync`
-  - Branch: `codex/haze4k-audit-sync`
+  - Current ResidualCalib code applied as remote commit `a474953`, equivalent
+    to local/GitHub commit `3b52a2b`.
   - Purpose: Git-backed source truth for the audit/metadata/doc sync work.
   - It symlinks `dataset/HAZE4K` and `experiment` to the main server checkout
     for dry-run validation without touching the older dirty training checkouts.
@@ -52,6 +54,57 @@ tables.
 
 When resuming, keep `epochs * iters_per_epoch = 100000`. `train.py` uses this
 as the cosine-LR horizon; changing it during resume changes the schedule.
+
+## Completed LF ResidualCalib Run
+
+- Run ID: `DEA-Net-LF-ResidualCalib-H4K-scout100k-20260525-122654`
+- Status: completed naturally on 2026-05-25; no tmux/process remained after
+  completion and GPU returned to idle.
+- Branch/commit: local and GitHub branch
+  `codex/haze4k-lf-residual-calibration`, commit `3b52a2b`; remote applied
+  commit `a474953` has the same tree.
+- Remote checkout: `/root/workspace/Dehaze-Net-audit-sync`
+- Log:
+  `/root/workspace/Dehaze-Net-audit-sync/experiment/HAZE4K/_run_logs/DEA-Net-LF-ResidualCalib-H4K-scout100k-20260525-122654.log`
+- Artifact dir:
+  `/root/workspace/Dehaze-Net-audit-sync/experiment/HAZE4K/DEA-Net-LF-ResidualCalib-H4K-scout100k-20260525-122654/`
+- Fair config: `epochs=20`, `iters_per_epoch=5000`, total `100000`,
+  `bs=16`, `patch_size=256`, `w_loss_CR=0.1`.
+- Best checkpoint: `saved_model/best.pk` at 90k, PSNR `32.3936`,
+  SSIM `0.9845`.
+- Final checkpoint: `saved_model/latest.pk` at 100k, PSNR `32.3858`,
+  SSIM `0.9846`; best values still came from 90k.
+- Alpha diagnostics show the branch is active, not dead:
+  `best.pk` alpha last mean/std/min/max
+  `0.516481/0.010491/0.502225/0.581695`; `latest.pk`
+  `0.516911/0.010565/0.502370/0.580890`.
+
+Full-test and residual diagnostics:
+
+- vs CR baseline full per-image:
+  `experiment/HAZE4K/per_image_eval/CR-vs-ResidualCalib-full-20260525/`
+  - mean delta PSNR `+0.1682 dB`, median `+0.2010 dB`
+  - better/worse by PSNR `547/453`
+  - weak-baseline mean delta `+0.6354 dB`
+  - strong-baseline mean delta `-0.1171 dB`
+- vs LF-v1 full per-image:
+  `experiment/HAZE4K/per_image_eval/LF-v1-vs-ResidualCalib-full-20260525/`
+  - mean delta PSNR `-0.0347 dB`, median `+0.0271 dB`
+  - better/worse by PSNR `509/491`
+  - weak-LF-v1-baseline mean delta `+0.3970 dB`
+  - strong-LF-v1-baseline mean delta `-0.2374 dB`
+- Residual diagnostics:
+  - `experiment/HAZE4K/residual_diagnostic/CR-vs-ResidualCalib-20260525/`
+    has wrong-direction count `163`, LF MSE improved/regressed `554/446`.
+  - `experiment/HAZE4K/residual_diagnostic/LF-v1-vs-ResidualCalib-20260525/`
+    has wrong-direction count `211`, LF MSE improved/regressed `512/488`.
+
+Decision:
+
+ResidualCalib is a useful positive ablation because it beats the CR baseline,
+but it is not a replacement for LF-v1. The next LF optimization should directly
+reduce residual wrong-direction cases and strong-baseline regressions; do not
+restart pure mask stacking as the next step.
 
 ## Stopped LF-v2 Haze-Aware Mask Run
 

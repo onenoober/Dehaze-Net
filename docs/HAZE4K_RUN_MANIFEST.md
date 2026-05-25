@@ -1,6 +1,6 @@
 # HAZE4K Run Manifest
 
-日期：2026-05-24
+日期：2026-05-25
 
 用途：作为 HAZE4K 训练、评估、可视化和失败消融的统一索引。后续删除或归档远端 `experiment/HAZE4K` 目录前，先查本文件，避免误删仍有分析价值的数据。
 
@@ -33,6 +33,7 @@ baseline、LF-v1 或新候选的公平对比表。
 | --- | ---: | --- | --- | --- | --- |
 | `DEA-Net-CR-H4K-Baseline-scout-20260520-101334` | 186M | baseline reference | best 90k `32.2255 / 0.9844`; final 100k `32.0952 / 0.9844` | `args.txt`, `saved_data/log.txt`, `saved_model/best.pk`, `latest.pk` | `KEEP` |
 | `DEA-Net-LF-H4K-scout-20260521-003100` | 184M | positive candidate | best 90k `32.4281 / 0.9845`; final 100k `32.3857 / 0.9845` | LF-v1 main positive result | `KEEP` |
+| `DEA-Net-LF-ResidualCalib-H4K-scout100k-20260525-122654` | 182M+ | positive ablation; below LF-v1 | best 90k `32.3936 / 0.9845`; final 100k `32.3858 / 0.9846` | residual direction/amplitude calibration beat CR baseline by `+0.1682 dB` full-test mean delta but trailed LF-v1 by `-0.0347 dB`; alpha branch active; useful current mechanism evidence | `KEEP` |
 | `DEA-Net-LF-Conservative-H4K-scout-20260522-145904` | 184M | negative ablation | best/final 100k `32.1083 / 0.9843` | over-constrained LF evidence | `KEEP_MINIMAL` |
 | `DEA-Net-CRPlus-P1-w005-H4K-scout-20260523-011100` | 180M | negative ablation | 10k `24.9623 / 0.9504` | low-pass hazy negative failed | `KEEP_MINIMAL` |
 | `DEA-Net-LowFreqLoss-w005-H4K-scout-20260523-015600` | 181M | negative ablation | 20k `27.8852 / 0.9716` | low-frequency reconstruction loss failed | `KEEP_MINIMAL` |
@@ -49,8 +50,15 @@ baseline、LF-v1 或新候选的公平对比表。
 | Path | Verdict | Contents | Policy |
 | --- | --- | --- | --- |
 | `experiment/HAZE4K/per_image_eval/CR-vs-LF-v1-full-20260523` | core full-test analysis | `summary.json`, `per_image_metrics.csv`, `group_summary.csv`, `hard_cases.json`, `analysis_report.md` | `KEEP` |
+| `experiment/HAZE4K/per_image_eval/CR-vs-ResidualCalib-full-20260525` | ResidualCalib full-test baseline comparison | 1000 images; mean delta `+0.1682 dB`; better/worse by PSNR `547/453`; weak-baseline gain and strong-baseline regression split | `KEEP` |
+| `experiment/HAZE4K/per_image_eval/LF-v1-vs-ResidualCalib-full-20260525` | ResidualCalib full-test LF-v1 comparison | 1000 images; mean delta `-0.0347 dB`; better/worse `509/491`; confirms positive ablation but not LF-v1 replacement | `KEEP` |
 | `experiment/HAZE4K/residual_diagnostic/CR-vs-LF-v1-20260524` | LF-v1 root-cause diagnostic | residual direction/magnitude `summary.json`, `per_image_residual_metrics.csv`, `group_summary.csv`, `hard_cases.json`, `analysis_report.md`; corr(delta PSNR, residual cosine) `0.8775` | `KEEP` |
+| `experiment/HAZE4K/residual_diagnostic/CR-vs-ResidualCalib-20260525` | ResidualCalib root-cause diagnostic vs CR | residual direction/magnitude summary; wrong-direction `163`, LF MSE improved/regressed `554/446`, corr(delta PSNR, residual cosine) `0.8490` | `KEEP` |
+| `experiment/HAZE4K/residual_diagnostic/LF-v1-vs-ResidualCalib-20260525` | ResidualCalib root-cause diagnostic vs LF-v1 | residual direction/magnitude summary; wrong-direction `211`, LF MSE improved/regressed `512/488`, corr(delta PSNR, residual cosine) `0.8580` | `KEEP` |
 | `experiment/HAZE4K/visual_compare/DEA-Net-CR-vs-LF-20260522` | fixed-sample LF-v1 diagnosis | fixed samples, metrics, selected panels, objective analysis | `KEEP` |
+| `experiment/HAZE4K/visual_compare/ResidualCalib-hardcases-20260525` | shared hardcase sample list | selected CR and LF-v1 relative improvement/regression samples for ResidualCalib visual triage | `KEEP` |
+| `experiment/HAZE4K/visual_compare/CR-vs-ResidualCalib-hardcases-20260525` | ResidualCalib hardcase visual/objective analysis vs CR | hardcase panels and objective report; mixed outcome with color/tone risk but net positive over CR | `KEEP` |
+| `experiment/HAZE4K/visual_compare/LF-v1-vs-ResidualCalib-hardcases-20260525` | ResidualCalib hardcase visual/objective analysis vs LF-v1 | hardcase panels and objective report; mixed outcome and larger LF-v1-relative hardcase regression | `KEEP` |
 | `experiment/HAZE4K/visual_compare/DEA-Net-CR-vs-LF-Conservative-20260522` | Conservative LF visual failure | fixed-sample comparison and objective analysis | `KEEP_MINIMAL` |
 | `experiment/HAZE4K/visual_compare/DEA-Net-CR-vs-LF-gate-sweep-20260522` | gate sweep diagnosis | scale summaries, panels, objective metrics | `KEEP_MINIMAL` |
 | `experiment/HAZE4K/eval-H4K-official-full-20260520-095415` | official checkpoint full eval | official `.pth` reference `34.2556 / 0.9885` | `KEEP_SUMMARY` |
@@ -118,6 +126,8 @@ Local `code/**/__pycache__` directories were deleted on 2026-05-23.
 ## Recommended Next State Before New Training
 
 1. Re-check `docs/CURRENT_CONTEXT.md` and `docs/README.md` before deciding what to load or edit next.
-2. Do not resume the current Conditional LF setting. If condition-aware LF is revisited, create a new explicit route/run after updating the experiment card.
+2. Do not resume the current Conditional LF, LF-v2 Haze-Aware Mask, or first
+   ResidualCalib setting as an active main candidate. ResidualCalib is kept as
+   positive ablation evidence, not a LF-v1 replacement.
 3. If starting a new route, use a clean branch, commit/push local changes first, and launch the formal scout as a 100k-target run with 10k/20k/50k internal gates.
 4. Keep archived one-off failed launchers as reproducibility evidence; prefer maintained parameterized launchers for future runs.
