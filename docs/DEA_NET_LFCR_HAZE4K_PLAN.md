@@ -189,6 +189,11 @@ LF-v1 residual 方向诊断见 `docs/HAZE4K_LF_RESIDUAL_DIRECTION_DIAGNOSIS_2026
 
 已删除的晋级假设：当前 Conditional LF 和 LF-v2 Haze-Aware Mask 都不再作为活动候选排队长训。
 
+下一轮活动候选：`DEA-Net-LF-ResidualCalib`。实验卡见
+`docs/HAZE4K_LF_RESIDUAL_CALIBRATION_PLAN_20260525.md`。第一版只允许做
+`pre_mix` 处的 residual direction/amplitude calibration，不叠加 teacher、
+lowfreq loss、CRPlus 或纯 mask 重启。
+
 ### 7.3 阶段三：CRPlus 独立损失路线
 
 目标：在不增加推理参数的前提下，改进已有 CR 的 task-aware 约束。

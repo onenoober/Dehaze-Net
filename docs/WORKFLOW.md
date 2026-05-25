@@ -455,6 +455,21 @@ manually, add:
   --lf_mask_init_bias 2.0
 ```
 
+For LF Residual Calibration, prefer the maintained launcher
+`scripts/runyun-haze4k-lf-residual-calib-scout.sh`. If writing the command
+manually, add:
+
+```bash
+  --use_lf_prior \
+  --lf_prior_channels 8 \
+  --lf_prior_pool 8 \
+  --lf_prior_gate_init 0.0 \
+  --lf_prior_injection pre_mix \
+  --lf_residual_calibration \
+  --lf_calib_hidden_channels 8 \
+  --lf_calib_alpha_max 1.0
+```
+
 After launch, record the run id, branch/commit, protocol, checkpoint path,
 metrics, and decision in `docs/EXPERIMENT_LOG.md`. Record important artifact
 directories in `docs/HAZE4K_RUN_MANIFEST.md`.
