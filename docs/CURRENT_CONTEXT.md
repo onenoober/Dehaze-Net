@@ -7,12 +7,18 @@ metrics in `docs/EXPERIMENT_LOG.md`, artifact policy in
 
 ## Quick Handoff
 
-- Current selector-audit branch/source truth:
-  `codex/haze4k-rich-selector-proxy-audit`, pushed to GitHub at commit
-  `52d0bb3` (`Audit HAZE4K selector proxy learnability`). Use
-  `git log -1 --oneline` in the relevant checkout to verify current state.
-- No HAZE4K training run is currently active. The latest ResidualDirLoss scout
-  was stopped at the 30k hard gate and should not be resumed.
+- Current active training branch/source truth:
+  `codex/haze4k-crplus-v2`. The cloud CRPlus-v2 run was launched from commit
+  `24085db` (`Record local CRPlus-v2 scout launch`); later doc-only commits may
+  exist on the same branch, so use `git log -1 --oneline` to verify.
+- Active HAZE4K training run is on `runyun-ts` in
+  `/root/workspace/Dehaze-Net-audit-sync`: run
+  `DEA-Net-CRPlusV2-w003-H4K-scout100k-20260526-225540`, tmux
+  `h4k_crplusv2_100k_20260526-225540`, log
+  `experiment/HAZE4K/_run_logs/DEA-Net-CRPlusV2-w003-H4K-scout100k-20260526-225540.log`.
+- The local WSL CRPlus-v2 scout
+  `DEA-Net-CRPlusV2-w003-H4K-scout100k-20260526-192721` was cancelled on
+  2026-05-26 before the first 10k checkpoint. Do not resume it.
 - Current positive model evidence remains LF-v1; ResidualCalib is a positive
   ablation but not a replacement.
 - Latest selector evidence says the "proxy audit before selector-v2"
@@ -439,10 +445,10 @@ Gate references for this run:
   - dry-run `dryrun-H4K-CRPlusV2-args-20260526`.
   - 2-step smoke `smoke-H4K-CRPlusV2-20260526`, checkpoint step `2`;
     `loss_log` includes `CRPlusV2` with tail `[1.4913553, 1.4035805]`.
-- Branch `codex/haze4k-crplus-v2` was pushed to GitHub at commit `2e0987c`.
-  Cloud server is currently unavailable, so the first fair scout is running on
-  local WSL/CUDA.
-- Active local fair scout:
+- Branch `codex/haze4k-crplus-v2` was pushed to GitHub. The cloud run below was
+  launched from code/docs commit `24085db`; later doc-only commits may update
+  this context without changing the launched training code.
+- Stopped local fair scout:
   `DEA-Net-CRPlusV2-w003-H4K-scout100k-20260526-192721`.
   - tmux: `h4k_crplusv2_100k_20260526-192721`
   - log:
@@ -453,11 +459,26 @@ Gate references for this run:
     `bs=16`, `patch_size=256`, `w_loss_CR=0.1`,
     `w_loss_crplus_v2=0.003`, eval/checkpoint every `10000`,
     `save_epoch_checkpoints=false`, no LF prior or other auxiliary routes.
-  - startup health: tmux/process present, GPU about `15975 MiB / 99%`,
-    log reached step `17/100000` with stable speed about `8.7s/step`.
-  - The first 10k gate is expected to take about one day locally. Use matched
-    baseline 10k `27.1101 / 0.9615` as the sanity reference and stop on a
-    CRPlus-P1-like collapse.
+  - status: cancelled on 2026-05-26 after the cloud server became available;
+    tmux/process were absent after stop and local GPU returned to idle.
+  - final local evidence: log reached about step `1802/100000`; no 10k eval or
+    checkpoint exists, only launch/loss/TensorBoard byproducts.
+- Active cloud fair scout:
+  `DEA-Net-CRPlusV2-w003-H4K-scout100k-20260526-225540`.
+  - remote checkout: `/root/workspace/Dehaze-Net-audit-sync`, branch
+    `codex/haze4k-crplus-v2`, launch commit `24085db`.
+  - tmux: `h4k_crplusv2_100k_20260526-225540`
+  - log:
+    `experiment/HAZE4K/_run_logs/DEA-Net-CRPlusV2-w003-H4K-scout100k-20260526-225540.log`
+  - fair config: `epochs=20`, `iters_per_epoch=5000`, total `100000`,
+    `bs=16`, `patch_size=256`, `w_loss_CR=0.1`,
+    `w_loss_crplus_v2=0.003`, eval/checkpoint every `10000`,
+    `save_epoch_checkpoints=false`, no LF prior or other auxiliary routes.
+  - startup health: `runyun-ts` reachable over Tailscale; tmux/process present;
+    RTX 5090 GPU about `16483 MiB / 98%`; log reached step `247/100000` at
+    about `3.3` steps/s during verification.
+  - First gate is the 10k sanity gate. Use matched baseline 10k
+    `27.1101 / 0.9615` as the reference and stop on a CRPlus-P1-like collapse.
 
 ## Model-Change Protocol
 
