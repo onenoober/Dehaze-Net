@@ -14,6 +14,9 @@ metrics in `docs/EXPERIMENT_LOG.md`, artifact policy in
   was stopped at the 30k hard gate and should not be resumed.
 - Current positive model evidence remains LF-v1; ResidualCalib is a positive
   ablation but not a replacement.
+- Latest route review says the "proxy audit before selector-v2" recommendation
+  is reliable, but safe proxies did not pass the local held-out audit. Do not
+  launch another LFResidualSelector 100k scout from oracle evidence alone.
 - Before any new model/loss/selector/mask scout, use
   `docs/HAZE4K_MODEL_CHANGE_PROTOCOL.md` to write the route card and
   mechanism-specific gate metrics.
@@ -162,9 +165,9 @@ restart pure mask stacking as the next step.
   It wrote `saved_model/latest.pk` at step 2 and logged
   `LF_selector_mean/std/min/max =
   0.8807968/0.0/0.8807970/0.8807970`, plus `LF_alpha_mean=0.5`.
-- Next action: after source sync, launch one fair 100k-target scout with
-  standard internal 10k/20k/30k/50k gates. The run should not include
-  Conditional LF, Haze-Aware Mask, TeacherGuard, LowFreqLoss, or CRPlus.
+- Historical note: this ready state led to the stopped selector run below.
+  It is no longer the next action. Do not launch this exact selector setting
+  again.
 
 ## Stopped LF ResidualSelector Run
 
@@ -302,6 +305,30 @@ Gate references for this run:
   mechanism-specific metrics chosen for the architecture. Residual-direction
   metrics are required for this route, but should not be blindly reused for
   unrelated routes.
+
+## Selector Proxy Audit Follow-Up
+
+- Local branch: `codex/haze4k-selector-proxy-audit`
+- New read-only script: `code/analyze_selector_proxy_learning.py`
+- New route review doc: `docs/HAZE4K_SELECTOR_PROXY_AUDIT_20260526.md`
+- Local diagnostic artifact:
+  `experiment/HAZE4K/selector_proxy/Baseline-LFv1-ResidualCalib-full-20260526/`
+- Audit verdict: the prior recommendation is reliable only as a diagnostic-first
+  step. The LF-v1/ResidualCalib oracle headroom is real, but it is not enough to
+  justify another selector run because the strongest rules are GT-aware.
+- Local held-out proxy result on the existing full-test three-way CSV:
+  - best safe proxy was `metadata_proxy` ridge logistic:
+    `+0.0508 dB` vs LF-v1, oracle recovery `0.0876`, residual precision
+    `0.5241`;
+  - `output_plus_metadata_proxy` ridge logistic: `+0.0323 dB`,
+    oracle recovery `0.0551`, residual precision `0.5306`;
+  - `output_proxy` ridge logistic: `+0.0300 dB`, oracle recovery `0.0529`,
+    residual precision `0.5227`;
+  - GT-aware leakage check recovers the oracle (`+0.5796 dB`, recovery
+    `0.9986`), confirming the target is real but not inference-safe.
+- Decision: do not launch selector-v2 yet. Either improve non-GT proxy features
+  or add an explicit supervised/distilled selector target and rerun the proxy
+  audit before any fair 100k selector scout.
 
 ## Model-Change Protocol
 
