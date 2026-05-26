@@ -5,19 +5,35 @@ This is the short handoff page for future DEA-Net work. Keep it compact. Use
 metrics in `docs/EXPERIMENT_LOG.md`, artifact policy in
 `docs/HAZE4K_RUN_MANIFEST.md`, and method reasoning in the dated analysis docs.
 
+## Quick Handoff
+
+- Current branch/source truth: `codex/haze4k-residual-direction-loss`, synced
+  locally, on GitHub, and on `/root/workspace/Dehaze-Net-audit-sync`. Use
+  `git log -1 --oneline` in the relevant checkout for the exact current commit.
+- No HAZE4K training run is currently active. The latest ResidualDirLoss scout
+  was stopped at the 30k hard gate and should not be resumed.
+- Current positive model evidence remains LF-v1; ResidualCalib is a positive
+  ablation but not a replacement.
+- Before any new model/loss/selector/mask scout, use
+  `docs/HAZE4K_MODEL_CHANGE_PROTOCOL.md` to write the route card and
+  mechanism-specific gate metrics.
+- Local machine is for code/docs/Git; CUDA dry-run, smoke, training, and eval
+  run on `runyun-ts`.
+
 ## Current State
 
 - Local workspace: `D:\Dehaze\Dehaze-Net`
-- Local editing branch: `codex/haze4k-lf-residual-calibration`
+- Local editing branch: `codex/haze4k-residual-direction-loss`
 - Conditional LF code branch/run lineage: `codex/haze4k-conditional-lf`
 - ResidualCalib code branch/run lineage: `codex/haze4k-lf-residual-calibration`
+- ResidualDirLoss code branch/run lineage: `codex/haze4k-residual-direction-loss`
 - GitHub repo: `https://github.com/onenoober/Dehaze-Net` (private)
 - Server SSH alias: `runyun-ts`
 - Main server checkout: `/root/workspace/Dehaze-Net`
 - Conditional LF checkout: `/root/workspace/Dehaze-Net-conditional-lf`
 - Clean synced source checkout: `/root/workspace/Dehaze-Net-audit-sync`
-  - Current ResidualCalib code applied as remote commit `a474953`, equivalent
-    to local/GitHub commit `3b52a2b`.
+  - Current branch `codex/haze4k-residual-direction-loss`; verify the exact
+    commit with `git log -1 --oneline`.
   - Purpose: Git-backed source truth for the audit/metadata/doc sync work.
   - It symlinks `dataset/HAZE4K` and `experiment` to the main server checkout
     for dry-run validation without touching the older dirty training checkouts.
@@ -150,7 +166,7 @@ restart pure mask stacking as the next step.
   standard internal 10k/20k/30k/50k gates. The run should not include
   Conditional LF, Haze-Aware Mask, TeacherGuard, LowFreqLoss, or CRPlus.
 
-## Active LF ResidualSelector Run
+## Stopped LF ResidualSelector Run
 
 - Run ID: `DEA-Net-LF-ResidualSelector-H4K-scout100k-20260525-223844`
 - Status: stopped on 2026-05-26 00:27 CST after the 20k gate failed; do not

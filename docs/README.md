@@ -27,6 +27,7 @@ the only decision evidence.
 | 主路线、论文实验设计、阶段计划 | `docs/DEA_NET_LFCR_HAZE4K_PLAN.md` | 每次运行的完整流水账、单次故障排查 |
 | 已失败路线的原因、架构层诊断 | `docs/HAZE4K_FAILURE_ANALYSIS_20260523.md` | 操作命令、artifact 清单、最新 run 状态 |
 | 模型优化流程是否合理、gate 纪律 | `docs/HAZE4K_OPTIMIZATION_WORKFLOW_REVIEW_20260523.md` | 单个 run 的详细日志 |
+| 新模型/损失/selector/mask/guard 修改协议和实验卡模板 | `docs/HAZE4K_MODEL_CHANGE_PROTOCOL.md` | 单个 run 的详细日志、artifact 清理 |
 | Conditional LF 立项理由、实现约束、实验卡 | `docs/HAZE4K_CONDITIONAL_LF_ROUTE_AUDIT_20260523.md` | 已发生 run 的最新状态、完整流水账 |
 | LF-v1 低频 residual 方向/幅度根因诊断 | `docs/HAZE4K_LF_RESIDUAL_DIRECTION_DIAGNOSIS_20260524.md` | 可复制命令、每次 run 的完整流水账 |
 | LF Residual Calibration 下一轮实验卡 | `docs/HAZE4K_LF_RESIDUAL_CALIBRATION_PLAN_20260525.md` | 已发生 run 的完整流水账、artifact 清单 |
@@ -53,6 +54,10 @@ the only decision evidence.
 
 后续新增或更新文档时，按这个闭环归档：
 
+0. **模型修改协议**：任何长程 HAZE4K model/loss/selector/mask/guard scout
+   前，先读 `docs/HAZE4K_MODEL_CHANGE_PROTOCOL.md`，写清 failure mode、
+   mechanism hypothesis、route-specific mechanism metrics 和 matched gate
+   rules。PSNR/SSIM 是全局护栏，不是唯一决策证据。
 1. **路线立项**：写清 hypothesis、单一变量、风险和 stop gates。路线专属内容放到 dated audit；长期主线只同步到 `DEA_NET_LFCR_HAZE4K_PLAN.md` 的摘要和决策。
 2. **实现和 smoke**：代码改动保持在 feature branch。可复用命令或脚本用法写 `WORKFLOW.md`；smoke 只作为入口验证，不能进入候选指标表。
 3. **公平训练**：正式 HAZE4K candidate 必须从启动时就是 `100000` total steps。`10k`、`20k`、`50k` 只是同一条 run 内部的 stop/continue gate。
