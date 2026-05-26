@@ -1,1 +1,1 @@
-from .cr import ContrastLoss
+from .cr import CRPlusV2Loss, ContrastLoss

@@ -411,6 +411,38 @@ Gate references for this run:
   only and must not be used to justify a training route without a predeclared,
   scientifically adequate sample-size rationale.
 
+## Current CRPlus-v2 Frequency Curriculum Step
+
+- Local branch: `codex/haze4k-crplus-v2`.
+- Rationale: LF-v1 remains the positive candidate, but selector, mask,
+  ResidualDirLoss, simple LowFreqLoss, and CRPlus-P1 low-pass negative evidence
+  now make another LF structure run low-value. The next useful route is a
+  no-inference-cost training loss that is frequency-aware and curriculum-safe.
+- New read-only script:
+  `code/analyze_crplus_v2_loss_scale.py`.
+- New route card:
+  `docs/HAZE4K_CRPLUS_V2_FREQ_CURRICULUM_PLAN_20260526.md`.
+- New launchers:
+  - `scripts/runyun-haze4k-crplus-v2-scale-diagnostic.sh`
+  - `scripts/runyun-haze4k-crplus-v2-scout.sh`
+- Local 64-image train center-crop scale diagnostic:
+  `experiment/HAZE4K/loss_scale/crplus-v2-baseline-train64-20260526/`.
+  Using the CR baseline best checkpoint, selected combined ratio loss was
+  `0.189611`; weighted ratios to L1 were `0.0197/0.0592/0.0987/0.1975` for
+  weights `0.001/0.003/0.005/0.01`. Absolute combined margin at `0.02` was
+  near-zero (`0.000141`), so CRPlus-v2 is ratio-first and margin-diagnostic.
+- Implemented default-off training support with `--w_loss_crplus_v2` and
+  related CRPlus-v2 options. The first scout default is
+  `w_loss_crplus_v2=0.003`.
+- Local validation passed:
+  - `python -m py_compile` over modified training and diagnostic files.
+  - dry-run `dryrun-H4K-CRPlusV2-args-20260526`.
+  - 2-step smoke `smoke-H4K-CRPlusV2-20260526`, checkpoint step `2`;
+    `loss_log` includes `CRPlusV2` with tail `[1.4913553, 1.4035805]`.
+- No fair CRPlus-v2 100k scout has been launched yet. Before launching, sync
+  branch `codex/haze4k-crplus-v2` to GitHub and the clean server checkout, then
+  dry-run/smoke on the target CUDA node.
+
 ## Model-Change Protocol
 
 Future HAZE4K model changes should be written up in

@@ -16,7 +16,7 @@ except ImportError:
 from logger import plot_loss_log, plot_psnr_log
 from metric import psnr, ssim
 from model import DEANet
-from loss import ContrastLoss
+from loss import CRPlusV2Loss, ContrastLoss
 from option_train import opt
 from data.data_loader import TrainDataset, TestDataset, resolve_pair_dirs
 
@@ -378,7 +378,7 @@ def train(net, loader_train, loader_test, optim, criterion, writer=None, trainin
     if 'loss_log' in training_state:
         loss_log = training_state['loss_log']
     for key in (
-        'LF_gate', 'LowFreq', 'ResidualDir', 'TeacherGuard',
+        'CRPlusV2', 'LF_gate', 'LowFreq', 'ResidualDir', 'TeacherGuard',
         'LF_mask_mean', 'LF_mask_std', 'LF_mask_min', 'LF_mask_max',
         'LF_alpha_mean', 'LF_alpha_std', 'LF_alpha_min', 'LF_alpha_max',
         'LF_selector_mean', 'LF_selector_std', 'LF_selector_min', 'LF_selector_max'
@@ -424,10 +424,13 @@ def train(net, loader_train, loader_test, optim, criterion, writer=None, trainin
             if opt.w_loss_CR > 0:
                 loss_CR = criterion[1](out, y, x)
             loss_lf_gate = lf_gate_regularization(net)
+            loss_crplus_v2 = crplus_v2_loss(out, y, x, step, criterion[2])
             loss_lowfreq = low_frequency_loss(out, y)
             loss_residual_dir = residual_direction_loss(out, x, y, step)
             loss_teacher_guard = teacher_guard_loss(out, x, y, step, teacher_net)
             loss = opt.w_loss_L1 * loss_L1 + opt.w_loss_CR * loss_CR
+            if loss_crplus_v2 is not None:
+                loss = loss + opt.w_loss_crplus_v2 * loss_crplus_v2
             if loss_lf_gate is not None:
                 loss = loss + opt.w_loss_lf_gate * loss_lf_gate
             if loss_lowfreq is not None:
@@ -446,6 +449,8 @@ def train(net, loader_train, loader_test, optim, criterion, writer=None, trainin
             loss_log_tmp['L1'].append(loss_L1.item())
             loss_log_tmp['CR'].append(loss_CR.item())
             loss_log_tmp['total'].append(loss.item())
+            if loss_crplus_v2 is not None:
+                loss_log_tmp['CRPlusV2'].append(loss_crplus_v2.item())
             if loss_lf_gate is not None:
                 loss_log_tmp['LF_gate'].append(loss_lf_gate.item())
             if loss_lowfreq is not None:
@@ -469,6 +474,9 @@ def train(net, loader_train, loader_test, optim, criterion, writer=None, trainin
                 writer.add_scalar('train/loss_L1', loss_L1.item(), step)
                 writer.add_scalar('train/loss_CR', loss_CR.item(), step)
                 writer.add_scalar('train/loss_CR_weighted', opt.w_loss_CR * loss_CR.item(), step)
+                if loss_crplus_v2 is not None:
+                    writer.add_scalar('train/loss_crplus_v2', loss_crplus_v2.item(), step)
+                    writer.add_scalar('train/loss_crplus_v2_weighted', opt.w_loss_crplus_v2 * loss_crplus_v2.item(), step)
                 if loss_lf_gate is not None:
                     writer.add_scalar('train/loss_lf_gate', loss_lf_gate.item(), step)
                     writer.add_scalar('train/loss_lf_gate_weighted', opt.w_loss_lf_gate * loss_lf_gate.item(), step)
@@ -600,6 +608,12 @@ def lf_gate_regularization(net):
     if lf_prior is None or opt.w_loss_lf_gate <= 0:
         return None
     return lf_prior.gate.pow(2)
+
+
+def crplus_v2_loss(out, target, hazy, step, criterion):
+    if opt.w_loss_crplus_v2 <= 0 or criterion is None:
+        return None
+    return criterion(out, target, hazy, step)
 
 
 def lf_prior_mask_stats(net):
@@ -800,6 +814,32 @@ if __name__ == "__main__":
         lowpass_pool=opt.cr_lowpass_pool,
         lowpass_weight=opt.cr_lowpass_weight
     ))
+    if opt.w_loss_crplus_v2 > 0:
+        criterion.append(CRPlusV2Loss(
+            negative_modes=opt.crplus_v2_negative_modes,
+            start_negative_modes=opt.crplus_v2_start_negative_modes,
+            curriculum_steps=opt.crplus_v2_curriculum_steps,
+            lowpass_pool=opt.crplus_v2_lowpass_pool,
+            frequency_weight=opt.crplus_v2_frequency_weight,
+            lowfreq_weight=opt.crplus_v2_lowfreq_weight,
+            under_dehazed_mix=opt.crplus_v2_under_dehazed_mix,
+            ratio_cap=opt.crplus_v2_ratio_cap
+        ))
+        print(
+            'Using CRPlus-v2: weight={} negatives={} start_negatives={} curriculum_steps={} pool={} freq_weight={} lowfreq_weight={} mix={} ratio_cap={}'.format(
+                opt.w_loss_crplus_v2,
+                opt.crplus_v2_negative_modes,
+                opt.crplus_v2_start_negative_modes,
+                opt.crplus_v2_curriculum_steps,
+                opt.crplus_v2_lowpass_pool,
+                opt.crplus_v2_frequency_weight,
+                opt.crplus_v2_lowfreq_weight,
+                opt.crplus_v2_under_dehazed_mix,
+                opt.crplus_v2_ratio_cap
+            )
+        )
+    else:
+        criterion.append(None)
 
     optimizer = optim.Adam(params=filter(lambda x: x.requires_grad, net.parameters()), lr=opt.start_lr, betas=(0.9, 0.999),
                            eps=1e-08)
