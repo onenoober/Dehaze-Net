@@ -7,7 +7,7 @@ metrics in `docs/EXPERIMENT_LOG.md`, artifact policy in
 
 ## Quick Handoff
 
-- Current branch/source truth: `codex/haze4k-residual-direction-loss`, synced
+- Current branch/source truth: `codex/haze4k-research-sync`, synced
   locally, on GitHub, and on `/root/workspace/Dehaze-Net-audit-sync`. Use
   `git log -1 --oneline` in the relevant checkout for the exact current commit.
 - No HAZE4K training run is currently active. The latest ResidualDirLoss scout
@@ -28,7 +28,7 @@ metrics in `docs/EXPERIMENT_LOG.md`, artifact policy in
 
 - Local workspace: `D:\Dehaze\Dehaze-Net`
 - Current local WSL workspace: `/home/ubuntu/workspace/Dehaze-Net`
-- Local editing branch: `codex/haze4k-residual-direction-loss`
+- Local editing branch: `codex/haze4k-research-sync`
 - Conditional LF code branch/run lineage: `codex/haze4k-conditional-lf`
 - ResidualCalib code branch/run lineage: `codex/haze4k-lf-residual-calibration`
 - ResidualDirLoss code branch/run lineage: `codex/haze4k-residual-direction-loss`
@@ -37,7 +37,7 @@ metrics in `docs/EXPERIMENT_LOG.md`, artifact policy in
 - Main server checkout: `/root/workspace/Dehaze-Net`
 - Conditional LF checkout: `/root/workspace/Dehaze-Net-conditional-lf`
 - Clean synced source checkout: `/root/workspace/Dehaze-Net-audit-sync`
-  - Current branch `codex/haze4k-residual-direction-loss`; verify the exact
+  - Current branch `codex/haze4k-research-sync`; verify the exact
     commit with `git log -1 --oneline`.
   - Purpose: Git-backed source truth for the audit/metadata/doc sync work.
   - It symlinks `dataset/HAZE4K` and `experiment` to the main server checkout
@@ -55,6 +55,24 @@ metrics in `docs/EXPERIMENT_LOG.md`, artifact policy in
   when explicitly requested.
 - Local project commands should run in WSL/bash. Windows PowerShell is still
   useful for `ssh runyun-ts` because that alias lives in Windows SSH config.
+
+## 2026-05-26 Research Sync State
+
+- Local WSL, GitHub `origin/codex/haze4k-research-sync`, and server clean
+  checkout `/root/workspace/Dehaze-Net-audit-sync` were verified at commit
+  `acafee751520f2cc6db7d615f954e80e12682b20`.
+- Git tracks no files under `experiment/`; datasets, checkpoints, synced
+  experiment byproducts, and temporary logs remain ignored.
+- Small cloud evidence from the older dirty server checkout was copied into
+  local ignored storage at `experiment/sync/runyun-ts-20260526/` and extracted
+  into local `experiment/HAZE4K/`.
+- Large cloud artifact candidates were inventoried but not synced. Use
+  `experiment/sync/runyun-ts-20260526/large-artifacts.txt` as the request list
+  if a later step needs selected checkpoints, full inference folders, large
+  image grids, arrays, datasets, or archives.
+- The older server checkout `/root/workspace/Dehaze-Net` remains dirty on
+  `codex/haze4k-lf-prior` and should not be treated as source truth. Use it
+  only for salvage or artifact inspection when explicitly intended.
 
 ## Non-Negotiable Training Rule
 

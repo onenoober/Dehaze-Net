@@ -117,6 +117,26 @@ order:
    --ff-only`.
 4. Verify local/GitHub/server all point at the same commit hash.
 
+Current integration branch for the WSL/GitHub/cloud handoff is
+`codex/haze4k-research-sync`. The last verified three-place source hash on
+2026-05-26 was `acafee751520f2cc6db7d615f954e80e12682b20`.
+
+Verification template:
+
+```bash
+cd /home/ubuntu/workspace/Dehaze-Net
+git status -sb
+git rev-parse HEAD
+git rev-parse origin/codex/haze4k-research-sync
+git ls-files experiment | wc -l
+```
+
+```powershell
+ssh runyun-ts 'cd /root/workspace/Dehaze-Net-audit-sync && git status -sb && git rev-parse HEAD && git rev-parse origin/codex/haze4k-research-sync && git ls-files experiment | wc -l'
+```
+
+The expected tracked `experiment/` file count is `0`.
+
 Do not edit source files directly on the server for experiment variants. If a
 server copy is intentionally not a Git checkout, either recreate it from the
 pushed Git source or record it as an isolated verification copy in

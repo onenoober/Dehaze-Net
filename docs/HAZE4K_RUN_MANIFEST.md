@@ -6,6 +6,29 @@
 
 本文件来自只读盘点，没有删除或移动任何远端/本地数据。
 
+## 2026-05-26 WSL Sync Snapshot
+
+Local WSL is the durable experiment artifact home. GitHub should keep only code,
+docs, commands, compact metrics, and conclusions. Cloud servers such as
+`runyun-ts` are temporary compute nodes.
+
+The 2026-05-26 small-evidence sync from `runyun-ts` is stored locally under
+ignored path `experiment/sync/runyun-ts-20260526/`:
+
+- `small-evidence-files.txt`: 236 compact evidence files selected from cloud
+  `experiment/HAZE4K`.
+- `small-evidence.tgz`: compact transfer archive, about 6.5 MB.
+- `cloud-status.txt`, `cloud-diff-name-status.txt`, `cloud-untracked.txt`, and
+  `cloud-uncommitted.patch`: inspection records from the older dirty server
+  checkout.
+- `cloud-untracked-small.tgz` and `untracked-small/`: compact untracked docs
+  and scripts that were small enough to inspect locally.
+- `large-artifacts.txt`: 5017 larger candidates intentionally not synced.
+
+The compact evidence was extracted into local ignored `experiment/HAZE4K/`.
+Do not add these files to Git. Sync selected large artifacts only when
+explicitly requested.
+
 ## Keep Policy
 
 | Policy | 含义 | 清理规则 |
