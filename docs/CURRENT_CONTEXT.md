@@ -7,16 +7,18 @@ metrics in `docs/EXPERIMENT_LOG.md`, artifact policy in
 
 ## Quick Handoff
 
-- Current branch/source truth: `codex/haze4k-research-sync`, synced
-  locally, on GitHub, and on `/root/workspace/Dehaze-Net-audit-sync`. Use
-  `git log -1 --oneline` in the relevant checkout for the exact current commit.
+- Current selector-audit branch/source truth:
+  `codex/haze4k-rich-selector-proxy-audit`, pushed to GitHub at commit
+  `52d0bb3` (`Audit HAZE4K selector proxy learnability`). Use
+  `git log -1 --oneline` in the relevant checkout to verify current state.
 - No HAZE4K training run is currently active. The latest ResidualDirLoss scout
   was stopped at the 30k hard gate and should not be resumed.
 - Current positive model evidence remains LF-v1; ResidualCalib is a positive
   ablation but not a replacement.
-- Latest route review says the "proxy audit before selector-v2" recommendation
-  is reliable, but safe proxies did not pass the local held-out audit. Do not
-  launch another LFResidualSelector 100k scout from oracle evidence alone.
+- Latest selector evidence says the "proxy audit before selector-v2"
+  recommendation was reliable, but strict CSV, rich CSV, and activation-forward
+  deployable proxies all failed the pass line. Do not launch another
+  LFResidualSelector 100k scout from oracle evidence alone.
 - Before any new model/loss/selector/mask scout, use
   `docs/HAZE4K_MODEL_CHANGE_PROTOCOL.md` to write the route card and
   mechanism-specific gate metrics.
@@ -28,7 +30,8 @@ metrics in `docs/EXPERIMENT_LOG.md`, artifact policy in
 
 - Local workspace: `D:\Dehaze\Dehaze-Net`
 - Current local WSL workspace: `/home/ubuntu/workspace/Dehaze-Net`
-- Local editing branch: `codex/haze4k-research-sync`
+- Local selector-audit branch: `codex/haze4k-rich-selector-proxy-audit`
+- General research-sync branch: `codex/haze4k-research-sync`
 - Conditional LF code branch/run lineage: `codex/haze4k-conditional-lf`
 - ResidualCalib code branch/run lineage: `codex/haze4k-lf-residual-calibration`
 - ResidualDirLoss code branch/run lineage: `codex/haze4k-residual-direction-loss`
@@ -366,9 +369,9 @@ Gate references for this run:
     residual precision `0.5231`;
   - GT-aware leakage check recovers the oracle (`+0.5796 dB`, recovery
     `0.9986`), confirming the target is real but not inference-safe.
-- Decision: do not launch selector-v2 yet. Either improve non-GT proxy features
-  or add an explicit supervised/distilled selector target and rerun the proxy
-  audit before any fair 100k selector scout.
+- Strict-audit decision at this stage: do not launch selector-v2 from strict
+  proxy evidence. The later rich and activation-forward audits below closed the
+  remaining deployable-proxy path.
 - Rich follow-up artifact:
   `experiment/HAZE4K/selector_proxy/Baseline-LFv1-ResidualCalib-full-rich-20260526/`
   - uses 280 metadata-free rich output/agreement features plus degradation-held

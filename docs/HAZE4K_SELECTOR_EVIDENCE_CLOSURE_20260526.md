@@ -13,9 +13,13 @@ Evidence chain:
   LF-v1.
 - The GT-aware oracle is strong, so the routing target exists.
 - Strict CSV proxy, rich CSV proxy, and frozen activation proxy all failed the
-  predeclared pass line on the full HAZE4K test set.
+  predeclared pass line using full-test evidence: strict/rich used the
+  1000-image three-way CSV with held-out splits, and activation-forward used
+  frozen checkpoint features from all 1000 test images.
 - ResidualSelector failed at the 20k gate.
-- ResidualDirLoss failed at the 30k hard gate.
+- ResidualDirLoss failed at the 30k hard gate on full validation PSNR/SSIM;
+  the 64-image residual review was supporting mechanism evidence, not the sole
+  basis for the stop.
 
 ## Decision
 

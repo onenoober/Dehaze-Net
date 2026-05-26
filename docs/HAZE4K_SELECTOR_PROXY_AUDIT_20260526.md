@@ -33,9 +33,10 @@ Negative evidence:
   Selector stats stayed near constant around `0.879`, so the branch did not
   learn meaningful selection.
 - The first residual-direction loss run failed the 30k hard gate. It tied the
-  baseline but remained behind LF-v1 by `-0.5195 dB`, and its route-specific
-  residual-direction metrics were worse than LF-v1 and ResidualCalib on the
-  64-image review subset.
+  baseline but remained behind LF-v1 by `-0.5195 dB` on full validation. Its
+  route-specific residual-direction metrics were also worse than LF-v1 and
+  ResidualCalib on the 64-image review subset, which is supporting mechanism
+  evidence rather than a standalone global conclusion.
 - Existing selector/oracle analysis says the best simple rule is
   `rescalib_from_lfv1_residual_error_ratio`, which is GT-aware.
 
@@ -203,7 +204,7 @@ exists but deployable activation/output proxies still do not recover it.
 
 ## Decision
 
-Do not launch another LFResidualSelector 100k scout yet.
+Do not launch another LFResidualSelector 100k scout from the current evidence.
 
 Strict, rich, and activation-forward proxy audits all failed the predeclared
 safe pass line. The reliable next step is to stop selector/structure search for

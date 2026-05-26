@@ -138,9 +138,9 @@ Do not launch selector-v2.
 The richer metadata-free proxy improved over strict output proxy on random
 splits (`+0.0956 dB` vs `+0.0268 dB`), but it still missed all three pass
 lines and weakened under degradation-held-out splits. The follow-up
-activation-forward audit then checked the only remaining plausible proxy route
-and also failed the pass line. Current selector-v2 training should not start
-from these evidence sets.
+activation-forward audit then checked the strongest remaining deployable-proxy
+route identified in this repo and also failed the pass line. Current
+selector-v2 training should not start from these evidence sets.
 
 The practical next step is to stop selector-v2 search and consolidate the
 paper story around LF-v1, ResidualCalib, oracle headroom, strict/rich/
