@@ -439,9 +439,25 @@ Gate references for this run:
   - dry-run `dryrun-H4K-CRPlusV2-args-20260526`.
   - 2-step smoke `smoke-H4K-CRPlusV2-20260526`, checkpoint step `2`;
     `loss_log` includes `CRPlusV2` with tail `[1.4913553, 1.4035805]`.
-- No fair CRPlus-v2 100k scout has been launched yet. Before launching, sync
-  branch `codex/haze4k-crplus-v2` to GitHub and the clean server checkout, then
-  dry-run/smoke on the target CUDA node.
+- Branch `codex/haze4k-crplus-v2` was pushed to GitHub at commit `2e0987c`.
+  Cloud server is currently unavailable, so the first fair scout is running on
+  local WSL/CUDA.
+- Active local fair scout:
+  `DEA-Net-CRPlusV2-w003-H4K-scout100k-20260526-192721`.
+  - tmux: `h4k_crplusv2_100k_20260526-192721`
+  - log:
+    `experiment/HAZE4K/_run_logs/DEA-Net-CRPlusV2-w003-H4K-scout100k-20260526-192721.log`
+  - launch env:
+    `experiment/HAZE4K/_run_logs/DEA-Net-CRPlusV2-w003-H4K-scout100k-20260526-192721.local_launch.env`
+  - fair config: `epochs=20`, `iters_per_epoch=5000`, total `100000`,
+    `bs=16`, `patch_size=256`, `w_loss_CR=0.1`,
+    `w_loss_crplus_v2=0.003`, eval/checkpoint every `10000`,
+    `save_epoch_checkpoints=false`, no LF prior or other auxiliary routes.
+  - startup health: tmux/process present, GPU about `15975 MiB / 99%`,
+    log reached step `17/100000` with stable speed about `8.7s/step`.
+  - The first 10k gate is expected to take about one day locally. Use matched
+    baseline 10k `27.1101 / 0.9615` as the sanity reference and stop on a
+    CRPlus-P1-like collapse.
 
 ## Model-Change Protocol
 
