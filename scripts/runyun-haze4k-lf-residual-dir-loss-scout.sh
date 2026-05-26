@@ -100,5 +100,6 @@ fi
   --eval_interval_steps "$EVAL_INTERVAL_STEPS_VALUE" \
   --save_epoch_checkpoints false \
   --no_pdf_plots \
+  "$@" \
   2>&1 | tee "$LOG_FILE"
 exit "${PIPESTATUS[0]}"
