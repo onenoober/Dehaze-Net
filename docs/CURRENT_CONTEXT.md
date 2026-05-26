@@ -153,8 +153,8 @@ restart pure mask stacking as the next step.
 ## Active LF ResidualSelector Run
 
 - Run ID: `DEA-Net-LF-ResidualSelector-H4K-scout100k-20260525-223844`
-- Status: launched on 2026-05-25 from remote clean checkout commit `7c93000`;
-  running in tmux at the time this context was updated.
+- Status: stopped on 2026-05-26 00:27 CST after the 20k gate failed; do not
+  resume this exact selector setting.
 - tmux session: `h4k_lf_resselector_100k_20260525_223844`
 - Launch script:
   `/root/workspace/Dehaze-Net-audit-sync/experiment/HAZE4K/_run_logs/DEA-Net-LF-ResidualSelector-H4K-scout100k-20260525-223844.sh`
@@ -170,6 +170,24 @@ restart pure mask stacking as the next step.
   `lf_residual_selector=True`, `lf_selector_init_bias=2.0`.
 - Startup health: process and tmux were present; GPU showed about `13919 MiB`
   used and `87%` utilization shortly after launch.
+- 10k gate, checked 2026-05-25 23:16 CST: `latest.pk` and `best.pk` both
+  at step `10000`, PSNR `26.7739`, SSIM `0.9615`. This is below baseline
+  by `-0.3362 dB`, above LF-v1 by `+0.5088 dB`, and above ResidualCalib by
+  `+0.2073 dB`; SSIM is essentially tied with baseline but below LF-v1 and
+  ResidualCalib. Continue to the 20k gate because it is not broken.
+- 10k selector diagnostics: `LF_selector_mean/std/min/max =
+  0.878648/0.000117/0.877970/0.878947`; `LF_alpha_mean/std/min/max =
+  0.499702/0.000040/0.499460/0.499879`. The selector is still near
+  initialization, so the 20k gate should check whether it becomes more
+  selective.
+- 20k gate, checked 2026-05-26 00:26 CST: `latest.pk` and `best.pk` both
+  at step `20000`, PSNR `27.6830`, SSIM `0.9713`. This is clearly below
+  baseline by `-1.2200 dB`, LF-v1 by `-1.1733 dB`, and ResidualCalib by
+  `-0.8175 dB`; selector stats remained near-constant
+  (`LF_selector_mean/std/min/max =
+  0.879248/0.000051/0.878806/0.879565`; `LF_alpha_mean/std/min/max =
+  0.499793/0.000094/0.499178/0.499984`). Stopped by PGID `50061` before
+  30k; verification showed no matching process/tmux and GPU `0 MiB / 0%`.
 
 Gate references for this run:
 
