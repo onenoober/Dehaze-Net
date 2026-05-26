@@ -286,15 +286,35 @@ save_epoch_checkpoints=false
 ```
 
 Validation still runs every `10000` steps so the curve is comparable and
-recoverable. Decision gates are not all equally strict:
+recoverable. Decision gates are not all equally strict, and they are not
+PSNR/SSIM-only gates.
+
+Before launching a fair candidate, write down the mechanism-specific diagnostic
+signals that the architecture is supposed to improve. PSNR/SSIM remain the
+global quality guardrails, but continuation past a weak gate requires evidence
+from the route's own target:
+
+- residual direction or calibration routes: residual-direction loss/cosine,
+  wrong-direction count, low-frequency MSE delta, residual norm/error ratio,
+  and strong-baseline regressions.
+- selector or mask routes: selector/mask mean/std/min/max, whether the map is
+  near-constant, and whether the selected branch improves the intended
+  residual/error groups.
+- teacher or guard routes: guard activation/weight, guarded-regression counts,
+  teacher loss behavior, and whether the guard is active at the failed gate.
+- frequency-reconstruction routes: low-frequency L1/MSE and color/tone
+  regressions, not only the weighted training loss.
+
+Use the list above as examples, not a fixed template. Each new route should
+name its own mechanism metrics in the experiment card before the long scout.
 
 | Step | Role | Rule |
 | ---: | --- | --- |
-| 10000 | sanity gate | stop only if clearly broken, unstable, or more than about `0.8 dB` below both baseline and the direct predecessor |
-| 20000 | early trajectory gate | stop if more than about `0.5 dB` below both references with no diagnostic upside |
-| 30000 | first hard gate | for a route that is merely tied at 20k, require recovery toward the direct predecessor; stop if clearly below both or if diagnostics show degeneration |
-| 50000 | promotion gate | must be at least close to baseline and preferably close to the direct predecessor; otherwise stop |
-| 70000 | late confirmation | continue only if still competitive and diagnostics are not worsening |
+| 10000 | sanity gate | stop only if quality collapses, training is unstable, or mechanism diagnostics show the route is inactive/degenerate |
+| 20000 | early trajectory gate | stop if more than about `0.5 dB` below both references with no route-specific diagnostic upside |
+| 30000 | first hard gate | for a route that is merely tied at 20k, require recovery toward the direct predecessor or clear mechanism improvement; stop if clearly below both or if route diagnostics fail |
+| 50000 | promotion gate | must be at least close to baseline and preferably close to the direct predecessor, with mechanism metrics not worse than the predecessor |
+| 70000 | late confirmation | continue only if still competitive and route-specific diagnostics are not worsening |
 | 90000 | best-checkpoint check | compare against known best-step behavior; prepare full-test analysis if competitive |
 | 100000 | final scout point | run only if the 50k/70k gates justify the remaining compute |
 

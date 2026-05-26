@@ -225,18 +225,14 @@ Gate references for this run:
   `smoke-H4K-LF-ResidualDirLoss-20260526`.
   It wrote `saved_model/latest.pk` at step `2`; checkpoint `loss_log` includes
   `ResidualDir`; post-check showed GPU `0 MiB / 0%`.
-- Next action: if launching a fair scout, use
-  `scripts/runyun-haze4k-lf-residual-dir-loss-scout.sh` with the standard
-  100k target and default `W_LOSS_RESIDUAL_DIR=0.005`.
-- If promoted, the first training candidate should be only
-  `LF-v1 + small residual-direction loss`; do not combine it with
-  ResidualCalib, ResidualSelector, Conditional LF, Haze-Aware Mask,
-  TeacherGuard, LowFreqLoss, or CRPlus.
+- The first fair scout below failed the 30k route-specific hard gate. Do not
+  resume this exact `w_loss_residual_dir=0.005` setting.
 
-## Active LF ResidualDirLoss Run
+## Stopped LF ResidualDirLoss Run
 
 - Run ID: `DEA-Net-LF-ResidualDirLoss-w005-H4K-scout100k-20260526-103853`
-- Status: launched on 2026-05-26; startup health check passed.
+- Status: stopped on 2026-05-26 about 12:56 CST after the 30k hard gate and
+  route-specific diagnostic review failed; do not resume this exact setting.
 - Local/GitHub/remote branch: `codex/haze4k-residual-direction-loss`
 - Local/GitHub/remote commit: `521392c`
 - Remote checkout: `/root/workspace/Dehaze-Net-audit-sync`
@@ -258,12 +254,38 @@ Gate references for this run:
   no TeacherGuard, no LowFreqLoss, no CRPlus.
 - Startup health: tmux/process present; GPU about `13193 MiB / 83%`;
   log reached step `129/100000` shortly after launch.
-- Gate references:
-  - 10k: stop only if clearly broken or repeating LowFreqLoss collapse.
-  - 20k: must not be clearly below both baseline and LF-v1.
-  - 30k hard gate: should be close to LF-v1 `30.6253 / 0.9783`.
-  - 50k: must be at least baseline `31.2384 / 0.9817`, preferably near
-    LF-v1 `31.3419 / 0.9817`.
+- Gate metrics:
+  - 10k: `25.5050 / 0.9614`; below baseline, LF-v1, and ResidualCalib on
+    PSNR, but SSIM did not collapse.
+  - 20k: `28.9783 / 0.9733`; PSNR recovered above the 20k references, so the
+    run was allowed to continue to the 30k hard gate.
+  - 30k: `30.1058 / 0.9779`; essentially baseline-level
+    (`30.1143 / 0.9776`) but clearly behind LF-v1
+    (`30.6253 / 0.9783`) and ResidualCalib (`30.3852 / 0.9782`).
+- Route-specific diagnostic review:
+  - Output dirs:
+    `experiment/HAZE4K/loss_scale/residual-dir-hardgate-review-20260526/`
+    and
+    `experiment/HAZE4K/residual_diagnostic/residual-dir-hardgate-review-20260526/`.
+  - On the 64-image test subset, direct residual-direction loss was worse:
+    ResidualDirLoss-30k `0.04645` vs LF-v1-best `0.03565` and
+    ResidualCalib-best `0.03330`.
+  - Direct residual cosine was worse:
+    ResidualDirLoss-30k `0.95355` vs LF-v1-best `0.96435` and
+    ResidualCalib-best `0.96670`.
+  - Relative to CR on the same 64-image subset, wrong-direction count was
+    `30/64` and LF MSE improved/regressed `17/47`, worse than LF-v1
+    (`18/64`, `32/32`) and ResidualCalib (`22/64`, `26/38`).
+  - Even though train checkpoint `loss_log` showed `ResidualDir` falling from
+    `0.29394` to `0.02585`, the test-side mechanism metrics did not improve.
+- Stop verification: before stopping the log had reached about
+  `35776/100000`; `latest.pk` and `best.pk` remained at 30k. Stopped by
+  `kill -TERM -- -7896`, then killed the tmux session. Verification showed no
+  matching process/tmux and GPU `0 MiB / 0%`.
+- Gate-rule update: future gates should use PSNR/SSIM as global guardrails plus
+  mechanism-specific metrics chosen for the architecture. Residual-direction
+  metrics are required for this route, but should not be blindly reused for
+  unrelated routes.
 
 ## Stopped LF-v2 Haze-Aware Mask Run
 

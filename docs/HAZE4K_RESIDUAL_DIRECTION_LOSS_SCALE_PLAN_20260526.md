@@ -163,7 +163,7 @@ Remote validation:
 - Checkpoint `loss_log` includes `ResidualDir`.
 - GPU returned to idle after smoke.
 
-Active fair scout:
+Stopped fair scout:
 
 ```text
 DEA-Net-LF-ResidualDirLoss-w005-H4K-scout100k-20260526-103853
@@ -175,6 +175,42 @@ DEA-Net-LF-ResidualDirLoss-w005-H4K-scout100k-20260526-103853
   `experiment/HAZE4K/_run_logs/DEA-Net-LF-ResidualDirLoss-w005-H4K-scout100k-20260526-103853.log`
 - Fair target: `100000` steps.
 - Startup check passed with GPU about `13193 MiB / 83%`.
+- Stopped on 2026-05-26 about 12:56 CST after failing the 30k hard gate.
+- Stop verification: main train PID `7905`, PGID `7896`; stopped with
+  `kill -TERM -- -7896`, tmux session was killed, and the follow-up check found
+  no matching process/tmux with GPU `0 MiB / 0%`.
+
+Gate result:
+
+- 10k: `25.5050 / 0.9614`, below all references on PSNR but not collapsed.
+- 20k: `28.9783 / 0.9733`, recovered enough to continue to the 30k hard gate.
+- 30k: `30.1058 / 0.9779`, tied with baseline 30k
+  `30.1143 / 0.9776` but below LF-v1 `30.6253 / 0.9783` by `-0.5195 dB`
+  and below ResidualCalib `30.3852 / 0.9782` by `-0.2794 dB`.
+
+Route-specific diagnostic result:
+
+- Diagnostic dirs:
+  `experiment/HAZE4K/loss_scale/residual-dir-hardgate-review-20260526/`
+  and
+  `experiment/HAZE4K/residual_diagnostic/residual-dir-hardgate-review-20260526/`.
+- On a 64-image test subset, direct residual-direction loss was worse for the
+  30k checkpoint: ResidualDirLoss `0.04645` vs LF-v1-best `0.03565` and
+  ResidualCalib-best `0.03330`.
+- Direct residual cosine was also worse: ResidualDirLoss `0.95355`,
+  LF-v1-best `0.96435`, ResidualCalib-best `0.96670`.
+- CR-relative residual diagnostic on the same subset showed wrong-direction
+  count `30/64` and LF MSE improved/regressed `17/47`; LF-v1-best was
+  `18/64` and `32/32`, ResidualCalib-best was `22/64` and `26/38`.
+- The training loss itself did move in the desired direction:
+  checkpoint `loss_log` had `ResidualDir` from `0.29394` to `0.02585`, but
+  that did not transfer to the test-side mechanism metrics by 30k.
+
+Decision:
+
+Treat `w_loss_residual_dir=0.005` as a negative fair ablation. Do not continue
+this run to 50k/100k, and do not retry the same setting without changing the
+loss definition or target.
 
 ## Remote Scale-Diagnostic Command
 
@@ -240,14 +276,30 @@ LF-v1 + small residual-direction loss
 
 No selector, no ResidualCalib, no CRPlus, no mask, no teacher guard.
 
-## Stop Rules For Future Training
+## Gate Rules For Future Training
 
-If a training candidate is implemented after the scale check, it must use the
-standard fair HAZE4K 100k target and the usual gates:
+Every training candidate must still use the standard fair HAZE4K 100k target.
+PSNR/SSIM are global quality guardrails, but the gate also has to read the
+mechanism-specific metrics for the architecture being tested.
+
+For residual-direction-loss routes, use:
+
+- direct residual-direction loss and residual cosine against GT;
+- CR-relative or predecessor-relative wrong-direction count;
+- low-frequency MSE improved/regressed;
+- residual norm/error ratio and strong-baseline regressions.
+
+For selector, mask, teacher-guard, or other routes, define the matching
+diagnostic signals before launch rather than reusing this residual-specific
+list blindly.
+
+For this route family:
 
 - 10k/20k: stop if it repeats the LowFreqLoss collapse pattern.
-- 30k: should be close to LF-v1 30k `30.6253 / 0.9783`.
+- 30k: should be close to LF-v1 30k `30.6253 / 0.9783`, or show clear
+  residual-direction diagnostic improvement that justifies one more gate.
 - 50k: must be at least baseline 50k `31.2384 / 0.9817`, preferably near
-  LF-v1 50k `31.3419 / 0.9817`.
+  LF-v1 50k `31.3419 / 0.9817`, with residual diagnostics not worse than
+  LF-v1.
 - 90k/100k: promote only if it beats LF-v1, or matches LF-v1 while reducing
   wrong-direction and strong-baseline regressions.
