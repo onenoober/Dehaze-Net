@@ -216,8 +216,18 @@ Gate references for this run:
   - `w=0.005` weighted direction loss is about `0.13%` of L1 on train crops
     and about `0.67%` of L1 on test full images.
 - Training options and launcher are prepared locally with default
-  `w_loss_residual_dir=0.005`; next action is source-sync, dry-run, and 2-step
-  smoke on `/root/workspace/Dehaze-Net-audit-sync`.
+  `w_loss_residual_dir=0.005`.
+- Remote source-sync completed on `/root/workspace/Dehaze-Net-audit-sync`;
+  branch `codex/haze4k-residual-direction-loss`, commit `f316354`.
+- Dry-run passed:
+  `dryrun-H4K-LF-ResidualDirLoss-args-20260526`.
+- 2-step smoke passed:
+  `smoke-H4K-LF-ResidualDirLoss-20260526`.
+  It wrote `saved_model/latest.pk` at step `2`; checkpoint `loss_log` includes
+  `ResidualDir`; post-check showed GPU `0 MiB / 0%`.
+- Next action: if launching a fair scout, use
+  `scripts/runyun-haze4k-lf-residual-dir-loss-scout.sh` with the standard
+  100k target and default `W_LOSS_RESIDUAL_DIR=0.005`.
 - If promoted, the first training candidate should be only
   `LF-v1 + small residual-direction loss`; do not combine it with
   ResidualCalib, ResidualSelector, Conditional LF, Haze-Aware Mask,

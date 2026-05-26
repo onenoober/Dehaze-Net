@@ -152,6 +152,17 @@ residual_dir_pool=8
 residual_dir_warmup_steps=0
 ```
 
+Remote validation:
+
+- Source synced to `/root/workspace/Dehaze-Net-audit-sync`, commit `f316354`.
+- Dry-run passed: `dryrun-H4K-LF-ResidualDirLoss-args-20260526`.
+- 2-step smoke passed: `smoke-H4K-LF-ResidualDirLoss-20260526`.
+- Smoke checkpoint:
+  `experiment/HAZE4K/smoke-H4K-LF-ResidualDirLoss-20260526/saved_model/latest.pk`
+  at step `2`.
+- Checkpoint `loss_log` includes `ResidualDir`.
+- GPU returned to idle after smoke.
+
 ## Remote Scale-Diagnostic Command
 
 Run from the clean server checkout after syncing this branch:
