@@ -20,12 +20,14 @@ metrics in `docs/EXPERIMENT_LOG.md`, artifact policy in
 - Before any new model/loss/selector/mask scout, use
   `docs/HAZE4K_MODEL_CHANGE_PROTOCOL.md` to write the route card and
   mechanism-specific gate metrics.
-- Local machine is for code/docs/Git; CUDA dry-run, smoke, training, and eval
-  run on `runyun-ts`.
+- Local WSL is the durable workspace and experiment artifact home. GitHub is
+  the lightweight code/docs/small-evidence relay. `runyun-ts` is a temporary
+  compute node.
 
 ## Current State
 
 - Local workspace: `D:\Dehaze\Dehaze-Net`
+- Current local WSL workspace: `/home/ubuntu/workspace/Dehaze-Net`
 - Local editing branch: `codex/haze4k-residual-direction-loss`
 - Conditional LF code branch/run lineage: `codex/haze4k-conditional-lf`
 - ResidualCalib code branch/run lineage: `codex/haze4k-lf-residual-calibration`
@@ -41,10 +43,18 @@ metrics in `docs/EXPERIMENT_LOG.md`, artifact policy in
   - It symlinks `dataset/HAZE4K` and `experiment` to the main server checkout
     for dry-run validation without touching the older dirty training checkouts.
 - Server env: `/opt/anaconda/envs/py310/bin/python`
-- Local machine is for coding, docs, Git, and static checks only. Dry-run,
-  smoke, training, benchmark, and evaluation run on the cloud CUDA server.
-- Local commands are Windows PowerShell; server commands are Ubuntu/Linux. Use
-  the PowerShell here-string SSH pattern below for multi-line server commands.
+- Local WSL env: `/home/ubuntu/miniconda3/envs/py310`.
+  Validated on 2026-05-26 with PyTorch `2.11.0+cu128`, CUDA `12.8`,
+  RTX 4080 SUPER, OpenCV `4.6.0`, NumPy `1.26.4`, and Matplotlib installed.
+- Local WSL stores durable experiment artifacts under ignored paths such as
+  `experiment/`, `trained_models/`, and `dataset/`.
+- Cloud compute outputs should be synced back to local WSL by size and value:
+  small logs, metric summaries, CSV/JSON summaries, scripts, and conclusions
+  can be synced when they guide route decisions; checkpoints, full inference
+  folders, datasets, large image grids, arrays, and archives are synced only
+  when explicitly requested.
+- Local project commands should run in WSL/bash. Windows PowerShell is still
+  useful for `ssh runyun-ts` because that alias lives in Windows SSH config.
 
 ## Non-Negotiable Training Rule
 

@@ -92,6 +92,7 @@ parser.add_argument('--tb_log_interval', type=int, default=20, help='write Tenso
 parser.add_argument('--dry_run', action='store_true', help='validate setup and resume checkpoint, then exit before training')
 parser.add_argument('--no_pdf_plots', action='store_true', help='skip PDF curve rendering during training')
 parser.add_argument('--eval_interval_steps', type=int, default=0, help='override evaluation interval in steps; 0 keeps upstream schedule')
+parser.add_argument('--max_test_batches', type=int, default=0, help='limit validation batches during training; 0 uses the full test set')
 parser.add_argument('--checkpoint_interval_steps', type=int, default=0, help='save latest checkpoint without evaluation every N steps; 0 disables extra saves')
 parser.add_argument('--save_epoch_checkpoints', type=str2bool, nargs='?', const=True, default=True, help='save numbered epoch checkpoints in addition to best/latest')
 parser.add_argument('--early_stop_patience_evals', type=int, default=0, help='stop after N evaluations without enough improvement; 0 disables early stopping')

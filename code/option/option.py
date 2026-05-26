@@ -15,6 +15,7 @@ parser.add_argument('--max_test_batches', type=int, default=0, help='limit evalu
 # only need for evaluation
 parser.add_argument('--pre_trained_model', type=str, default='null', help='path of pre trained model for resume training')
 parser.add_argument('--save_infer_results', action='store_true', default=False, help='save the infer results during validation')
+parser.add_argument('--max_eval_batches', type=int, default=0, help='limit evaluation batches; 0 evaluates the full dataset')
 opt=parser.parse_args()
 
 if opt.val_dataset_dir is None:

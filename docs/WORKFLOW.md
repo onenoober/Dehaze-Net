@@ -6,6 +6,27 @@ For document boundaries and where to write new analysis, start with
 `docs/README.md`. This file is only for repeatable workflow and command
 templates.
 
+## Storage Roles
+
+- GitHub is the lightweight code and documentation repository. Do not store
+  datasets, checkpoints, large generated images, large inference folders, or
+  bulky experiment artifacts in GitHub.
+- Local WSL is the experiment artifact home. Keep datasets, checkpoints, full
+  logs, plots, previews, and other research byproducts under the local WSL
+  workspace, usually in ignored paths such as `dataset/`, `trained_models/`,
+  and `experiment/`.
+- Cloud servers such as `runyun-ts` are temporary compute nodes. They can
+  produce checkpoints, logs, metrics, and analysis outputs, but the durable
+  copy should eventually live in local WSL.
+- Sync small cloud outputs back to local WSL when they help choose the next
+  research route: launch scripts, compact logs, metric summaries, CSV/JSON
+  summaries, experiment-log rows, and conclusion documents.
+- Sync large cloud outputs only when explicitly requested: checkpoints, full
+  inference folders, large image grids, large tensor arrays, datasets, and
+  archives.
+- After small cloud outputs are reviewed locally, put only the distilled code,
+  documentation, commands, metrics, and conclusions into GitHub.
+
 ## Local loop
 1. Create a topic branch.
 2. Make a focused change.
@@ -15,7 +36,8 @@ templates.
 
 Example:
 
-```powershell
+```bash
+cd /home/ubuntu/workspace/Dehaze-Net
 git checkout -b feat/wavelet-fusion
 git add -A
 git commit -m "Add wavelet fusion prototype"
@@ -24,21 +46,25 @@ git push -u origin feat/wavelet-fusion
 
 ## Server Loop Boundary
 
-Current instruction: operate only on local files and GitHub unless the user
-explicitly asks to sync or run on the server. The server-side commands below are
-templates for later use, not permission to run them automatically.
+Current instruction: operate on local WSL files, GitHub, and cloud sync only
+when the user asks for that scope. The server-side commands below are templates
+for later use, not permission to run long jobs automatically.
 
-Command validation note from 2026-05-24: the local machine is Windows
-PowerShell, while the cloud server is Ubuntu/Linux. Run multi-line Linux
-commands through the PowerShell here-string pattern shown below, or run the
-`bash` snippets only after entering the server shell/tmux. Do not paste Linux
-syntax directly into local PowerShell.
+Command validation note from 2026-05-26: the durable local workspace is WSL
+Ubuntu with bash at `/home/ubuntu/workspace/Dehaze-Net`. Windows PowerShell is
+still useful for `ssh runyun-ts` because that alias lives in Windows SSH config.
+Run local project commands in WSL/bash; run multi-line cloud commands through
+the PowerShell here-string pattern shown below, or run the `bash` snippets only
+after entering the server shell/tmux.
 
 ## Server loop
-1. Pull the latest branch on the rented server.
-2. Run training or evaluation from `code/`.
-3. Save logs and checkpoints outside Git.
-4. Update the experiment log with the final result.
+1. Treat the server as disposable compute, not the artifact source of truth.
+2. Pull or receive the intended code branch on the rented server.
+3. Run training or evaluation from `code/`.
+4. Save logs, checkpoints, inference outputs, and intermediate artifacts outside Git.
+5. Sync small evidence back to local WSL when useful for route decisions.
+6. Sync large artifacts back to local WSL only on request.
+7. Update the local experiment log with final metrics, stop/resume state, and conclusions.
 
 Codex should make source changes locally, commit and push them, then pull on the
 server before testing or training. Do not edit source files directly on the
@@ -84,7 +110,7 @@ HTTP(S), but the current private-repo path should be SSH.
 When the user asks to keep local, GitHub, and the cloud server unified, use this
 order:
 
-1. Commit locally after checks pass.
+1. Commit locally in WSL after checks pass.
 2. Push the branch to GitHub.
 3. On each Git-backed server checkout, verify the target path, run
    `git status -sb`, fetch the pushed branch, and only then `git pull
