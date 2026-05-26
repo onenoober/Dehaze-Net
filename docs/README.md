@@ -1,5 +1,11 @@
 # Documentation Index
 
+Model-change entry point: before any long HAZE4K model, loss, selector, mask,
+or guard scout, read `docs/HAZE4K_MODEL_CHANGE_PROTOCOL.md`. The route card
+must define the target failure mode, mechanism hypothesis, route-specific
+mechanism metrics, and matched gate rules. PSNR/SSIM are global guardrails, not
+the only decision evidence.
+
 用途：作为后续对话和人工查看的最小入口。先读少量入口文档，再按任务加载证据文档，避免把当前状态、命令、指标、artifact 和方法分析混在一起。
 
 本文档使用 UTF-8。Windows PowerShell 中建议用 `Get-Content -Encoding UTF8` 读取中文文档。

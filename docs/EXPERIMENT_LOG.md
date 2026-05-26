@@ -6,6 +6,11 @@ metric, stop/resume state, and decision. Put long method reasoning in the
 dated analysis docs, command templates in `docs/WORKFLOW.md`, and artifact
 keep/delete policy in `docs/HAZE4K_RUN_MANIFEST.md`.
 
+For model, loss, selector, mask, or guard changes, the Notes cell must include
+the mechanism-specific evidence used for the decision, not only PSNR/SSIM. The
+required route-card and gate format is defined in
+`docs/HAZE4K_MODEL_CHANGE_PROTOCOL.md`.
+
 ## HAZE4K Fair-Comparison Rule
 
 Formal HAZE4K candidate runs must be launched with the same 100k-step target:
@@ -17,6 +22,20 @@ not separately launched short schedules. A run launched with `epochs=4`,
 `epochs=10`, a different LR horizon, a changed batch/data/loss protocol, or a
 resume that changes `epochs * iters_per_epoch` is diagnostic only and must be
 excluded from baseline/LF-v1/candidate metric tables.
+
+## Mechanism-Gate Rule
+
+Every fair candidate must be judged by:
+
+- image quality guardrails: PSNR and SSIM at matched gates;
+- route-specific mechanism metrics declared before launch;
+- a stop/continue decision that explains both sides.
+
+Examples: residual routes should report residual cosine/loss and wrong-direction
+or LF-MSE counts; selector or mask routes should report selector/mask activity
+and target-group behavior; teacher/guard routes should report guard activation
+and guarded-regression behavior. Use the metrics that match the claimed
+mechanism rather than a fixed global checklist.
 
 | Date | Branch | Dataset | Model | Change | Result | Notes |
 | --- | --- | --- | --- | --- | --- | --- |

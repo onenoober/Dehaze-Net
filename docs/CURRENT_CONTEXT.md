@@ -287,6 +287,22 @@ Gate references for this run:
   metrics are required for this route, but should not be blindly reused for
   unrelated routes.
 
+## Model-Change Protocol
+
+Future HAZE4K model changes should be written up in
+`docs/HAZE4K_MODEL_CHANGE_PROTOCOL.md` before a long scout starts. The route
+card must name:
+
+- the failure mode being targeted;
+- the mechanism hypothesis;
+- the exact code/loss change;
+- the route-specific mechanism metrics;
+- the gate rules for 10k/20k/30k/50k;
+- the full-test artifact required before claiming success.
+
+For this repo, PSNR/SSIM are necessary guardrails, but they are not enough on
+their own. The mechanism metrics must match the route under test.
+
 ## Stopped LF-v2 Haze-Aware Mask Run
 
 - Run ID: `DEA-Net-LF-HazeAwareMask-H4K-scout100k-20260524-152758`

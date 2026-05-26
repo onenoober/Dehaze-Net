@@ -267,6 +267,12 @@ Local Windows is for coding, docs, Git, and lightweight static checks only.
 Dry-run, smoke, training, benchmark, and evaluation must run on the cloud CUDA
 server.
 
+Before changing model architecture or training loss, open
+`docs/HAZE4K_MODEL_CHANGE_PROTOCOL.md` and create or update the route's dated
+experiment card. A long fair scout should not start until the card contains the
+failure mode, mechanism hypothesis, enabled/disabled flags, route-specific
+mechanism metrics, and written gate rules.
+
 Formal HAZE4K candidate/scout runs must start with the same target horizon and
 core training protocol:
 
