@@ -264,6 +264,45 @@ def low_frequency_loss(out, target):
     return F.l1_loss(low_out, low_target)
 
 
+def residual_direction_loss(out, hazy, target, step):
+    if opt.w_loss_residual_dir <= 0:
+        return None
+    if step < opt.residual_dir_warmup_steps:
+        return None
+    if opt.residual_dir_pool <= 0:
+        raise ValueError('residual_dir_pool must be positive')
+    low_out = F.avg_pool2d(
+        out,
+        kernel_size=opt.residual_dir_pool,
+        stride=opt.residual_dir_pool,
+        ceil_mode=True
+    )
+    low_hazy = F.avg_pool2d(
+        hazy,
+        kernel_size=opt.residual_dir_pool,
+        stride=opt.residual_dir_pool,
+        ceil_mode=True
+    )
+    low_target = F.avg_pool2d(
+        target,
+        kernel_size=opt.residual_dir_pool,
+        stride=opt.residual_dir_pool,
+        ceil_mode=True
+    )
+    pred_residual = low_out - low_hazy
+    target_residual = low_target - low_hazy
+    pred_vec = pred_residual.reshape(pred_residual.shape[0], -1)
+    target_vec = target_residual.reshape(target_residual.shape[0], -1)
+    pred_norm = pred_vec.norm(dim=1)
+    target_norm = target_vec.norm(dim=1)
+    valid = target_norm > opt.residual_dir_target_norm_floor
+    if not valid.any():
+        return out.new_zeros(())
+    cosine = (pred_vec[valid] * target_vec[valid]).sum(dim=1)
+    cosine = cosine / (pred_norm[valid] * target_norm[valid] + 1e-8)
+    return (1.0 - cosine).mean()
+
+
 def per_sample_l1(a, b, pool_size=0):
     if pool_size < 0:
         raise ValueError('teacher_guard_patch_pool must be non-negative')
@@ -339,7 +378,7 @@ def train(net, loader_train, loader_test, optim, criterion, writer=None, trainin
     if 'loss_log' in training_state:
         loss_log = training_state['loss_log']
     for key in (
-        'LF_gate', 'LowFreq', 'TeacherGuard',
+        'LF_gate', 'LowFreq', 'ResidualDir', 'TeacherGuard',
         'LF_mask_mean', 'LF_mask_std', 'LF_mask_min', 'LF_mask_max',
         'LF_alpha_mean', 'LF_alpha_std', 'LF_alpha_min', 'LF_alpha_max',
         'LF_selector_mean', 'LF_selector_std', 'LF_selector_min', 'LF_selector_max'
@@ -386,12 +425,15 @@ def train(net, loader_train, loader_test, optim, criterion, writer=None, trainin
                 loss_CR = criterion[1](out, y, x)
             loss_lf_gate = lf_gate_regularization(net)
             loss_lowfreq = low_frequency_loss(out, y)
+            loss_residual_dir = residual_direction_loss(out, x, y, step)
             loss_teacher_guard = teacher_guard_loss(out, x, y, step, teacher_net)
             loss = opt.w_loss_L1 * loss_L1 + opt.w_loss_CR * loss_CR
             if loss_lf_gate is not None:
                 loss = loss + opt.w_loss_lf_gate * loss_lf_gate
             if loss_lowfreq is not None:
                 loss = loss + opt.w_loss_lowfreq * loss_lowfreq
+            if loss_residual_dir is not None:
+                loss = loss + opt.w_loss_residual_dir * loss_residual_dir
             if loss_teacher_guard is not None:
                 loss = loss + opt.w_loss_teacher_guard * loss_teacher_guard
             loss.backward()
@@ -408,6 +450,8 @@ def train(net, loader_train, loader_test, optim, criterion, writer=None, trainin
                 loss_log_tmp['LF_gate'].append(loss_lf_gate.item())
             if loss_lowfreq is not None:
                 loss_log_tmp['LowFreq'].append(loss_lowfreq.item())
+            if loss_residual_dir is not None:
+                loss_log_tmp['ResidualDir'].append(loss_residual_dir.item())
             if loss_teacher_guard is not None:
                 loss_log_tmp['TeacherGuard'].append(loss_teacher_guard.item())
             if lf_mask_stats is not None:
@@ -431,6 +475,9 @@ def train(net, loader_train, loader_test, optim, criterion, writer=None, trainin
                 if loss_lowfreq is not None:
                     writer.add_scalar('train/loss_lowfreq', loss_lowfreq.item(), step)
                     writer.add_scalar('train/loss_lowfreq_weighted', opt.w_loss_lowfreq * loss_lowfreq.item(), step)
+                if loss_residual_dir is not None:
+                    writer.add_scalar('train/loss_residual_dir', loss_residual_dir.item(), step)
+                    writer.add_scalar('train/loss_residual_dir_weighted', opt.w_loss_residual_dir * loss_residual_dir.item(), step)
                 if loss_teacher_guard is not None:
                     writer.add_scalar('train/loss_teacher_guard', loss_teacher_guard.item(), step)
                     writer.add_scalar('train/loss_teacher_guard_weighted', opt.w_loss_teacher_guard * loss_teacher_guard.item(), step)

@@ -198,6 +198,31 @@ Gate references for this run:
 | 30000 | `30.1143 / 0.9776` | `30.6253 / 0.9783` | `30.3852 / 0.9782` | hard gate; continue only if close to LF-v1 or diagnostically promising |
 | 50000 | `31.2384 / 0.9817` | `31.3419 / 0.9817` | `31.1396 / 0.9808` | if below baseline, stop |
 
+## Current Residual-Direction Loss Scale Step
+
+- Local branch: `codex/haze4k-residual-direction-loss`
+- Rationale: the ResidualSelector 20k failure makes another selector or mask
+  low-value. LF-v1 and ResidualCalib evidence still points to low-frequency
+  residual direction as the next useful target.
+- New read-only script:
+  `code/analyze_residual_direction_loss_scale.py`
+- New experiment card:
+  `docs/HAZE4K_RESIDUAL_DIRECTION_LOSS_SCALE_PLAN_20260526.md`
+- Remote loss-scale diagnostics completed on 2026-05-26 using LF-v1 best.pk:
+  - train center-crop 256 output:
+    `experiment/HAZE4K/loss_scale/residual-direction-lfv1-train256-20260526/`
+  - test full-image 256 output:
+    `experiment/HAZE4K/loss_scale/residual-direction-lfv1-test256-20260526/`
+  - `w=0.005` weighted direction loss is about `0.13%` of L1 on train crops
+    and about `0.67%` of L1 on test full images.
+- Training options and launcher are prepared locally with default
+  `w_loss_residual_dir=0.005`; next action is source-sync, dry-run, and 2-step
+  smoke on `/root/workspace/Dehaze-Net-audit-sync`.
+- If promoted, the first training candidate should be only
+  `LF-v1 + small residual-direction loss`; do not combine it with
+  ResidualCalib, ResidualSelector, Conditional LF, Haze-Aware Mask,
+  TeacherGuard, LowFreqLoss, or CRPlus.
+
 ## Stopped LF-v2 Haze-Aware Mask Run
 
 - Run ID: `DEA-Net-LF-HazeAwareMask-H4K-scout100k-20260524-152758`
