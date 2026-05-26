@@ -163,6 +163,19 @@ Remote validation:
 - Checkpoint `loss_log` includes `ResidualDir`.
 - GPU returned to idle after smoke.
 
+Active fair scout:
+
+```text
+DEA-Net-LF-ResidualDirLoss-w005-H4K-scout100k-20260526-103853
+```
+
+- Branch/commit: `codex/haze4k-residual-direction-loss` / `521392c`
+- tmux: `h4k_lf_resdir_100k_20260526-103853`
+- Log:
+  `experiment/HAZE4K/_run_logs/DEA-Net-LF-ResidualDirLoss-w005-H4K-scout100k-20260526-103853.log`
+- Fair target: `100000` steps.
+- Startup check passed with GPU about `13193 MiB / 83%`.
+
 ## Remote Scale-Diagnostic Command
 
 Run from the clean server checkout after syncing this branch:

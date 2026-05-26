@@ -233,6 +233,38 @@ Gate references for this run:
   ResidualCalib, ResidualSelector, Conditional LF, Haze-Aware Mask,
   TeacherGuard, LowFreqLoss, or CRPlus.
 
+## Active LF ResidualDirLoss Run
+
+- Run ID: `DEA-Net-LF-ResidualDirLoss-w005-H4K-scout100k-20260526-103853`
+- Status: launched on 2026-05-26; startup health check passed.
+- Local/GitHub/remote branch: `codex/haze4k-residual-direction-loss`
+- Local/GitHub/remote commit: `521392c`
+- Remote checkout: `/root/workspace/Dehaze-Net-audit-sync`
+- tmux session: `h4k_lf_resdir_100k_20260526-103853`
+- Launch script:
+  `/root/workspace/Dehaze-Net-audit-sync/experiment/HAZE4K/_run_logs/DEA-Net-LF-ResidualDirLoss-w005-H4K-scout100k-20260526-103853.sh`
+- Log:
+  `/root/workspace/Dehaze-Net-audit-sync/experiment/HAZE4K/_run_logs/DEA-Net-LF-ResidualDirLoss-w005-H4K-scout100k-20260526-103853.log`
+- Artifact dir:
+  `/root/workspace/Dehaze-Net-audit-sync/experiment/HAZE4K/DEA-Net-LF-ResidualDirLoss-w005-H4K-scout100k-20260526-103853/`
+- Verified launch config:
+  `epochs=20`, `iters_per_epoch=5000`, total `100000`, `bs=16`,
+  `patch_size=256`, `w_loss_L1=1.0`, `w_loss_CR=0.1`,
+  `w_loss_residual_dir=0.005`, `residual_dir_pool=8`,
+  `residual_dir_warmup_steps=0`, `start_lr=0.0001`,
+  `end_lr=0.000001`, checkpoint/eval every `10000`,
+  `save_epoch_checkpoints=false`, `use_lf_prior=True`,
+  `lf_prior_injection=pre_mix`, no ResidualCalib, no selector, no mask,
+  no TeacherGuard, no LowFreqLoss, no CRPlus.
+- Startup health: tmux/process present; GPU about `13193 MiB / 83%`;
+  log reached step `129/100000` shortly after launch.
+- Gate references:
+  - 10k: stop only if clearly broken or repeating LowFreqLoss collapse.
+  - 20k: must not be clearly below both baseline and LF-v1.
+  - 30k hard gate: should be close to LF-v1 `30.6253 / 0.9783`.
+  - 50k: must be at least baseline `31.2384 / 0.9817`, preferably near
+    LF-v1 `31.3419 / 0.9817`.
+
 ## Stopped LF-v2 Haze-Aware Mask Run
 
 - Run ID: `DEA-Net-LF-HazeAwareMask-H4K-scout100k-20260524-152758`
