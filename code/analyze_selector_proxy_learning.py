@@ -42,6 +42,7 @@ GT_DIAGNOSTIC_FEATURES = (
     'residual_dark_channel_abs_bias_regression_vs_lfv1',
     'residual_edge_error_regression_vs_lfv1',
 )
+SAFE_FEATURE_SETS = ('output_proxy', 'metadata_proxy', 'output_plus_metadata_proxy')
 
 
 def parse_args():
@@ -142,11 +143,31 @@ def output_proxy_features(rows):
     for prefix in ('baseline', 'lfv1', 'residual'):
         for stat in SAFE_OUTPUT_STATS:
             names.append('{}_{}'.format(prefix, stat))
-    for row_key in rows[0].keys():
-        if row_key.endswith('_delta') or row_key.endswith('_delta_abs'):
-            if any(stat in row_key for stat in SAFE_OUTPUT_STATS):
-                names.append(row_key)
+    for left, right in (
+        ('residual', 'lfv1'),
+        ('residual', 'baseline'),
+        ('lfv1', 'baseline'),
+    ):
+        for stat in SAFE_OUTPUT_STATS:
+            names.append('{}_{}_{}_delta'.format(left, right, stat))
+            names.append('{}_{}_{}_delta_abs'.format(left, right, stat))
     return numeric_feature_names(rows, sorted(set(names)))
+
+
+def allowed_output_proxy_feature_names():
+    names = []
+    for prefix in ('baseline', 'lfv1', 'residual'):
+        for stat in SAFE_OUTPUT_STATS:
+            names.append('{}_{}'.format(prefix, stat))
+    for left, right in (
+        ('residual', 'lfv1'),
+        ('residual', 'baseline'),
+        ('lfv1', 'baseline'),
+    ):
+        for stat in SAFE_OUTPUT_STATS:
+            names.append('{}_{}_{}_delta'.format(left, right, stat))
+            names.append('{}_{}_{}_delta_abs'.format(left, right, stat))
+    return set(names)
 
 
 def metadata_features(rows):
@@ -167,6 +188,22 @@ def build_feature_sets(rows):
         'output_plus_metadata_proxy': sorted(set(output + metadata)),
         'gt_diagnostic_leakage_check': gt_diag,
     }
+
+
+def validate_safe_features(feature_sets):
+    allowed_output = allowed_output_proxy_feature_names()
+    allowed_metadata = set(METADATA_FEATURES)
+    allowed_by_set = {
+        'output_proxy': allowed_output,
+        'metadata_proxy': allowed_metadata,
+        'output_plus_metadata_proxy': allowed_output | allowed_metadata,
+    }
+    for name in SAFE_FEATURE_SETS:
+        unexpected = sorted(set(feature_sets.get(name, [])) - allowed_by_set[name])
+        if unexpected:
+            raise ValueError(
+                'Unsafe feature(s) found in {}: {}'.format(name, ', '.join(unexpected))
+            )
 
 
 def label(row):
@@ -535,7 +572,7 @@ def markdown_table(rows, keys):
 def recommendation(aggregate_rows, args):
     safe_rows = [
         row for row in aggregate_rows
-        if row['feature_set'] in ('output_proxy', 'metadata_proxy', 'output_plus_metadata_proxy')
+        if row['feature_set'] in SAFE_FEATURE_SETS
         and row['model_type'] in ('stump', 'logistic')
     ]
     if not safe_rows:
@@ -667,6 +704,7 @@ def main():
     rows = filter_rows(read_rows(args.three_way_csv), args.sample_list)
     add_proxy_deltas(rows)
     feature_sets = build_feature_sets(rows)
+    validate_safe_features(feature_sets)
 
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -698,6 +736,8 @@ def main():
 
     with open(output_dir / 'summary.json', 'w', encoding='utf-8') as f:
         json.dump(summary, f, indent=2, ensure_ascii=False)
+    with open(output_dir / 'feature_lists.json', 'w', encoding='utf-8') as f:
+        json.dump(feature_sets, f, indent=2, ensure_ascii=False)
     write_csv(output_dir / 'split_metrics.csv', split_rows)
     write_csv(output_dir / 'aggregate_summary.csv', aggregate_rows)
     write_csv(output_dir / 'stump_rules.csv', stump_rows)

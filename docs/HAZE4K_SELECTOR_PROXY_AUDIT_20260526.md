@@ -55,7 +55,10 @@ features can recover the LF-v1/ResidualCalib oracle on held-out splits.
 Feature sets:
 
 - `output_proxy`: output-derived statistics and pairwise deltas that do not use
-  GT directly.
+  GT directly. The script now builds this set from an explicit whitelist only:
+  per-output luma/saturation/dark-channel/edge/Laplacian/high-frequency
+  summaries plus candidate-output pairwise deltas generated inside the script.
+  It does not auto-discover existing CSV `*_delta` columns.
 - `metadata_proxy`: synthetic HAZE4K filename metadata such as airlight, beta,
   height, and width. Useful for diagnosis, but less portable to real images.
 - `output_plus_metadata_proxy`: union of the above.
@@ -75,6 +78,7 @@ Outputs:
 
 ```text
 summary.json
+feature_lists.json
 aggregate_summary.csv
 split_metrics.csv
 stump_rules.csv
@@ -84,12 +88,12 @@ analysis_report.md
 
 ## Local Audit Result
 
-Local command, using the existing full-test three-way CSV:
+Strict local command, using the existing full-test three-way CSV:
 
 ```powershell
 python code\analyze_selector_proxy_learning.py `
   --three_way_csv experiment\HAZE4K\three_way_eval\Baseline-LFv1-ResidualCalib-full-20260525\per_image_three_way_metrics.csv `
-  --output_dir experiment\HAZE4K\selector_proxy\Baseline-LFv1-ResidualCalib-full-20260526 `
+  --output_dir experiment\HAZE4K\selector_proxy\Baseline-LFv1-ResidualCalib-full-strict-20260526 `
   --splits 5 `
   --threshold_steps 9 `
   --logistic_steps 250 `
@@ -100,16 +104,26 @@ python code\analyze_selector_proxy_learning.py `
 Artifact:
 
 ```text
-experiment/HAZE4K/selector_proxy/Baseline-LFv1-ResidualCalib-full-20260526/
+experiment/HAZE4K/selector_proxy/Baseline-LFv1-ResidualCalib-full-strict-20260526/
 ```
+
+Strictness checks:
+
+- `output_proxy` now has `63` features instead of the earlier `66`.
+- `output_plus_metadata_proxy` now has `67` features instead of the earlier
+  `70`.
+- The script validates that safe feature sets contain only whitelisted
+  inference-safe features before writing results.
+- A manual regex check over `stump_rules.csv` and `logistic_coefficients.csv`
+  found `0` unsafe safe-feature rows.
 
 Result:
 
 | Feature Set | Best Safe Model | Held-Out Gain vs LF-v1 | Oracle Recovery | Residual Precision | Decision |
 | --- | --- | ---: | ---: | ---: | --- |
 | `metadata_proxy` | ridge logistic | `+0.0508 dB` | `0.0876` | `0.5241` | fail |
-| `output_plus_metadata_proxy` | ridge logistic | `+0.0323 dB` | `0.0551` | `0.5306` | fail |
-| `output_proxy` | ridge logistic | `+0.0300 dB` | `0.0529` | `0.5227` | fail |
+| `output_plus_metadata_proxy` | ridge logistic | `+0.0329 dB` | `0.0556` | `0.5236` | fail |
+| `output_proxy` | ridge logistic | `+0.0268 dB` | `0.0459` | `0.5231` | fail |
 | `gt_diagnostic_leakage_check` | decision stump | `+0.5796 dB` | `0.9986` | `0.9960` | leakage ceiling only |
 
 Pass line before selector-v2:
@@ -122,28 +136,93 @@ residual precision >= 0.65
 
 No safe feature set passed.
 
+## Rich Proxy Follow-Up
+
+Follow-up doc:
+
+```text
+docs/HAZE4K_RICH_SELECTOR_PROXY_AUDIT_20260526.md
+```
+
+Follow-up artifact:
+
+```text
+experiment/HAZE4K/selector_proxy/Baseline-LFv1-ResidualCalib-full-rich-20260526/
+```
+
+The rich follow-up added 280 metadata-free CSV-derived output/agreement
+features and evaluated random plus degradation-held-out split families. Best
+metadata-free rows still failed:
+
+| Split Family | Feature Set | Gain vs LF-v1 | Oracle Recovery | Precision |
+| --- | --- | ---: | ---: | ---: |
+| `random_stratified` | `rich_output_proxy` | `+0.0956 dB` | `0.1643` | `0.6046` |
+| `airlight_leave_one` | `rich_output_proxy` | `+0.0695 dB` | `0.1208` | `0.5858` |
+| `beta_leave_one` | `agreement_proxy` | `+0.0755 dB` | `0.1235` | `0.5861` |
+| `degradation_combo_group5` | `rich_output_proxy` | `+0.0656 dB` | `0.1077` | `0.5805` |
+
+This improves over strict output proxy but remains below the pass line.
+
+## Activation Proxy Follow-Up
+
+Follow-up doc:
+
+```text
+docs/HAZE4K_ACTIVATION_SELECTOR_PROXY_AUDIT_20260526.md
+```
+
+Follow-up artifact:
+
+```text
+experiment/HAZE4K/selector_proxy/Baseline-LFv1-ResidualCalib-full-activation-20260526/
+```
+
+The activation follow-up forwarded frozen CR baseline, LF-v1, and ResidualCalib
+checkpoints over the full 1000-image HAZE4K test set and extracted non-GT
+hazy-input, common activation, LF prior, ResidualCalib alpha/direction, and
+activation-disagreement features.
+
+The sample-size gate passed:
+
+- images: `1000`;
+- selector target positives/negatives: `509 / 491`;
+- minimum split class count: `55`.
+
+Best metadata-free activation rows still failed:
+
+| Split Family | Feature Set | Gain vs LF-v1 | Oracle Recovery | Precision |
+| --- | --- | ---: | ---: | ---: |
+| `random_stratified` | `activation_plus_rich_output_proxy` | `+0.0748 dB` | `0.1247` | `0.5978` |
+| `airlight_leave_one` | `activation_plus_rich_output_proxy` | `+0.0585 dB` | `0.0922` | `0.5763` |
+| `beta_leave_one` | `activation_plus_strict_output_proxy` | `+0.0392 dB` | `0.0630` | `0.6086` |
+| `degradation_combo_group5` | `activation_plus_rich_output_proxy` | `+0.0544 dB` | `0.0883` | `0.5855` |
+
+Manual regex checking found `0` leakage-like safe features. The GT-aware
+leakage ceiling still works (`+0.5796 dB`, recovery `0.9986`), so the target
+exists but deployable activation/output proxies still do not recover it.
+
 ## Decision
 
 Do not launch another LFResidualSelector 100k scout yet.
 
-The reliable next step is one of these two:
+Strict, rich, and activation-forward proxy audits all failed the predeclared
+safe pass line. The reliable next step is to stop selector/structure search for
+now and consolidate the thesis story:
 
-1. Improve proxy evidence first:
-   - extract stronger non-GT features, such as bottleneck confidence summaries,
-     LF branch activation traces, local contrast, dark-channel/luma statistics,
-     and uncertainty from both candidate outputs;
-   - rerun `analyze_selector_proxy_learning.py`;
-   - proceed only if the safe proxy pass line is met.
+- baseline CR is strong;
+- LF-v1 gives a real but uneven `+0.2030 dB` full-test gain;
+- ResidualCalib is a positive ablation but not a replacement;
+- selector/oracle analysis proves there is headroom, while strict/rich/
+  activation proxy audits explain why naive learned selection failed;
+- ResidualDirLoss confirms that training-loss improvement alone does not
+  guarantee test-side residual mechanism improvement.
 
-2. If selector proxy evidence remains weak, stop LF architecture search for now
-   and consolidate the thesis story:
-   - baseline CR is strong;
-   - LF-v1 gives a real but uneven `+0.2030 dB` full-test gain;
-   - ResidualCalib is a positive ablation but not a replacement;
-   - selector/oracle analysis proves there is headroom, while proxy audit shows
-     why naive learned selection failed;
-   - ResidualDirLoss confirms that training-loss improvement alone does not
-     guarantee test-side residual mechanism improvement.
+Only reopen selector-v2 if the proposal changes the problem, such as adding an
+explicit supervised or distilled selector target, and then passes a fresh
+full-sample proxy audit before any 100k training run.
+
+Future proxy conclusions must use a scientifically adequate sample size. Small
+subsets are valid for smoke/debug only and cannot justify a new training route.
 
 ## Formal Follow-Up Gate
 

@@ -336,27 +336,77 @@ Gate references for this run:
 
 ## Selector Proxy Audit Follow-Up
 
-- Local branch: `codex/haze4k-selector-proxy-audit`
-- New read-only script: `code/analyze_selector_proxy_learning.py`
-- New route review doc: `docs/HAZE4K_SELECTOR_PROXY_AUDIT_20260526.md`
-- Local diagnostic artifact:
-  `experiment/HAZE4K/selector_proxy/Baseline-LFv1-ResidualCalib-full-20260526/`
+- Local branch: `codex/haze4k-rich-selector-proxy-audit`
+- Read-only scripts:
+  - `code/analyze_selector_proxy_learning.py`
+  - `code/analyze_selector_rich_proxy_learning.py`
+  - `code/analyze_selector_activation_proxy_learning.py`
+- Route review docs:
+  - `docs/HAZE4K_SELECTOR_PROXY_AUDIT_20260526.md`
+  - `docs/HAZE4K_RICH_SELECTOR_PROXY_AUDIT_20260526.md`
+  - `docs/HAZE4K_ACTIVATION_SELECTOR_PROXY_AUDIT_20260526.md`
+  - `docs/HAZE4K_SELECTOR_EVIDENCE_CLOSURE_20260526.md`
+- Current strict local diagnostic artifact:
+  `experiment/HAZE4K/selector_proxy/Baseline-LFv1-ResidualCalib-full-strict-20260526/`
 - Audit verdict: the prior recommendation is reliable only as a diagnostic-first
   step. The LF-v1/ResidualCalib oracle headroom is real, but it is not enough to
   justify another selector run because the strongest rules are GT-aware.
-- Local held-out proxy result on the existing full-test three-way CSV:
+- Strictness update: safe output proxy features now come only from an explicit
+  whitelist and script-generated candidate-output pairwise deltas. The script
+  writes `feature_lists.json` and fails if a safe feature set contains a
+  non-whitelisted feature. A manual regex check over strict stump/logistic
+  outputs found `0` unsafe safe-feature rows.
+- Strict local held-out proxy result on the existing full-test three-way CSV:
   - best safe proxy was `metadata_proxy` ridge logistic:
     `+0.0508 dB` vs LF-v1, oracle recovery `0.0876`, residual precision
     `0.5241`;
-  - `output_plus_metadata_proxy` ridge logistic: `+0.0323 dB`,
-    oracle recovery `0.0551`, residual precision `0.5306`;
-  - `output_proxy` ridge logistic: `+0.0300 dB`, oracle recovery `0.0529`,
-    residual precision `0.5227`;
+  - `output_plus_metadata_proxy` ridge logistic: `+0.0329 dB`,
+    oracle recovery `0.0556`, residual precision `0.5236`;
+  - `output_proxy` ridge logistic: `+0.0268 dB`, oracle recovery `0.0459`,
+    residual precision `0.5231`;
   - GT-aware leakage check recovers the oracle (`+0.5796 dB`, recovery
     `0.9986`), confirming the target is real but not inference-safe.
 - Decision: do not launch selector-v2 yet. Either improve non-GT proxy features
   or add an explicit supervised/distilled selector target and rerun the proxy
   audit before any fair 100k selector scout.
+- Rich follow-up artifact:
+  `experiment/HAZE4K/selector_proxy/Baseline-LFv1-ResidualCalib-full-rich-20260526/`
+  - uses 280 metadata-free rich output/agreement features plus degradation-held
+    out split families: random, airlight leave-one, beta leave-one, and
+    airlight/beta combo grouped 5-fold;
+  - best random metadata-free rich row: `rich_output_proxy` ridge logistic,
+    `+0.0956 dB`, oracle recovery `0.1643`, precision `0.6046`;
+  - best held-out family rows: airlight `+0.0695 dB`, beta `+0.0755 dB`,
+    combo grouped `+0.0656 dB`; all fail the pass line
+    (`+0.12 dB`, recovery `0.20`, precision `0.65`);
+  - GT-aware leakage still recovers the target, so the selector target exists
+    but current inference-safe CSV-derived proxy evidence remains insufficient.
+- Activation-forward artifact:
+  `experiment/HAZE4K/selector_proxy/Baseline-LFv1-ResidualCalib-full-activation-20260526/`
+  - forwards the frozen CR baseline, LF-v1, and ResidualCalib best checkpoints
+    over the full 1000-image HAZE4K test set and extracts inference-safe
+    hazy-input, common activation, LF prior, ResidualCalib alpha/direction, and
+    activation-disagreement features;
+  - conclusive sample-size check passed: `1000` images, selector target
+    positives/negatives `509/491`, minimum split class count `55`;
+  - feature counts: activation-only `1418`, activation+strict output `1481`,
+    activation+rich output `1698`;
+  - best metadata-free activation rows still failed: random `+0.0748 dB`,
+    recovery `0.1247`, precision `0.5978`; airlight `+0.0585/0.0922/0.5763`;
+    beta `+0.0392/0.0630/0.6086`; combo grouped
+    `+0.0544/0.0883/0.5855`;
+  - manual safe-feature regex check found `0` leakage-like safe features, while
+    GT-aware leakage still recovered near oracle (`+0.5796 dB`, recovery
+    `0.9986`).
+- Current selector-v2 decision: do not train. Strict, rich, and activation
+  proxy audits all fail the predeclared pass line. Stop selector/structure
+  search unless a future route changes the problem with an explicit
+  supervised/distilled selector target and passes a fresh full-sample proxy
+  audit first.
+- Sample-size rule for future selector/proxy claims: use the full available
+  evaluation set when feasible. Small fixed subsets are smoke/debug evidence
+  only and must not be used to justify a training route without a predeclared,
+  scientifically adequate sample-size rationale.
 
 ## Model-Change Protocol
 
