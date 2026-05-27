@@ -142,3 +142,12 @@ Matched gate references:
 - Required docs to update:
   `docs/EXPERIMENT_LOG.md`, `docs/CURRENT_CONTEXT.md`,
   `docs/HAZE4K_RUN_MANIFEST.md`, and this route card.
+
+## Gate Results
+
+- 2026-05-28 10k: run `DEA-Net-LFCR-v1-w005-H4K-scout100k-20260527-231728`
+  reached step `10000` with PSNR `27.3004`, SSIM `0.9660`. This beats matched
+  CR baseline 10k `27.1101 / 0.9615`, LF-v1 10k `26.2651 / 0.9631`, and
+  CRPlus-v2 10k `26.7627 / 0.9629`. Checkpoint health: LF scalar gate
+  `0.0073388`, active `CRPlusV2` loss log tail around `0.63`. Decision:
+  continue to 20k.

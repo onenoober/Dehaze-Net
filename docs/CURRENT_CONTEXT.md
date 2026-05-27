@@ -25,7 +25,9 @@ route reasoning in the dated analysis docs.
   `h4k_lfcr_v1_w005_20260527-231728`, log
   `experiment/HAZE4K/_run_logs/DEA-Net-LFCR-v1-w005-H4K-scout100k-20260527-231728.log`.
   It uses the fair 100k HAZE4K protocol with LF-v1 architecture plus
-  `w_loss_crplus_v2=0.005`.
+  `w_loss_crplus_v2=0.005`. The 10k gate passed on 2026-05-28:
+  `27.3004 / 0.9660`, above matched CR baseline, LF-v1, and CRPlus-v2 10k
+  references. Continue to the 20k gate unless the process fails.
 - Local WSL accidental LFCR launch
   `DEA-Net-LFCR-v1-w0.005-H4K-scout100k-20260527-224613` was stopped on
   2026-05-27 before any valid gate. Do not resume it or use it as evidence.
