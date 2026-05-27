@@ -2,9 +2,11 @@
 
 Date: 2026-05-26
 
-Status: current CRPlus-v2 route card and gate definition. Live run status is
-not stored here; verify `docs/CURRENT_CONTEXT.md`, `docs/EXPERIMENT_LOG.md`,
-and live server logs before claiming a run is active or complete.
+Status: first CRPlus-v2 fair scout completed. It is positive versus CR
+baseline but is not a replacement for LF-v1; use this card as the route
+definition, final evidence, and next-step boundary. Live run status is not
+stored here; verify `docs/CURRENT_CONTEXT.md`, `docs/EXPERIMENT_LOG.md`, and
+live server logs before claiming a run is active.
 
 Purpose: define the next non-LF training route after LF-v1, ResidualCalib,
 ResidualSelector, and ResidualDirLoss evidence. This card is diagnostic-first:
@@ -244,33 +246,79 @@ DEA-Net-CRPlusV2-w003-H4K-scout100k-20260526-225540
   `experiment/HAZE4K/_run_logs/DEA-Net-CRPlusV2-w003-H4K-scout100k-20260526-225540.log`.
 - Large `best.pk` and `latest.pk` were not copied locally because they are
   checkpoint-sized artifacts; they remain on runyun unless explicitly needed.
-- 2026-05-27 check: no matching tmux/train process, latest log step about
-  `47556/100000`.
 - 2026-05-27 50k resume: resumed from 40k to 50k in
   `h4k_crplusv2_resume50k_20260527-143152`; watcher found the 50k eval log,
   verified checkpoint step `50000`, and stopped training.
 - 2026-05-27 100k resume: after the 50k pass, resumed again from checkpoint
   step `50000` in `h4k_crplusv2_resume100k_20260527-161004` with the same
   `epochs=20`, `iters_per_epoch=5000` 100k horizon.
+- 2026-05-27 final check: no matching tmux/train process, GPU idle, and
+  `best.pk` / `latest.pk` both at step `100000`.
 
 Validation curve:
 
-| Step | PSNR | SSIM | Baseline Delta | LF-v1 Delta |
-| ---: | ---: | ---: | ---: | ---: |
-| 10000 | `26.7627` | `0.9629` | `-0.3474` | `+0.4976` |
-| 20000 | `29.2182` | `0.9714` | `+0.3152` | `+0.3619` |
-| 30000 | `30.1416` | `0.9769` | `+0.0273` | `-0.4837` |
-| 40000 | `30.6141` | `0.9795` | `+0.2329` | `+0.8530` |
-| 50000 | `31.3717` | `0.9824` | `+0.1333` | `+0.0298` |
+| Step | PSNR | SSIM |
+| ---: | ---: | ---: |
+| 10000 | `26.7627` | `0.9629` |
+| 20000 | `29.2182` | `0.9714` |
+| 30000 | `30.1416` | `0.9769` |
+| 40000 | `30.6141` | `0.9795` |
+| 50000 | `31.3717` | `0.9824` |
+| 60000 | `31.5598` | `0.9824` |
+| 70000 | `31.9543` | `0.9838` |
+| 80000 | `32.1779` | `0.9842` |
+| 90000 | `32.3067` | `0.9844` |
+| 100000 | `32.3633` | `0.9847` |
 
 Interpretation:
 
 - The route did not show the CRPlus-P1 collapse pattern.
-- The 50k gate is a strong positive mid-run signal: it beats the matched
-  baseline, LF-v1, and ResidualCalib 50k gates.
-- Do not promote CRPlus-v2 from 50k alone. Continue to 90k/100k and then run
-  full per-image/frequency analysis before deciding whether it is a candidate
-  replacement or a component for LFCR.
+- Final PSNR/SSIM is positive versus CR baseline best `32.2255 / 0.9844`,
+  but below LF-v1 best `32.4281 / 0.9845` and ResidualCalib best
+  `32.3936 / 0.9845` in PSNR.
+- The final SSIM is slightly higher than LF-v1 and ResidualCalib, but the
+  decision metric cannot be SSIM alone because PSNR and per-image distribution
+  still favor LF-v1/ResidualCalib.
+
+## Final Diagnostics
+
+Artifacts synced locally under ignored `experiment/HAZE4K/`:
+
+- `per_image_eval/CR-vs-CRPlusV2-full-100k-20260527/`
+- `per_image_eval/LF-v1-vs-CRPlusV2-full-100k-20260527/`
+- `per_image_eval/ResidualCalib-vs-CRPlusV2-full-100k-20260527/`
+- `loss_scale/crplus-v2-final-test-100k-20260527/`
+
+Per-image full-test comparison:
+
+| Baseline | Mean Delta PSNR | Median Delta PSNR | Mean Delta SSIM | Better / Worse | Weak-Baseline Delta | Strong-Baseline Delta |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| CR baseline | `+0.1396` | `+0.1559` | `+0.000271` | `552 / 448` | `+0.4462` | `+0.0921` |
+| LF-v1 | `-0.0633` | `-0.0296` | `+0.000235` | `488 / 512` | `+0.2187` | `-0.1116` |
+| ResidualCalib | `-0.0286` | `-0.1235` | `+0.000189` | `461 / 539` | `+0.4367` | `-0.1092` |
+
+Loss-scale full-test review:
+
+- Mean L1: `0.021967`.
+- Selected ratio objective: `0.357142`; at trained weight `0.003`, this is
+  about `0.0488` of L1.
+- Selected combined margin loss at margin `0.02`: `0.001901`.
+- `under_dehazed_mix` remains the main active selected negative at margin
+  `0.02` with active fraction `0.345`; `hazy` is mostly easy at `0.024`, and
+  `output_lowpass` is easy in the combined distance at this margin.
+
+Final interpretation:
+
+- CRPlus-v2 is a real, useful CR-only route: it beats CR baseline by
+  `+0.1396 dB` full-test mean delta and has no inference-time architecture
+  cost.
+- It is not the best current standalone model: PSNR is still below LF-v1 and
+  ResidualCalib, and the per-image pattern shows weak-sample compensation with
+  strong-sample regression against the LF-family checkpoints.
+- The most valuable next use is as a component or ablation input, not as a
+  replacement for LF-v1. A lighter CRPlus-v2-lite or LF+CRPlus combination
+  should be justified by reducing strong-case regressions and avoiding a second
+  redundant VGG-heavy constraint.
 
 ## Analysis Plan
 

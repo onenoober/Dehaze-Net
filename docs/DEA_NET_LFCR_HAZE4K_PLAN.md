@@ -109,6 +109,7 @@ dataset/HAZE4K/
 | DEA-Net-CR baseline | 有效基线 | `DEA-Net-CR-H4K-Baseline-scout-20260520-101334` best 90k `32.2255 / 0.9844` | 作为所有 candidate 的同协议参照 |
 | LF-v1 | 当前唯一正向单模块候选 | `DEA-Net-LF-H4K-scout-20260521-003100` best 90k `32.4281 / 0.9845`，full per-image mean delta `+0.2030 dB` | 保留为 LF 对照；需补稳定性、复杂度和视觉风险 |
 | ResidualCalib | 正向消融，但不替代 LF-v1 | `DEA-Net-LF-ResidualCalib-H4K-scout100k-20260525-122654` best 90k `32.3936 / 0.9845`；full per-image vs baseline `+0.1682 dB`，vs LF-v1 `-0.0347 dB`；wrong-direction vs CR `163`、vs LF-v1 `211` | 保留为 residual calibration 消融；下一步只做能直接减少 wrong-direction 和强 baseline 样本回退的候选 |
+| CRPlus-v2 | 正向 CR-only 组件候选，但不替代 LF-v1 | `DEA-Net-CRPlusV2-w003-H4K-scout100k-20260526-225540` best/final 100k `32.3633 / 0.9847`；full per-image vs CR `+0.1396 dB`，vs LF-v1 `-0.0633 dB`，vs ResidualCalib `-0.0286 dB` | 保留为无推理成本的正向 loss 消融；下一步若继续，应优先做 lite/组合并减少强样本回退 |
 | Conservative LF | 失败 | 100k `32.1083 / 0.9843`，低于 baseline/LF-v1 | 不继续此强约束组合 |
 | CRPlus-P1 lowpass negative | 失败 | 10k `24.9623 / 0.9504` | 不继续同一 negative 设计 |
 | LowFreqLoss / LF+LowFreqLoss | 失败 | 20k/50k 均低于对应参照 | 不继续简单低频 L1 路线 |
@@ -218,6 +219,12 @@ ResidualCalib 都不再作为活动主候选排队长训。LF-v1 仍是当前主
 
 - 现有 CR 已经是 DEA-Net-CR 的有效组成，不能把“加入 CR”作为创新点。
 - CRPlus-P1 的 `hazy_lowpass` equal-weight negative 已失败，不继续同一设计。
+- CRPlus-v2 频域/低频/VGG ratio curriculum 已完成第一条公平 `100k`
+  scout。它相对 CR baseline 是正向结果：best/final `32.3633 / 0.9847`，
+  full-test mean delta `+0.1396 dB`。
+- CRPlus-v2 仍低于 LF-v1 和 ResidualCalib 的最佳 PSNR，且 per-image
+  诊断显示它主要补偿弱样本、对 LF-family 强样本有回退。因此它应作为
+  CR-only loss 组件候选和消融证据，而不是当前最佳 standalone 替代。
 
 后续若重启 CRPlus，应先做离线 loss scale / feature distance 诊断，再考虑训练。候选方向：
 
@@ -225,6 +232,8 @@ ResidualCalib 都不再作为活动主候选排队长训。LF-v1 仍是当前主
 - 用 margin ranking 形式替代简单多 negative ratio。
 - negative 使用受控退化的 `prediction.detach()`，而不是直接把 `lowpass(hazy)` 当 hard negative。
 - 或只在 amplitude / frequency residual 上做轻量一致性或排序约束，避免内容无关的 VGG negative。
+- 优先设计 CRPlus-v2-lite 或 LF+CRPlus 组合，目标是保留弱样本收益，
+  同时减少强 baseline / 强 LF-v1 样本回退和 VGG 约束重复。
 
 CRPlus 必须保持为独立消融，不依赖 LF 输出，不新增推理参数。
 
@@ -293,7 +302,7 @@ TTA / 真实域适配只作为扩展，不阻塞 HAZE4K 主结果。
 | A2 | DEA-Net-Conditional-LF | Yes | No | No | TBD | TBD | TBD | TBD | TBD | 30k gate 失败，放入失败消融 |
 | A3 | DEA-Net-LF-v2-HazeAwareMask | Yes | No | No | TBD | TBD | TBD | TBD | TBD | 30k gate 失败，mask 激活但指标不晋级 |
 | A4 | DEA-Net-LF-ResidualCalib | Yes | No | No | TBD | TBD | `32.3936` | `0.9845` | TBD | 正向消融但未超过 LF-v1；保留 residual calibration 证据 |
-| A5 | DEA-Net-CRPlus | No | Yes | No | TBD | TBD | TBD | TBD | TBD | 仅损失改动 |
+| A5 | DEA-Net-CRPlus-v2 | No | Yes | No | TBD | TBD | `32.3633` | `0.9847` | TBD | 正向 CR-only loss 消融；未超过 LF-v1/ResidualCalib PSNR |
 | A6 | DEA-Net-LFCR | Yes | Yes | No | TBD | TBD | TBD | TBD | TBD | 最终组合候选 |
 | A7 | DEA-Net-LFCR-TTA | Yes | Yes | Yes | TBD | TBD | TBD | TBD | TBD | 可选扩展 |
 
@@ -307,6 +316,9 @@ TTA / 真实域适配只作为扩展，不阻塞 HAZE4K 主结果。
 - 当前 Conditional LF 已在 30k gate 停止：略高于 baseline 但明显低于 LF-v1，且 mask 仍近似常数，记录为“条件化未充分激活”。
 - LF-v2 Haze-Aware Mask 已在 30k gate 停止：mask 已激活，但指标只追平 baseline、明显低于 LF-v1，记录为“选择性不足以修正方向错误”。
 - ResidualCalib 已完成 100k：强于 baseline 但 full per-image 低于 LF-v1，wrong-direction 仍未消除，记录为“方向/幅度校准有效但不足”，不晋级为 LF-v1 替代主线。
+- CRPlus-v2 已完成 100k：强于 baseline 且无推理成本，但 PSNR 低于 LF-v1
+  和 ResidualCalib；记录为“正向 CR-only 组件候选”，不直接晋级为 standalone
+  最终模型。
 - loss 不稳定或训练异常无法解释。
 - 输出出现系统性 halo、偏色、过锐化或大片雾残留。
 - 复杂度增长明显，但指标或视觉收益很小。
@@ -337,7 +349,7 @@ TTA / 真实域适配只作为扩展，不阻塞 HAZE4K 主结果。
 | 4 | Conditional LF 公平 `100k` scout | 已在 30k gate 停止，不晋级 |
 | 5 | LF-v2 Haze-Aware Mask 公平 `100k` scout | 已在 30k gate 停止，不晋级 |
 | 6 | ResidualCalib 公平 `100k` scout + full per-image / residual 诊断 | 正向消融但不替代 LF-v1；后续只围绕方向/幅度约束继续 |
-| 7 | CRPlus 重新设计或离线诊断 | 是否值得长训 |
+| 7 | CRPlus-v2 公平 scout + final diagnostics | 已完成；正向 CR-only 组件候选，但不替代 LF-v1 |
 | 8 | 最终候选 full eval、复杂度、可视化 | 论文主表和图 |
 | 9 | 可选 TTA / 真实域测试 | 扩展章节证据 |
 | 10 | 汇总方法、消融、失败讨论和局限 | 毕业论文初稿 |

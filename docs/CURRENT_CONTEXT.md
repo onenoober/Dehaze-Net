@@ -17,19 +17,17 @@ route reasoning in the dated analysis docs.
 - Secondary cloud server: `runyun-ts`. Use it when the user asks for runyun,
   when AutoDL is unavailable, or when checking runyun artifacts.
 - Latest runyun CRPlus-v2 status checked on 2026-05-27: run
-  `DEA-Net-CRPlusV2-w003-H4K-scout100k-20260526-225540` was resumed from 40k
-  to the 50k gate, then stopped by watcher after checkpoint step `50000`;
-  after the 50k pass, it was resumed again toward 100k in tmux
-  `h4k_crplusv2_resume100k_20260527-161004`. Synced compact local evidence now
-  has 10k `26.7627/0.9629`,
-  20k `29.2182/0.9714`, 30k `30.1416/0.9769`, 40k `30.6141/0.9795`,
-  and 50k `31.3717/0.9824`. Large `best.pk`/`latest.pk` remain on runyun
-  unless explicitly requested.
+  `DEA-Net-CRPlusV2-w003-H4K-scout100k-20260526-225540` completed the fair
+  100k horizon on `runyun-ts`; no matching tmux/train process remained and GPU
+  was idle. `best.pk` and `latest.pk` are both step `100000`, PSNR
+  `32.3633`, SSIM `0.9847`. Compact local evidence and diagnostics are synced
+  under ignored `experiment/HAZE4K/`; large checkpoints remain on runyun unless
+  explicitly requested.
 - Local WSL CRPlus-v2 scout
   `DEA-Net-CRPlusV2-w003-H4K-scout100k-20260526-192721` was cancelled on
   2026-05-26 before the first 10k checkpoint. Do not resume it.
-- Current positive model evidence remains LF-v1. ResidualCalib is a positive
-  ablation, not a replacement for LF-v1.
+- Current best standalone model evidence remains LF-v1. ResidualCalib and
+  CRPlus-v2 are positive ablations/components, not replacements for LF-v1.
 - Selector evidence is closed for now: strict CSV, rich CSV, and
   activation-forward deployable proxies all failed the pass line. Do not launch
   another LFResidualSelector 100k scout from oracle evidence alone.
@@ -119,7 +117,7 @@ gate policy. Use `docs/WORKFLOW.md` for exact launch/check/stop templates.
 | ResidualCalib | Positive ablation but below LF-v1: best 90k `32.3936 / 0.9845`; useful for residual-direction evidence. | `docs/HAZE4K_LF_RESIDUAL_CALIBRATION_PLAN_20260525.md`, `docs/HAZE4K_THREE_WAY_OUTPUT_ANALYSIS_20260525.md` |
 | Selector route | Closed for now. Oracle headroom is real, but deployable proxies failed; only reopen with a changed target and fresh full-sample proxy audit. | `docs/HAZE4K_SELECTOR_EVIDENCE_CLOSURE_20260526.md` |
 | ResidualDirLoss | First `w_loss_residual_dir=0.005` fair scout failed the 30k hard gate and should not be resumed. | `docs/HAZE4K_RESIDUAL_DIRECTION_LOSS_SCALE_PLAN_20260526.md` |
-| CRPlus-v2 | First runyun scout passed the 50k gate: `31.3717 / 0.9824`, slightly above baseline, LF-v1, and ResidualCalib at matched 50k. Treat as a strong positive mid-run signal, but require 90k/100k and per-image/frequency diagnostics before promotion. | `docs/HAZE4K_CRPLUS_V2_FREQ_CURRICULUM_PLAN_20260526.md` |
+| CRPlus-v2 | Completed first fair scout at 100k: `32.3633 / 0.9847`. It is positive versus CR baseline (`+0.1396 dB` full-test mean delta), but below LF-v1 (`-0.0633 dB`) and ResidualCalib (`-0.0286 dB`) in PSNR while slightly higher in SSIM. Treat as a positive CR-only component candidate, not an LF-v1 replacement. | `docs/HAZE4K_CRPLUS_V2_FREQ_CURRICULUM_PLAN_20260526.md` |
 
 ## Do Not Do
 
