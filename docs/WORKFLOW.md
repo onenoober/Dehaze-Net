@@ -57,10 +57,11 @@ commands in WSL/bash; run multi-line cloud commands through the here-string
 pattern shown below, or run the `bash` snippets only after entering the server
 shell/tmux.
 
-Command validation note from 2026-05-27: the primary cloud server is the
-AutoDL/SeetaCloud instance reached from WSL as `autodl-dehaze`. Use `runyun-ts`
-when the user asks for it, when AutoDL is unavailable, or when checking runyun
-artifacts.
+Command validation note from 2026-05-27: model training should run on a cloud
+server by default, not local WSL, unless the user explicitly asks for local
+training. The primary cloud server is the AutoDL/SeetaCloud instance reached
+from WSL as `autodl-dehaze`. Use `runyun-ts` when the user asks for runyun,
+when AutoDL is unavailable, or when checking runyun artifacts.
 
 ## Server loop
 1. Treat the server as disposable compute, not the artifact source of truth.
@@ -187,6 +188,18 @@ Main checkout: /root/workspace/Dehaze-Net
 Clean Git-backed checkout: /root/workspace/Dehaze-Net-audit-sync
 Python: /opt/anaconda/envs/py310/bin/python
 ```
+
+Runyun connection rule from 2026-05-27: before each runyun training/evaluation
+session, first connect through the public SSH alias and refresh the Tailscale
+serve tunnel, then use only the Tailscale SSH alias for repo and training work:
+
+```powershell
+ssh runyun "bash /root/workspace/tailscale-ssh/start.sh"
+ssh runyun-ts "hostname && pwd"
+```
+
+Do not run training over the public `runyun` SSH path; use it only to refresh
+Tailscale when needed.
 
 Basic health check:
 

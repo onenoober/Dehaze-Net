@@ -8,14 +8,27 @@ route reasoning in the dated analysis docs.
 
 ## Quick Handoff
 
-- Active code branch/source truth: `codex/haze4k-crplus-v2`.
-  The CRPlus-v2 scout was launched from commit `24085db` (`Record local
-  CRPlus-v2 scout launch`). Later doc-only commits may exist on the same
-  branch, so verify with `git log -1 --oneline` before syncing or launching.
+- Active code branch/source truth for the current LFCR run:
+  `codex/haze4k-lfcr-v1` at commit `1a32a2a` (`Add LFCR v1 route and launch
+  scripts`).
 - Primary cloud server for new operations: `autodl-dehaze` at
   `/root/autodl-tmp/workspace/Dehaze-Net`.
 - Secondary cloud server: `runyun-ts`. Use it when the user asks for runyun,
   when AutoDL is unavailable, or when checking runyun artifacts.
+- Current user instruction for model training: run on cloud servers by default,
+  not local WSL, unless the user explicitly asks for local training. For
+  runyun work, first connect to public `runyun` and run
+  `bash /root/workspace/tailscale-ssh/start.sh`, then use the Tailscale SSH
+  alias `runyun-ts` for all repo, training, and evaluation commands.
+- Active LFCR-v1 run on `runyun-ts`: `DEA-Net-LFCR-v1-w005-H4K-scout100k-20260527-231728`
+  in `/root/workspace/Dehaze-Net-audit-sync`, tmux
+  `h4k_lfcr_v1_w005_20260527-231728`, log
+  `experiment/HAZE4K/_run_logs/DEA-Net-LFCR-v1-w005-H4K-scout100k-20260527-231728.log`.
+  It uses the fair 100k HAZE4K protocol with LF-v1 architecture plus
+  `w_loss_crplus_v2=0.005`.
+- Local WSL accidental LFCR launch
+  `DEA-Net-LFCR-v1-w0.005-H4K-scout100k-20260527-224613` was stopped on
+  2026-05-27 before any valid gate. Do not resume it or use it as evidence.
 - Latest runyun CRPlus-v2 status checked on 2026-05-27: run
   `DEA-Net-CRPlusV2-w003-H4K-scout100k-20260526-225540` completed the fair
   100k horizon on `runyun-ts`; no matching tmux/train process remained and GPU
