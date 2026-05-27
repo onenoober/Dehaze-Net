@@ -46,6 +46,7 @@ artifact 和方法分析混在一起。
 | Selector 细节证据 | `docs/HAZE4K_SELECTOR_PROXY_AUDIT_20260526.md`, `docs/HAZE4K_RICH_SELECTOR_PROXY_AUDIT_20260526.md`, `docs/HAZE4K_ACTIVATION_SELECTOR_PROXY_AUDIT_20260526.md` | 已由 closure 汇总；只在需要复查 proxy 特征、split、pass line 时加载。 |
 | ResidualDirLoss | `docs/HAZE4K_RESIDUAL_DIRECTION_LOSS_SCALE_PLAN_20260526.md` | scale 诊断、实现验证和 30k 失败结果。 |
 | CRPlus-v2 | `docs/HAZE4K_CRPLUS_V2_FREQ_CURRICULUM_PLAN_20260526.md` | 当前 CRPlus-v2 路线卡、scale 诊断、实现验证和 gates。 |
+| LFCR-v1 | `docs/HAZE4K_LFCR_V1_COMBINATION_PLAN_20260527.md` | LF-v1 + CRPlus-v2 组合路线卡、权重选择规则、机制指标和 gates。 |
 | 历史清理记录 | `docs/archive/HAZE4K_CLEANUP_PLAN_20260523.md` | 仅用于追溯 2026-05-23 清理过程；日常 artifact 判断看 manifest。 |
 
 ## Authority Rules
