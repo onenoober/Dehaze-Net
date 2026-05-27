@@ -246,6 +246,12 @@ DEA-Net-CRPlusV2-w003-H4K-scout100k-20260526-225540
   checkpoint-sized artifacts; they remain on runyun unless explicitly needed.
 - 2026-05-27 check: no matching tmux/train process, latest log step about
   `47556/100000`.
+- 2026-05-27 50k resume: resumed from 40k to 50k in
+  `h4k_crplusv2_resume50k_20260527-143152`; watcher found the 50k eval log,
+  verified checkpoint step `50000`, and stopped training.
+- 2026-05-27 100k resume: after the 50k pass, resumed again from checkpoint
+  step `50000` in `h4k_crplusv2_resume100k_20260527-161004` with the same
+  `epochs=20`, `iters_per_epoch=5000` 100k horizon.
 
 Validation curve:
 
@@ -255,16 +261,16 @@ Validation curve:
 | 20000 | `29.2182` | `0.9714` | `+0.3152` | `+0.3619` |
 | 30000 | `30.1416` | `0.9769` | `+0.0273` | `-0.4837` |
 | 40000 | `30.6141` | `0.9795` | `+0.2329` | `+0.8530` |
+| 50000 | `31.3717` | `0.9824` | `+0.1333` | `+0.0298` |
 
 Interpretation:
 
 - The route did not show the CRPlus-P1 collapse pattern.
-- The 20k/30k/40k curve is at least baseline-competitive, but it does not yet
-  beat the established LF-v1 positive route at the important 30k comparison and
-  has no 50k gate.
-- Treat this as incomplete but useful evidence. Do not promote CRPlus-v2 yet;
-  either resume to the 50k gate with the same 100k LR horizon or use these logs
-  to design a lighter ablation.
+- The 50k gate is a strong positive mid-run signal: it beats the matched
+  baseline, LF-v1, and ResidualCalib 50k gates.
+- Do not promote CRPlus-v2 from 50k alone. Continue to 90k/100k and then run
+  full per-image/frequency analysis before deciding whether it is a candidate
+  replacement or a component for LFCR.
 
 ## Analysis Plan
 

@@ -17,11 +17,14 @@ route reasoning in the dated analysis docs.
 - Secondary cloud server: `runyun-ts`. Use it when the user asks for runyun,
   when AutoDL is unavailable, or when checking runyun artifacts.
 - Latest runyun CRPlus-v2 status checked on 2026-05-27: run
-  `DEA-Net-CRPlusV2-w003-H4K-scout100k-20260526-225540` had no matching
-  tmux/train process, latest log step about `47556/100000`, and synced compact
-  local evidence through the 40k eval: 10k `26.7627/0.9629`,
-  20k `29.2182/0.9714`, 30k `30.1416/0.9769`, 40k `30.6141/0.9795`.
-  Large `best.pk`/`latest.pk` remain on runyun unless explicitly requested.
+  `DEA-Net-CRPlusV2-w003-H4K-scout100k-20260526-225540` was resumed from 40k
+  to the 50k gate, then stopped by watcher after checkpoint step `50000`;
+  after the 50k pass, it was resumed again toward 100k in tmux
+  `h4k_crplusv2_resume100k_20260527-161004`. Synced compact local evidence now
+  has 10k `26.7627/0.9629`,
+  20k `29.2182/0.9714`, 30k `30.1416/0.9769`, 40k `30.6141/0.9795`,
+  and 50k `31.3717/0.9824`. Large `best.pk`/`latest.pk` remain on runyun
+  unless explicitly requested.
 - Local WSL CRPlus-v2 scout
   `DEA-Net-CRPlusV2-w003-H4K-scout100k-20260526-192721` was cancelled on
   2026-05-26 before the first 10k checkpoint. Do not resume it.
@@ -116,7 +119,7 @@ gate policy. Use `docs/WORKFLOW.md` for exact launch/check/stop templates.
 | ResidualCalib | Positive ablation but below LF-v1: best 90k `32.3936 / 0.9845`; useful for residual-direction evidence. | `docs/HAZE4K_LF_RESIDUAL_CALIBRATION_PLAN_20260525.md`, `docs/HAZE4K_THREE_WAY_OUTPUT_ANALYSIS_20260525.md` |
 | Selector route | Closed for now. Oracle headroom is real, but deployable proxies failed; only reopen with a changed target and fresh full-sample proxy audit. | `docs/HAZE4K_SELECTOR_EVIDENCE_CLOSURE_20260526.md` |
 | ResidualDirLoss | First `w_loss_residual_dir=0.005` fair scout failed the 30k hard gate and should not be resumed. | `docs/HAZE4K_RESIDUAL_DIRECTION_LOSS_SCALE_PLAN_20260526.md` |
-| CRPlus-v2 | Current active code route, but first runyun scout is stopped/paused before 50k. It did not collapse and beat baseline at 20k/30k/40k, but remains below LF-v1's positive 30k/50k trajectory; decide next step from synced 40k evidence. | `docs/HAZE4K_CRPLUS_V2_FREQ_CURRICULUM_PLAN_20260526.md` |
+| CRPlus-v2 | First runyun scout passed the 50k gate: `31.3717 / 0.9824`, slightly above baseline, LF-v1, and ResidualCalib at matched 50k. Treat as a strong positive mid-run signal, but require 90k/100k and per-image/frequency diagnostics before promotion. | `docs/HAZE4K_CRPLUS_V2_FREQ_CURRICULUM_PLAN_20260526.md` |
 
 ## Do Not Do
 
