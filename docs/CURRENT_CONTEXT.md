@@ -8,9 +8,10 @@ route reasoning in the dated analysis docs.
 
 ## Quick Handoff
 
-- Active code branch/source truth for the current LFCR run:
-  `codex/haze4k-lfcr-v1` at commit `1a32a2a` (`Add LFCR v1 route and launch
-  scripts`).
+- Active LFCR-v1 implementation source: `codex/haze4k-lfcr-v1` commit
+  `1a32a2a` (`Add LFCR v1 route and launch scripts`). The active runyun
+  checkout was verified at `dbd1320`, which adds run-launch documentation on
+  top of the same implementation.
 - Primary cloud server for new operations: `autodl-dehaze` at
   `/root/autodl-tmp/workspace/Dehaze-Net`.
 - Secondary cloud server: `runyun-ts`. Use it when the user asks for runyun,
@@ -59,9 +60,11 @@ route reasoning in the dated analysis docs.
   plots, previews, and synced evidence under ignored paths such as
   `dataset/`, `trained_models/`, and `experiment/`.
 - Cloud servers are temporary compute nodes. Sync compact evidence back to
-  local WSL when it affects route decisions; sync large checkpoints, inference
-  folders, image grids, arrays, datasets, and archives only when explicitly
-  requested.
+  local WSL when it affects route decisions, but do not let log sync delay or
+  disturb active training. If syncing would contend for bandwidth, I/O, or
+  wall time, leave logs in their initial cloud run path and fetch summaries at
+  the next gate or final check. Sync large checkpoints, inference folders,
+  image grids, arrays, datasets, and archives only when explicitly requested.
 
 ## Current Environments
 

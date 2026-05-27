@@ -69,8 +69,11 @@ when AutoDL is unavailable, or when checking runyun artifacts.
 3. Run training or evaluation from `code/`.
 4. Save logs, checkpoints, inference outputs, and intermediate artifacts outside Git.
 5. Sync small evidence back to local WSL when useful for route decisions.
-6. Sync large artifacts back to local WSL only on request.
-7. Update the local experiment log with final metrics, stop/resume state, and conclusions.
+6. Sync training logs only when it is lightweight and does not delay or disturb
+   active training; otherwise leave them in the original cloud run path and
+   fetch summaries at the next gate or final check.
+7. Sync large artifacts back to local WSL only on request.
+8. Update the local experiment log with final metrics, stop/resume state, and conclusions.
 
 Codex should make source changes locally, commit and push them, then pull on the
 server before testing or training. Do not edit source files directly on the
@@ -150,7 +153,9 @@ rsync -avh --partial --info=progress2 \
   root@connect.bjb1.seetacloud.com:/root/autodl-tmp/workspace/Dehaze-Net/experiment/
 ```
 
-Sync compact cloud evidence back to local WSL. Pull checkpoints only when they
+Sync compact cloud evidence back to local WSL. Pull logs only when the transfer
+is lightweight and will not slow active training; otherwise leave them on the
+cloud server until the next gate or final check. Pull checkpoints only when they
 are needed for resume or analysis:
 
 ```bash
