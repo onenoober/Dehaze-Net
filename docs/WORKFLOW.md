@@ -15,9 +15,11 @@ templates.
   logs, plots, previews, and other research byproducts under the local WSL
   workspace, usually in ignored paths such as `dataset/`, `trained_models/`,
   and `experiment/`.
-- Cloud servers such as `runyun-ts` are temporary compute nodes. They can
-  produce checkpoints, logs, metrics, and analysis outputs, but the durable
-  copy should eventually live in local WSL.
+- Cloud servers such as `autodl-dehaze` and `runyun-ts` are temporary compute
+  nodes. They can produce checkpoints, logs, metrics, and analysis outputs, but
+  the durable copy should eventually live in local WSL. Use `autodl-dehaze` as
+  the default cloud server unless the user explicitly asks for `runyun-ts` or
+  another server.
 - Sync small cloud outputs back to local WSL when they help choose the next
   research route: launch scripts, compact logs, metric summaries, CSV/JSON
   summaries, experiment-log rows, and conclusion documents.
@@ -57,6 +59,10 @@ Run local project commands in WSL/bash; run multi-line cloud commands through
 the PowerShell here-string pattern shown below, or run the `bash` snippets only
 after entering the server shell/tmux.
 
+Command validation note from 2026-05-27: the default cloud server is the
+AutoDL/SeetaCloud instance reached from WSL as `autodl-dehaze`. Use it first
+unless the user names `runyun-ts` or another server.
+
 ## Server loop
 1. Treat the server as disposable compute, not the artifact source of truth.
 2. Pull or receive the intended code branch on the rented server.
@@ -70,6 +76,106 @@ Codex should make source changes locally, commit and push them, then pull on the
 server before testing or training. Do not edit source files directly on the
 server; use the server for data checks, dependency checks, evaluation, and
 training logs only.
+
+## Default AutoDL/SeetaCloud Server
+
+Default for new cloud operations unless the user explicitly specifies
+`runyun-ts` or another server:
+
+```text
+SSH alias: autodl-dehaze
+SSH target: root@connect.bjb1.seetacloud.com
+SSH port: 19285
+Local WSL key: ~/.ssh/autodl_dehaze_ed25519
+Project root: /root/autodl-tmp/workspace/Dehaze-Net
+Python: /root/miniconda3/envs/py310/bin/python
+```
+
+WSL SSH config:
+
+```bash
+mkdir -p ~/.ssh
+chmod 700 ~/.ssh
+cat >> ~/.ssh/config <<'EOF'
+Host autodl-dehaze
+  HostName connect.bjb1.seetacloud.com
+  User root
+  Port 19285
+  IdentityFile ~/.ssh/autodl_dehaze_ed25519
+  IdentitiesOnly yes
+  ServerAliveInterval 30
+  ServerAliveCountMax 6
+  Compression yes
+EOF
+chmod 600 ~/.ssh/config
+```
+
+Basic health check:
+
+```bash
+ssh autodl-dehaze 'cd /root/autodl-tmp/workspace/Dehaze-Net && \
+  hostname && git status -sb && git log -1 --oneline && \
+  nvidia-smi --query-gpu=index,name,memory.used,utilization.gpu --format=csv,noheader && \
+  source /root/miniconda3/etc/profile.d/conda.sh && conda activate py310 && \
+  python - <<'"'"'PY'"'"'
+import torch, torchvision, cv2, numpy
+print("torch", torch.__version__, "cuda", torch.version.cuda, torch.cuda.is_available())
+print("torchvision", torchvision.__version__)
+print("cv2", cv2.__version__)
+print("numpy", numpy.__version__)
+PY'
+```
+
+Dataset and artifact checks on the default server:
+
+```bash
+ssh autodl-dehaze 'cd /root/autodl-tmp/workspace/Dehaze-Net && \
+  for p in dataset/HAZE4K/train/hazy dataset/HAZE4K/train/clear \
+           dataset/HAZE4K/test/hazy dataset/HAZE4K/test/clear; do \
+    printf "%-34s " "$p"; find -L "$p" -type f | wc -l; \
+  done && \
+  find trained_models -maxdepth 4 -type f | sort && \
+  du -sh experiment dataset trained_models && \
+  find experiment/HAZE4K -mindepth 1 -maxdepth 1 | wc -l'
+```
+
+Sync ignored experiment artifacts from local WSL to the default server. Do not
+use `--delete` unless deliberately mirroring after checking the remote:
+
+```bash
+cd /home/ubuntu/workspace/Dehaze-Net
+rsync -avh --partial --info=progress2 \
+  -e "ssh -i $HOME/.ssh/autodl_dehaze_ed25519 -p 19285" \
+  experiment/ \
+  root@connect.bjb1.seetacloud.com:/root/autodl-tmp/workspace/Dehaze-Net/experiment/
+```
+
+Sync compact cloud evidence back to local WSL. Pull checkpoints only when they
+are needed for resume or analysis:
+
+```bash
+cd /home/ubuntu/workspace/Dehaze-Net
+RUN=<run-id>
+rsync -avh --partial --exclude 'saved_model/' \
+  -e "ssh -i $HOME/.ssh/autodl_dehaze_ed25519 -p 19285" \
+  root@connect.bjb1.seetacloud.com:/root/autodl-tmp/workspace/Dehaze-Net/experiment/HAZE4K/${RUN}/ \
+  experiment/HAZE4K/${RUN}/
+rsync -avh --partial \
+  -e "ssh -i $HOME/.ssh/autodl_dehaze_ed25519 -p 19285" \
+  root@connect.bjb1.seetacloud.com:/root/autodl-tmp/workspace/Dehaze-Net/experiment/HAZE4K/_run_logs/${RUN}.log \
+  experiment/HAZE4K/_run_logs/
+```
+
+Validated default-server state on 2026-05-27:
+
+- Project root: `/root/autodl-tmp/workspace/Dehaze-Net`.
+- Branch/commit: `codex/haze4k-crplus-v2`, `ae9a70c`.
+- GPU: RTX 5090, driver `580.105.08`, `32607 MiB`, compute capability `12.0`.
+- Environment: `py310` with `torch 2.11.0+cu128`,
+  `torchvision 0.26.0+cu128`, OpenCV `4.6.0`, NumPy `1.26.4`.
+- HAZE4K counts: train hazy/clear `3001/3000`, test hazy/clear `1000/1000`.
+- Local `experiment/` synced to the server: about `6.3G`, `5377` files.
+- Smoke run passed: `smoke-H4K-CRPlusV2-autodl-20260527-104052`.
 
 ## Server GitHub sync
 
@@ -117,8 +223,10 @@ order:
    --ff-only`.
 4. Verify local/GitHub/server all point at the same commit hash.
 
-Current integration branch for the WSL/GitHub/cloud handoff is
-`codex/haze4k-research-sync`. The last verified three-place source hash on
+Current default server for the WSL/GitHub/cloud handoff is `autodl-dehaze`
+unless a runyun server is explicitly requested. The historical integration
+branch for the older WSL/GitHub/runyun handoff is
+`codex/haze4k-research-sync`; the last verified three-place source hash on
 2026-05-26 was `acafee751520f2cc6db7d615f954e80e12682b20`.
 
 Verification template:
@@ -130,6 +238,12 @@ git rev-parse HEAD
 git rev-parse origin/codex/haze4k-research-sync
 git ls-files experiment | wc -l
 ```
+
+```bash
+ssh autodl-dehaze 'cd /root/autodl-tmp/workspace/Dehaze-Net && git status -sb && git rev-parse HEAD && git rev-parse origin/codex/haze4k-crplus-v2 && git ls-files experiment | wc -l'
+```
+
+Legacy runyun verification template:
 
 ```powershell
 ssh runyun-ts 'cd /root/workspace/Dehaze-Net-audit-sync && git status -sb && git rev-parse HEAD && git rev-parse origin/codex/haze4k-research-sync && git ls-files experiment | wc -l'

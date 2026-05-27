@@ -11,7 +11,11 @@ metrics in `docs/EXPERIMENT_LOG.md`, artifact policy in
   `codex/haze4k-crplus-v2`. The cloud CRPlus-v2 run was launched from commit
   `24085db` (`Record local CRPlus-v2 scout launch`); later doc-only commits may
   exist on the same branch, so use `git log -1 --oneline` to verify.
-- Active HAZE4K training run is on `runyun-ts` in
+- Default cloud server for new operations is the AutoDL/SeetaCloud instance
+  `autodl-dehaze` at `/root/autodl-tmp/workspace/Dehaze-Net`, unless the user
+  explicitly asks to use `runyun-ts` or another server. This server has RTX
+  5090 CUDA validation and a working `py310` environment.
+- The previous cloud CRPlus-v2 run is on `runyun-ts` in
   `/root/workspace/Dehaze-Net-audit-sync`: run
   `DEA-Net-CRPlusV2-w003-H4K-scout100k-20260526-225540`, tmux
   `h4k_crplusv2_100k_20260526-225540`, log
@@ -29,8 +33,8 @@ metrics in `docs/EXPERIMENT_LOG.md`, artifact policy in
   `docs/HAZE4K_MODEL_CHANGE_PROTOCOL.md` to write the route card and
   mechanism-specific gate metrics.
 - Local WSL is the durable workspace and experiment artifact home. GitHub is
-  the lightweight code/docs/small-evidence relay. `runyun-ts` is a temporary
-  compute node.
+  the lightweight code/docs/small-evidence relay. Cloud servers are temporary
+  compute nodes; prefer `autodl-dehaze` unless told otherwise.
 
 ## Current State
 
@@ -42,16 +46,30 @@ metrics in `docs/EXPERIMENT_LOG.md`, artifact policy in
 - ResidualCalib code branch/run lineage: `codex/haze4k-lf-residual-calibration`
 - ResidualDirLoss code branch/run lineage: `codex/haze4k-residual-direction-loss`
 - GitHub repo: `https://github.com/onenoober/Dehaze-Net` (private)
-- Server SSH alias: `runyun-ts`
-- Main server checkout: `/root/workspace/Dehaze-Net`
+- Default cloud SSH alias: `autodl-dehaze`
+  - SSH target: `root@connect.bjb1.seetacloud.com`, port `19285`
+  - Local WSL key: `~/.ssh/autodl_dehaze_ed25519`
+  - Default checkout: `/root/autodl-tmp/workspace/Dehaze-Net`
+  - Current branch/commit at setup: `codex/haze4k-crplus-v2`,
+    `ae9a70c` (`Record cloud CRPlus-v2 scout launch`)
+  - Data state on 2026-05-27: HAZE4K dataset, official weights, and local
+    `experiment/` artifacts synced; Git tracks no `experiment/` files.
+  - Default env: `/root/miniconda3/envs/py310/bin/python`
+  - Verified stack on 2026-05-27: RTX 5090, driver `580.105.08`,
+    `torch 2.11.0+cu128`, CUDA runtime `12.8`, `torchvision 0.26.0+cu128`,
+    OpenCV `4.6.0`, NumPy `1.26.4`.
+  - Smoke run passed:
+    `smoke-H4K-CRPlusV2-autodl-20260527-104052`.
+- Secondary/legacy server SSH alias: `runyun-ts`
+- Main runyun server checkout: `/root/workspace/Dehaze-Net`
 - Conditional LF checkout: `/root/workspace/Dehaze-Net-conditional-lf`
-- Clean synced source checkout: `/root/workspace/Dehaze-Net-audit-sync`
+- Clean runyun synced source checkout: `/root/workspace/Dehaze-Net-audit-sync`
   - Current branch `codex/haze4k-research-sync`; verify the exact
     commit with `git log -1 --oneline`.
   - Purpose: Git-backed source truth for the audit/metadata/doc sync work.
   - It symlinks `dataset/HAZE4K` and `experiment` to the main server checkout
     for dry-run validation without touching the older dirty training checkouts.
-- Server env: `/opt/anaconda/envs/py310/bin/python`
+- Runyun server env: `/opt/anaconda/envs/py310/bin/python`
 - Local WSL env: `/home/ubuntu/miniconda3/envs/py310`.
   Validated on 2026-05-26 with PyTorch `2.11.0+cu128`, CUDA `12.8`,
   RTX 4080 SUPER, OpenCV `4.6.0`, NumPy `1.26.4`, and Matplotlib installed.
