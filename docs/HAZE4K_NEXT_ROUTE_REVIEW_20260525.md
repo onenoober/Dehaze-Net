@@ -2,6 +2,11 @@
 
 Date: 2026-05-25
 
+Status: historical route review. It records why selector/oracle and
+ResidualDirLoss were worth testing at that time. Current route status is in
+`docs/CURRENT_CONTEXT.md`; selector-specific closure is in
+`docs/HAZE4K_SELECTOR_EVIDENCE_CLOSURE_20260526.md`.
+
 Purpose: combine the current HAZE4K experiment evidence with related dehazing
 research, then decide the highest-value next attempt.
 
@@ -231,4 +236,3 @@ Even if the next selector does not beat LF-v1, it can still strengthen the
 paper if it produces a clean failure analysis: frequency priors help, but
 dehazing gains depend on residual direction reliability and strong-case
 protection.
-

@@ -2,6 +2,10 @@
 
 Date: 2026-05-26
 
+Status: historical route/scale card. The direct ResidualDirLoss scout later
+failed at the 30k hard gate; keep this document for scale diagnostics and
+failure evidence, not as a current launch instruction.
+
 Purpose: re-check the current route decision after the failed
 `LFResidualSelector` run, then define the first safe step before any new
 training.

@@ -2,6 +2,10 @@
 
 Date: 2026-05-26
 
+Status: current CRPlus-v2 route card and gate definition. Live run status is
+not stored here; verify `docs/CURRENT_CONTEXT.md`, `docs/EXPERIMENT_LOG.md`,
+and live server logs before claiming a run is active or complete.
+
 Purpose: define the next non-LF training route after LF-v1, ResidualCalib,
 ResidualSelector, and ResidualDirLoss evidence. This card is diagnostic-first:
 do not launch a long scout until the loss-scale report passes.
@@ -78,6 +82,7 @@ Matched gate references:
 | 10000 | `27.1101 / 0.9615` | `26.2651 / 0.9631` |
 | 20000 | `28.9030 / 0.9713` | `28.8563 / 0.9751` |
 | 30000 | `30.1143 / 0.9776` | `30.6253 / 0.9783` |
+| 40000 | `30.3812 / 0.9804` | `29.7611 / 0.9776` |
 | 50000 | `31.2384 / 0.9817` | `31.3419 / 0.9817` |
 | 90000 | `32.2255 / 0.9844` | `32.4281 / 0.9845` |
 
@@ -222,6 +227,44 @@ Validation:
   `experiment/HAZE4K/smoke-H4K-CRPlusV2-20260526/`.
   It wrote `saved_model/latest.pk` at step `2`; checkpoint `loss_log`
   contains `CRPlusV2`, with tail values `[1.4913553, 1.4035805]`.
+
+## Runyun Scout Evidence
+
+Run:
+
+```text
+DEA-Net-CRPlusV2-w003-H4K-scout100k-20260526-225540
+```
+
+- Server: `runyun-ts`, checkout `/root/workspace/Dehaze-Net-audit-sync`.
+- Launch commit: `24085db`.
+- Synced compact local evidence:
+  `experiment/HAZE4K/DEA-Net-CRPlusV2-w003-H4K-scout100k-20260526-225540/`
+  and
+  `experiment/HAZE4K/_run_logs/DEA-Net-CRPlusV2-w003-H4K-scout100k-20260526-225540.log`.
+- Large `best.pk` and `latest.pk` were not copied locally because they are
+  checkpoint-sized artifacts; they remain on runyun unless explicitly needed.
+- 2026-05-27 check: no matching tmux/train process, latest log step about
+  `47556/100000`.
+
+Validation curve:
+
+| Step | PSNR | SSIM | Baseline Delta | LF-v1 Delta |
+| ---: | ---: | ---: | ---: | ---: |
+| 10000 | `26.7627` | `0.9629` | `-0.3474` | `+0.4976` |
+| 20000 | `29.2182` | `0.9714` | `+0.3152` | `+0.3619` |
+| 30000 | `30.1416` | `0.9769` | `+0.0273` | `-0.4837` |
+| 40000 | `30.6141` | `0.9795` | `+0.2329` | `+0.8530` |
+
+Interpretation:
+
+- The route did not show the CRPlus-P1 collapse pattern.
+- The 20k/30k/40k curve is at least baseline-competitive, but it does not yet
+  beat the established LF-v1 positive route at the important 30k comparison and
+  has no 50k gate.
+- Treat this as incomplete but useful evidence. Do not promote CRPlus-v2 yet;
+  either resume to the 50k gate with the same 100k LR horizon or use these logs
+  to design a lighter ablation.
 
 ## Analysis Plan
 

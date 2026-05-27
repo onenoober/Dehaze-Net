@@ -2,6 +2,11 @@
 
 Date: 2026-05-25
 
+Status: historical selector experiment card. It preserves the oracle evidence
+and launch rationale for the first LFResidualSelector run. The fair run later
+failed at the 20k gate, and the selector route is now summarized by
+`docs/HAZE4K_SELECTOR_EVIDENCE_CLOSURE_20260526.md`.
+
 Purpose: define the next LF candidate after selector/oracle diagnosis confirmed
 that LF-v1 and ResidualCalib are strongly complementary.
 
@@ -160,4 +165,3 @@ Proceed to implementation only as a bounded, LF-v1-initialized structural
 candidate. The purpose is not to hand-code the oracle; it is to test whether a
 small learned selector can recover part of the strong LF-v1/ResidualCalib
 complementarity while preserving the current best LF-v1 behavior.
-

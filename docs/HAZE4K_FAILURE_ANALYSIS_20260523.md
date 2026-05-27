@@ -2,6 +2,10 @@
 
 日期：2026-05-23
 
+Status: 历史失败分析。用于保留根因和证据链；当前可执行路线与服务器状态以
+`docs/CURRENT_CONTEXT.md` 和 `docs/EXPERIMENT_LOG.md` 为准。文中的下一步建议
+可能已被后续 route card 和实验结果替代。
+
 范围：本报告审查 `DEA-Net-CR` baseline、`LF-v1`、Conservative LF、CRPlus-P1、LowFreqLoss、LF+LowFreqLoss、TeacherGuard、PostMix 等 HAZE4K scouting 结果。目标不是继续试新模型，而是解释为什么多数尝试失败，并为下一轮实验给出更稳的方向。
 
 本次审查只做只读核验和代码分析，没有启动新的训练。

@@ -6,9 +6,13 @@
 ```
 trained_models/
 ├── HAZE4K
-│   └── PSNR3425_SSIM9985.pth
+│   └── PSNR3426_SSIM9885.pth
 ├── ITS
 │   └── PSNR4131_SSIM9945.pth
 └── OTS
     └── PSNR3659_SSIM9897.pth
 ```
+
+The HAZE4K checkpoint filename has appeared inconsistently in upstream notes.
+Use the actual downloaded filename when running `eval.py`; the verified fork
+reference is `PSNR3426_SSIM9885.pth`.

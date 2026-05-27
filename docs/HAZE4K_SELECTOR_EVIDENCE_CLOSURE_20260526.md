@@ -2,6 +2,9 @@
 
 Date: 2026-05-26
 
+Status: selector-v2 closure summary. Use this as the selector evidence entry;
+strict/rich/activation proxy audits are supporting details.
+
 ## Final Read
 
 The selector target is real, but the deployable proxy is not good enough.

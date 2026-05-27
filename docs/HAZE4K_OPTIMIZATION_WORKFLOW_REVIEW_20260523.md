@@ -2,6 +2,10 @@
 
 日期：2026-05-23
 
+Status: 历史流程审查。保留方法论和流程纪律建议；当前路线决策、run 状态和
+服务器状态以 `docs/CURRENT_CONTEXT.md`、`docs/EXPERIMENT_LOG.md` 以及后续 dated
+route card 为准。
+
 范围：复核当前 DEA-Net HAZE4K 架构尝试、训练测试、结果分析和文档总结流程，判断它是否合理、是否符合主流可靠的模型优化流程，并给出下一轮实验约束。
 
 ## 1. 总体结论

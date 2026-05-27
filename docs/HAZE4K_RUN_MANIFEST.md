@@ -1,8 +1,11 @@
 # HAZE4K Run Manifest
 
-日期：2026-05-25
+Created: 2026-05-25
+Last reviewed: 2026-05-27
 
-用途：作为 HAZE4K 训练、评估、可视化和失败消融的统一索引。后续删除或归档远端 `experiment/HAZE4K` 目录前，先查本文件，避免误删仍有分析价值的数据。
+用途：作为 HAZE4K 训练、评估、可视化和失败消融 artifact 的统一索引。后续删除或归档远端 `experiment/HAZE4K` 目录前，先查本文件，避免误删仍有分析价值的数据。
+
+本文件记录 artifact 保留/删除判断和历史盘点结果，不是当前运行状态的唯一来源。判断某个 run 是否仍在运行时，先读 `docs/CURRENT_CONTEXT.md`，再做 live process/log/checkpoint 检查。
 
 本文件来自只读盘点，没有删除或移动任何远端/本地数据。
 
@@ -60,7 +63,7 @@ baseline、LF-v1 或新候选的公平对比表。
 | `DEA-Net-LF-ResidualSelector-H4K-scout100k-20260525-223844` | 180M+ | negative fair ablation; stopped at 20k gate | 20k `27.6830 / 0.9713` | launched from commit `7c93000`; fair `100000`-step selector run with `lf_residual_calibration=True`, `lf_residual_selector=True`, `lf_selector_init_bias=2.0`; 10k soft-pass was `26.7739 / 0.9615`, but 20k lagged baseline by `-1.2200 dB`, LF-v1 by `-1.1733 dB`, and ResidualCalib by `-0.8175 dB`; selector remained near init (`mean/std 0.879248/0.000051`), so stopped by PGID `50061` before 30k; do not resume this exact setting | `KEEP_MINIMAL` |
 | `DEA-Net-LF-ResidualDirLoss-w005-H4K-scout100k-20260526-103853` | 180M+ | negative fair ablation; stopped at 30k hard gate | 30k `30.1058 / 0.9779` | launched from commit `521392c`; fair `100000`-step LF-v1 plus `w_loss_residual_dir=0.005`; 20k recovered to `28.9783 / 0.9733`, but 30k tied baseline and lagged LF-v1 by `-0.5195 dB` on full validation; route-specific diagnostics on a 64-image test subset were supporting mechanism evidence and also failed: direct direction loss `0.04645` worse than LF-v1-best `0.03565` and ResidualCalib-best `0.03330`, direct residual cosine `0.95355` worse than `0.96435`/`0.96670`, CR-relative wrong-direction `30/64`, LF MSE improved/regressed `17/47`; stopped by PGID `7896` at about log step `35776` before 40k, verified no process/tmux and GPU `0 MiB / 0%`; do not resume this exact setting | `KEEP_MINIMAL` |
 | `DEA-Net-CRPlusV2-w003-H4K-scout100k-20260526-192721` | small/partial | cancelled local pre-checkpoint scout | no eval/checkpoint; log reached about step `1802/100000` | branch/commit `codex/haze4k-crplus-v2` / `2e0987c`; local WSL run started while cloud server was unavailable, then stopped by request on 2026-05-26 after `runyun-ts` returned; tmux `h4k_crplusv2_100k_20260526-192721`; log `experiment/HAZE4K/_run_logs/DEA-Net-CRPlusV2-w003-H4K-scout100k-20260526-192721.log`; fair config with `w_loss_crplus_v2=0.003`; verified tmux/process absent and local GPU released; keep only as launch/speed/loss evidence, do not resume | `KEEP_SUMMARY_DELETE_MODEL_AFTER_CONFIRM` |
-| `DEA-Net-CRPlusV2-w003-H4K-scout100k-20260526-225540` | active | active cloud fair scout | TBD; first 10k gate pending | launched from commit `24085db` in clean remote checkout `/root/workspace/Dehaze-Net-audit-sync` on branch `codex/haze4k-crplus-v2`; Tailscale status healthy on `runyun-ts`; tmux `h4k_crplusv2_100k_20260526-225540`; log `experiment/HAZE4K/_run_logs/DEA-Net-CRPlusV2-w003-H4K-scout100k-20260526-225540.log`; fair config with `w_loss_crplus_v2=0.003`, `epochs=20`, `iters_per_epoch=5000`, `bs=16`, `patch_size=256`, checkpoint/eval every `10000`; startup verification reached step `247/100000` on RTX 5090 with GPU about `16483 MiB / 98%` and about `3.3` steps/s | `KEEP_MINIMAL` |
+| `DEA-Net-CRPlusV2-w003-H4K-scout100k-20260526-225540` | 182M remote; compact local sync | incomplete fair scout; stopped/paused before 50k | 40k `30.6141 / 0.9795`; latest log step about `47556/100000` | launched from commit `24085db` in clean remote checkout `/root/workspace/Dehaze-Net-audit-sync` on branch `codex/haze4k-crplus-v2`; Tailscale status healthy on `runyun-ts`; tmux `h4k_crplusv2_100k_20260526-225540`; log `experiment/HAZE4K/_run_logs/DEA-Net-CRPlusV2-w003-H4K-scout100k-20260526-225540.log`; fair config with `w_loss_crplus_v2=0.003`, `epochs=20`, `iters_per_epoch=5000`, `bs=16`, `patch_size=256`, checkpoint/eval every `10000`; curve 10k `26.7627/0.9629`, 20k `29.2182/0.9714`, 30k `30.1416/0.9769`, 40k `30.6141/0.9795`; no matching tmux/train process on 2026-05-27 check; compact evidence synced locally, while large `best.pk`/`latest.pk` remain on runyun unless explicitly requested | `KEEP_MINIMAL_REMOTE_MODEL` |
 | `DEA-Net-LF-Conservative-H4K-scout-20260522-145904` | 184M | negative ablation | best/final 100k `32.1083 / 0.9843` | over-constrained LF evidence | `KEEP_MINIMAL` |
 | `DEA-Net-CRPlus-P1-w005-H4K-scout-20260523-011100` | 180M | negative ablation | 10k `24.9623 / 0.9504` | low-pass hazy negative failed | `KEEP_MINIMAL` |
 | `DEA-Net-LowFreqLoss-w005-H4K-scout-20260523-015600` | 181M | negative ablation | 20k `27.8852 / 0.9716` | low-frequency reconstruction loss failed | `KEEP_MINIMAL` |
@@ -149,26 +152,3 @@ baseline、LF-v1 或新候选的公平对比表。
 | `bench-H4K-speed-bs16-20260520-170842` | 180M | deleted 2026-05-23; generated checkpoint not needed after speed summary | `DELETED` |
 | `bench-H4K-speed-bs24-20260520-171257` | 180M | deleted 2026-05-23; generated checkpoint not needed after speed summary | `DELETED` |
 | `bench-H4K-speed-bs32-20260520-171827` | 180M | deleted 2026-05-23; generated checkpoint not needed after speed summary | `DELETED` |
-
-## Local Workspace Cleanup Snapshot
-
-Snapshot from the 2026-05-23 cleanup pass. Re-check `git status` before using
-this as current truth.
-
-- `code/evaluate_train_ckpt_per_image.py`: keep, useful analysis tool.
-- `docs/HAZE4K_FAILURE_ANALYSIS_20260523.md`: keep, failure analysis.
-- `docs/HAZE4K_OPTIMIZATION_WORKFLOW_REVIEW_20260523.md`: keep, method/process review for future experiment discipline.
-- `docs/HAZE4K_CONDITIONAL_LF_ROUTE_AUDIT_20260523.md`: keep, pre-implementation route audit and experiment card for Conditional LF.
-- `scripts/archive/failed-ablation-launchers/`: archived failed-ablation launchers retained for reproducibility, not used as daily entrypoints.
-- `D:\Dehaze\reference\目前图像去雾基线模型深度研究与毕业论文改进方案建议.docx`: moved outside repo root on 2026-05-23.
-
-Local `code/**/__pycache__` directories were deleted on 2026-05-23.
-
-## Recommended Next State Before New Training
-
-1. Re-check `docs/CURRENT_CONTEXT.md` and `docs/README.md` before deciding what to load or edit next.
-2. Do not resume the current Conditional LF, LF-v2 Haze-Aware Mask, or first
-   ResidualCalib setting as an active main candidate. ResidualCalib is kept as
-   positive ablation evidence, not a LF-v1 replacement.
-3. If starting a new route, use a clean branch, commit/push local changes first, and launch the formal scout as a 100k-target run with 10k/20k/50k internal gates.
-4. Keep archived one-off failed launchers as reproducibility evidence; prefer maintained parameterized launchers for future runs.

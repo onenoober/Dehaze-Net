@@ -2,6 +2,10 @@
 
 Date: 2026-05-25
 
+Status: evidence analysis for baseline, LF-v1, and ResidualCalib. Use it for
+mechanism patterns and full-test comparisons; current route decisions live in
+`docs/CURRENT_CONTEXT.md` and later route cards.
+
 Scope: compare final test outputs from DEA-Net-CR baseline, LF-v1, and
 ResidualCalib. The goal is to identify what visual/result patterns should guide
 the next optimization step.

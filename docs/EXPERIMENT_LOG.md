@@ -1,10 +1,14 @@
-# Experiment Log Template
+# Experiment Log
 
 Use one row per run. This file is the chronological ledger for run facts:
 run id, branch/commit, dataset, changed mechanism, protocol, checkpoint,
 metric, stop/resume state, and decision. Put long method reasoning in the
 dated analysis docs, command templates in `docs/WORKFLOW.md`, and artifact
 keep/delete policy in `docs/HAZE4K_RUN_MANIFEST.md`.
+
+Rows record what was true at the time of the event. For current run status,
+read `docs/CURRENT_CONTEXT.md` first, then verify live process, log, and
+checkpoint state when needed.
 
 For model, loss, selector, mask, or guard changes, the Notes cell must include
 the mechanism-specific evidence used for the decision, not only PSNR/SSIM. The
@@ -90,13 +94,4 @@ mechanism rather than a fixed global checklist.
 | 2026-05-26 | codex/haze4k-crplus-v2 | HAZE4K | DEA-Net-CR | CRPlus-v2 frequency curriculum scale diagnostic | diagnostic passed for a small first weight | added read-only `code/analyze_crplus_v2_loss_scale.py`, route card `docs/HAZE4K_CRPLUS_V2_FREQ_CURRICULUM_PLAN_20260526.md`, and diagnostic launcher `scripts/runyun-haze4k-crplus-v2-scale-diagnostic.sh`; local artifact `experiment/HAZE4K/loss_scale/crplus-v2-baseline-train64-20260526/`; baseline best checkpoint on 64 HAZE4K train center crops gave mean L1 `0.009603`, selected combined ratio loss `0.189611`, and weighted ratios to L1 `0.0197/0.0592/0.0987/0.1975` for weights `0.001/0.003/0.005/0.01`; absolute margin was near-zero, so the route changed to bounded ratio first and margin diagnostic second; first scout default should be `w_loss_crplus_v2=0.003` |
 | 2026-05-26 | codex/haze4k-crplus-v2 | HAZE4K | DEA-Net-CRPlusV2 | default-off training implementation dry-run and smoke | PASS; no fair training launched | implemented `CRPlusV2Loss`, default-off training options, loss logging, TensorBoard hooks, and `scripts/runyun-haze4k-crplus-v2-scout.sh`; fixed a blocking duplicate `--max_test_batches` parser definition in `code/option_train.py`; local dry-run passed with CRPlus-v2 enabled; local 2-step smoke `smoke-H4K-CRPlusV2-20260526` used diagnostic `epochs=1`, `iters_per_epoch=2`, `bs=2`, `patch_size=64`, `max_train_batches=1`, `max_test_batches=1`, `w_loss_crplus_v2=0.003`, wrote `saved_model/latest.pk` at step `2`, and checkpoint `loss_log` contains `CRPlusV2` tail `[1.4913553, 1.4035805]`; invalid for fair comparison |
 | 2026-05-26 | codex/haze4k-crplus-v2 | HAZE4K | DEA-Net-CRPlusV2 | local fair 100k scout launched | cancelled before 10k; no checkpoint | run `DEA-Net-CRPlusV2-w003-H4K-scout100k-20260526-192721`; branch/commit `codex/haze4k-crplus-v2` / `2e0987c`; local WSL `/home/ubuntu/workspace/Dehaze-Net`; tmux `h4k_crplusv2_100k_20260526-192721`; log `experiment/HAZE4K/_run_logs/DEA-Net-CRPlusV2-w003-H4K-scout100k-20260526-192721.log`; fair config `epochs=20`, `iters_per_epoch=5000`, total `100000`, `bs=16`, `patch_size=256`, `w_loss_CR=0.1`, `w_loss_crplus_v2=0.003`, curriculum switches from `hazy,under_dehazed_mix` to `hazy,output_lowpass,under_dehazed_mix` after 20k, eval/checkpoint every `10000`; stopped by request on 2026-05-26 after `runyun-ts` became available; final local log reached about step `1802/100000`, with no 10k eval/checkpoint; verified tmux/process absent and local GPU released |
-| 2026-05-26 | codex/haze4k-crplus-v2 | HAZE4K | DEA-Net-CRPlusV2 | cloud fair 100k scout launched | active cloud run | run `DEA-Net-CRPlusV2-w003-H4K-scout100k-20260526-225540`; launch commit `24085db`; remote checkout `/root/workspace/Dehaze-Net-audit-sync` synced from GitHub branch `codex/haze4k-crplus-v2`; Tailscale status was healthy on `runyun-ts`; tmux `h4k_crplusv2_100k_20260526-225540`; log `experiment/HAZE4K/_run_logs/DEA-Net-CRPlusV2-w003-H4K-scout100k-20260526-225540.log`; fair config `epochs=20`, `iters_per_epoch=5000`, total `100000`, `bs=16`, `patch_size=256`, `w_loss_CR=0.1`, `w_loss_crplus_v2=0.003`, eval/checkpoint every `10000`, `save_epoch_checkpoints=false`; startup verification used `/opt/anaconda/envs/py310/bin/python` on RTX 5090, GPU about `16483 MiB / 98%`, log reached step `247/100000` at about `3.3` steps/s; first 10k sanity gate pending |
-
-## Suggested notes
-- Dataset split
-- Checkpoint name
-- Learning rate
-- Batch size
-- Patch size
-- Hardware
-- Runtime
+| 2026-05-26 | codex/haze4k-crplus-v2 | HAZE4K | DEA-Net-CRPlusV2 | cloud fair 100k scout launched | stopped/paused before 50k; 40k evidence synced | run `DEA-Net-CRPlusV2-w003-H4K-scout100k-20260526-225540`; launch commit `24085db`; remote checkout `/root/workspace/Dehaze-Net-audit-sync` synced from GitHub branch `codex/haze4k-crplus-v2`; Tailscale status was healthy on `runyun-ts`; tmux `h4k_crplusv2_100k_20260526-225540`; log `experiment/HAZE4K/_run_logs/DEA-Net-CRPlusV2-w003-H4K-scout100k-20260526-225540.log`; fair config `epochs=20`, `iters_per_epoch=5000`, total `100000`, `bs=16`, `patch_size=256`, `w_loss_CR=0.1`, `w_loss_crplus_v2=0.003`, eval/checkpoint every `10000`, `save_epoch_checkpoints=false`; startup verification used `/opt/anaconda/envs/py310/bin/python` on RTX 5090; 2026-05-27 runyun check found no matching tmux/train process, latest log step about `47556/100000`, and saved_data eval curve 10k `26.7627/0.9629`, 20k `29.2182/0.9714`, 30k `30.1416/0.9769`, 40k `30.6141/0.9795`; compact evidence synced locally, while large `best.pk`/`latest.pk` remain on runyun; result did not collapse and beat baseline at 20k/30k/40k, but it trails LF-v1 at the important 30k comparison and still lacks a 50k gate, so treat as incomplete evidence rather than a promoted candidate |

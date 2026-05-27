@@ -2,6 +2,11 @@
 
 Date: 2026-05-26
 
+Status: detailed activation-proxy evidence. The current selector route decision
+is summarized in `docs/HAZE4K_SELECTOR_EVIDENCE_CLOSURE_20260526.md`; load this
+file only when checking the frozen-forward activation audit, sample-size rule,
+or non-GT deployable feature results.
+
 Purpose: run the final non-training selector proxy check by forwarding frozen
 CR baseline, LF-v1, and ResidualCalib checkpoints and testing whether internal
 inference-time activation features can learn the LF-v1 vs ResidualCalib choice.

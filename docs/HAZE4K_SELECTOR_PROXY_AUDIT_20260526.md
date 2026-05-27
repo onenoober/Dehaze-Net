@@ -2,6 +2,11 @@
 
 Date: 2026-05-26
 
+Status: detailed strict-proxy evidence. The current selector route decision is
+summarized in `docs/HAZE4K_SELECTOR_EVIDENCE_CLOSURE_20260526.md`; load this
+file only when checking the strict CSV proxy setup, thresholds, or failure
+details.
+
 Purpose: review whether the previous recommendation is reliable, then define
 the next evidence gate before any new selector training run.
 

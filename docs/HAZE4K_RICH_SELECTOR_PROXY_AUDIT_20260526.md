@@ -2,6 +2,11 @@
 
 Date: 2026-05-26
 
+Status: detailed rich-proxy evidence. The current selector route decision is
+summarized in `docs/HAZE4K_SELECTOR_EVIDENCE_CLOSURE_20260526.md`; load this
+file only when checking the richer CSV feature set, split logic, or pass-line
+reasoning.
+
 Purpose: re-check whether the next best step after the strict selector proxy
 audit should be a richer proxy learnability audit, then run that audit locally
 before any selector-v2 training.

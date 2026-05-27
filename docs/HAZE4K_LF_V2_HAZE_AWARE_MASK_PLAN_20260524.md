@@ -2,6 +2,10 @@
 
 Date: 2026-05-24
 
+Status: historical experiment card and failure outcome. The Haze-Aware Mask
+setting failed at the 30k hard gate; do not relaunch the exact setting as a
+current candidate.
+
 ## Purpose
 
 LF-v1 is still the only positive LF candidate, but the root-cause diagnosis

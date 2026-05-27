@@ -11,7 +11,8 @@ The upstream project was tested with:
 For the current HAZE4K workflow, local Windows is for coding/docs/Git/static
 checks only. Training, smoke, benchmark, and evaluation run on the cloud Ubuntu
 CUDA server; use `docs/WORKFLOW.md` for the current PowerShell-to-SSH command
-templates and `/opt/anaconda/envs/py310/bin/python` for server-side Python.
+templates and `docs/CORE_SERVER_RUNBOOK.md` for the current server-side Python
+path.
 
 Install the Python dependencies:
 

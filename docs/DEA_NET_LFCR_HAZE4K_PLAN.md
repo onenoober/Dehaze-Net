@@ -2,6 +2,10 @@
 
 日期：2026-05-25
 
+Status: 主路线/论文计划文档，不是当前 run 状态。当前可执行状态以
+`docs/CURRENT_CONTEXT.md` 为准；每次 run 的事实以 `docs/EXPERIMENT_LOG.md`
+为准。
+
 用途：记录 DEA-Net 在 HAZE4K 上的主路线、阶段计划、晋级规则和论文证据链。本文不保存完整运行流水账；具体 run 事实以 `docs/EXPERIMENT_LOG.md` 为准，artifact 保留策略以 `docs/HAZE4K_RUN_MANIFEST.md` 为准，当前可执行状态以 `docs/CURRENT_CONTEXT.md` 为准。
 
 ## 1. 文档边界

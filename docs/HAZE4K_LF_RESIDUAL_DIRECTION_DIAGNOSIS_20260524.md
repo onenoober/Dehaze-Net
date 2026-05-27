@@ -2,6 +2,9 @@
 
 Date: 2026-05-24
 
+Status: historical read-only diagnosis. Use it as LF-v1 residual evidence; it
+is not a current route card or launch instruction.
+
 Purpose: verify whether LF-v1's next optimization target should move from
 spatial mask selection to low-frequency residual direction and magnitude
 calibration.

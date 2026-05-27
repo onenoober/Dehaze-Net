@@ -32,9 +32,12 @@ This private fork is organized for ongoing collaboration and iteration.
 - Working notes: [AGENTS.md](./AGENTS.md)
 - Reproduction guide: [docs/REPRODUCTION.md](./docs/REPRODUCTION.md)
 - Download plan: [docs/DOWNLOADS.md](./docs/DOWNLOADS.md)
-- Linux command notes: [Linux.md](./Linux.md)
 - Collaboration workflow: [docs/WORKFLOW.md](./docs/WORKFLOW.md)
-- Experiment log template: [docs/EXPERIMENT_LOG.md](./docs/EXPERIMENT_LOG.md)
+- Experiment log: [docs/EXPERIMENT_LOG.md](./docs/EXPERIMENT_LOG.md)
+- HAZE4K checkpoint used in this fork:
+  `trained_models/HAZE4K/PSNR3426_SSIM9885.pth`. If a download mirror uses a
+  different filename, pass the actual downloaded filename to
+  `--pre_trained_model`.
 
 ## News
 
@@ -165,7 +168,7 @@ CUDA_VISIBLE_DEVICES=0 python train.py --epochs 300 --iters_per_epoch 5000 --fin
 ```
 trained_models/
 ├── HAZE4K
-│   └── PSNR3426_SSIM9985.pth
+│   └── PSNR3426_SSIM9885.pth
 ├── ITS
 │   └── PSNR4131_SSIM9945.pth
 └── OTS
@@ -189,7 +192,7 @@ python3 eval.py --dataset HAZE4K --model_name DEA-Net-CR --pre_trained_model PSN
 python3 eval.py --dataset ITS --model_name DEA-Net-CR --pre_trained_model PSNR4131_SSIM9945.pth --save_infer_results
 python3 eval.py --dataset OTS --model_name DEA-Net-CR --pre_trained_model PSNR3659_SSIM9897.pth --save_infer_results
 ```
-Inference results will be saved in ```experiment/<dataset>/<model_name>/<pre_trained_model>/```
+Inference results will be saved in `experiment/<dataset>/<model_name>/<pre_trained_model>/`.
 
 ## Citation
 If you find our paper and repo are helpful for your research, please consider citing:
