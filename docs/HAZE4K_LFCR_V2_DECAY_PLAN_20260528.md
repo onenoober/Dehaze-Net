@@ -4,6 +4,38 @@ Date: 2026-05-28
 
 Status: route card for the next fair HAZE4K scout after LFCR-v1 diagnostics.
 
+## Most Valuable Attempt
+
+- Why this is the most valuable current attempt:
+  LFCR-v1 proved that CRPlus-v2 can accelerate early training and rescue part
+  of LF-v1's regression set, but constant high pressure suppresses LF-v1 late.
+  A decayed schedule tests that exact failure with one primary variable. It is
+  higher-value than another constant-weight search because it can validate or
+  reject the "early help, late harm" explanation directly.
+- Cheap preflight evidence:
+  LFCR-v1 full diagnostics show best 10k trajectory, LF gate suppression,
+  `182/351` large LF-v1 regression cases improved by at least `0.30 dB`, and
+  late CRPlus-v2 pressure dominated by `under_dehazed_mix`.
+- Earliest decisive gate:
+  20k verifies that the schedule turns off cleanly; 30k is the first hard gate
+  for LF gate recovery and trajectory recovery versus LFCR-v1/LF-v1.
+- Expected training-time or attempt-count saving:
+  If the 20k/30k gates fail, deprioritize constant CRPlus-v2 weight search and
+  avoid spending more 100k runs on weight-only variants. If they pass, the next
+  search narrows to decay window/min-weight tuning instead of broad mechanism
+  exploration.
+- What success decides:
+  CRPlus-v2 is useful as an early training curriculum for LF-v1, and the next
+  optimization should tune schedule shape or minimum late weight.
+- What failure decides:
+  The LFCR complementarity is not solved by time-localized CRPlus-v2 pressure;
+  the next useful route should move to selective/guarded application or stop
+  prioritizing CRPlus-v2-on-LF-v1.
+- Why a cheaper diagnostic is not enough:
+  The key claim is training dynamics under a changing loss weight. Existing
+  checkpoints can reveal the failure pattern, but only a scheduled fair scout
+  can test whether early acceleration remains after late pressure is removed.
+
 ## Hypothesis
 
 - Prior evidence:
@@ -89,6 +121,7 @@ the schedule fails.
 
 | Metric | Why it matches this route | Gate subset | Full-test artifact |
 | --- | --- | --- | --- |
+| matched-step PSNR/SSIM and time-to-quality | Primary goal is faster useful quality, not only final quality. | every 10k eval | `saved_data/log.txt` plus run log |
 | `CRPlusV2_weight` log | Confirms scheduled loss is active early and off after 20k. | checkpoint/loss log | `loss_log` in checkpoint |
 | LF scalar gate | Tests whether late CRPlus pressure suppression is removed. | every checkpoint | pairwise/per-image summary |
 | LFCR vs LF-v1 mean delta | Direct predecessor quality comparison. | every 10k eval | full-test pairwise CSV |
