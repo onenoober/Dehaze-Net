@@ -2,10 +2,10 @@
 
 Date: 2026-05-28
 
-Status: proposed route card. This document does not authorize a 100k scout by
-itself. Implement the change, pass the preflight checks, then decide whether a
-fair run is worth launching. Current run state belongs in
-`docs/CURRENT_CONTEXT.md`; run facts belong in `docs/EXPERIMENT_LOG.md`.
+Status: implementation preflight passed; fair 100k scout active on `runyun-ts`.
+This card now authorizes only the launched first LF-v2 MBR scout and its
+declared gates. Current run state belongs in `docs/CURRENT_CONTEXT.md`; run
+facts belong in `docs/EXPERIMENT_LOG.md`.
 
 ## Most Valuable Attempt
 
@@ -117,6 +117,26 @@ Preflight must pass before any fair 100k training launch:
 | Branch activity | Gate/activation stats must be finite and non-degenerate after smoke or early diagnostic steps. | If dead or saturated, do not spend 100k. |
 | Training smoke | No non-finite loss; checkpoint and eval path still work. | If smoke fails, fix implementation before route evaluation. |
 
+Preflight result on `runyun-ts`:
+
+- Run id:
+  `HAZE4K-lf-v2-mbr-preflight-runyun-20260528-222102`.
+- Checkout:
+  `/root/workspace/Dehaze-Net-audit-sync`, branch
+  `codex/haze4k-lf-v2-mbr`, commit `cc6b3c4`.
+- Static cost and neutrality:
+  LF-v1 params `7790690`; LF-v2 MBR params `7794114`; overhead `0.04395%`.
+  LF-v1 latency `18.2281 ms`; MBR latency `18.5519 ms`; overhead `1.7766%`.
+  Neutral-init max abs diff `0.0`.
+- Branch/backward health:
+  branch mean/std/min/max `0.002305 / 0.202575 / -0.380796 / 0.388539`;
+  random backward finite; gate grad abs `0.000421999`.
+- HAZE4K smoke:
+  `smoke-H4K-LF-v2-MBR-runyun-20260528-222111` wrote step `2`, with
+  `lf_mbr_std_tail 0.1993472`.
+- Recommendation:
+  `preflight_passed_launch_allowed`.
+
 ## Mechanism Metrics
 
 | Metric | Why it matches this route | Gate subset | Full-test artifact |
@@ -143,6 +163,19 @@ Preflight must pass before any fair 100k training launch:
   preservation losses in the first scout.
 - Eval/checkpoint cadence:
   every `10000` steps; `save_epoch_checkpoints=false`.
+
+Current scout:
+
+- Active fair run:
+  `DEA-Net-LF-v2-MBR-c8-H4K-scout100k-20260528-223014`.
+- Cloud path:
+  `/root/workspace/Dehaze-Net-audit-sync/experiment/HAZE4K/DEA-Net-LF-v2-MBR-c8-H4K-scout100k-20260528-223014`.
+- Log:
+  `/root/workspace/Dehaze-Net-audit-sync/experiment/HAZE4K/_run_logs/DEA-Net-LF-v2-MBR-c8-H4K-scout100k-20260528-223014.log`.
+- Launch note:
+  earlier run `DEA-Net-LF-v2-MBR-c8-H4K-scout100k-20260528-222223`
+  stopped around step `487` because the launch was not detached; it produced no
+  checkpoint and is diagnostic only.
 
 ## Gates
 

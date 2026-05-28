@@ -106,12 +106,23 @@ route reasoning in the dated analysis docs.
   2026-05-26 before the first 10k checkpoint. Do not resume it.
 - Current best standalone model evidence remains LF-v1. ResidualCalib and
   CRPlus-v2 are positive ablations/components, not replacements for LF-v1.
-- Current best next cold-start architecture direction is the proposed LF-v2
-  multiscale bottleneck refiner route card:
-  `docs/HAZE4K_LF_V2_MULTISCALE_BOTTLENECK_REFINER_PLAN_20260528.md`. Treat it
-  as a planning route only until implementation preflight passes cost,
-  neutral-init, branch-activity, smoke, and preservation gates. Do not launch a
-  100k scout from this card alone.
+- Active LF-v2 multiscale bottleneck refiner cold-start route on `runyun-ts`:
+  branch `codex/haze4k-lf-v2-mbr`, commit `cc6b3c4`. Preflight passed on
+  2026-05-28 CST in `/root/workspace/Dehaze-Net-audit-sync`: static preflight
+  reported parameter overhead `0.044%`, latency overhead `1.78%`,
+  neutral-init max diff `0.0`, finite branch/backward stats; HAZE4K smoke
+  wrote step `2` and recommended `preflight_passed_launch_allowed`. Current
+  fair 100k scout is
+  `DEA-Net-LF-v2-MBR-c8-H4K-scout100k-20260528-223014`, log
+  `experiment/HAZE4K/_run_logs/DEA-Net-LF-v2-MBR-c8-H4K-scout100k-20260528-223014.log`,
+  run dir
+  `experiment/HAZE4K/DEA-Net-LF-v2-MBR-c8-H4K-scout100k-20260528-223014`.
+  It uses the formal 100k HAZE4K protocol with `--use_lf_prior
+  --lf_multiscale_refiner --lf_mbr_channels 8 --lf_mbr_pool_sizes 4,8,16`.
+  First sanity gate is 10k; first hard route gate is 30k. Earlier launch
+  `DEA-Net-LF-v2-MBR-c8-H4K-scout100k-20260528-222223` was a failed
+  non-detached launch that stopped around step `487` with no checkpoint; do not
+  resume or use it as evidence.
 - New isolated warm-start fine-tuning route:
   `docs/HAZE4K_OFFICIAL_WARMSTART_FINETUNE_PLAN_20260528.md` on branch
   `codex/haze4k-official-warmstart-finetune`. This route starts from the
@@ -229,7 +240,7 @@ gate policy. Use `docs/WORKFLOW.md` for exact launch/check/stop templates.
 | LFCR-v2 decay | Completed fair 100k scout: final/best `32.1516 / 0.9844`, independent verify `32.1518 / 0.9844`, LF gate `0.019099`. Negative/neutral ablation: schedule-off mechanism partly worked and rescue cases remained, but final quality was below CR best, LF-v1, ResidualCalib, CRPlus-v2, and LFCR-v1 final. | `docs/HAZE4K_LFCR_V2_DECAY_PLAN_20260528.md` |
 | Preserve/proxy family | WaveletPreserve, wavelet+activation, supervised preserve, and continuous confidence preflights all found some signal but failed preservation or intervention precision. Current feature/proxy family is not safe for a 100k scout. | `docs/HAZE4K_WAVELET_PRESERVE_PROXY_AUDIT_20260528.md`, `docs/HAZE4K_SUPERVISED_PRESERVE_PROXY_AUDIT_20260528.md`, `docs/HAZE4K_LF_RESIDUAL_FIELD_CONFIDENCE_PLAN_20260528.md` |
 | ResidualFieldConfidence preflight | Continuous confidence has signal but is not safe enough: main random split `+0.8356 dB` simulated gain and `0.3751` confidence correlation, but preserve recall `0.6275` and intervention precision `0.5320` miss the pass line. Do not train LF-RFC v1 from this target. | `docs/HAZE4K_LF_RESIDUAL_FIELD_CONFIDENCE_PLAN_20260528.md` |
-| Route evidence review / next route | Local aggregation across CR, LF-v1, ResidualCalib, CRPlus-v2, and LFCR-v1 confirms LF-v1 remains the best standalone mean-PSNR route, but all-five GT oracle reaches `33.5098` mean PSNR (`+1.0815 dB` over LF-v1). After later preflights failed, the best next cold-start direction is a scoped LF-v2 multiscale bottleneck refiner, not another selector/proxy/CRPlus schedule. | `docs/HAZE4K_ROUTE_EVIDENCE_REVIEW_20260528.md`, `docs/HAZE4K_LF_V2_MULTISCALE_BOTTLENECK_REFINER_PLAN_20260528.md` |
+| Route evidence review / next route | Local aggregation across CR, LF-v1, ResidualCalib, CRPlus-v2, and LFCR-v1 confirms LF-v1 remains the best standalone mean-PSNR route, but all-five GT oracle reaches `33.5098` mean PSNR (`+1.0815 dB` over LF-v1). After later preflights failed, the scoped LF-v2 multiscale bottleneck refiner became the next cold-start route; its implementation preflight has now passed and a runyun fair 100k scout is active. | `docs/HAZE4K_ROUTE_EVIDENCE_REVIEW_20260528.md`, `docs/HAZE4K_LF_V2_MULTISCALE_BOTTLENECK_REFINER_PLAN_20260528.md` |
 
 ## Do Not Do
 
