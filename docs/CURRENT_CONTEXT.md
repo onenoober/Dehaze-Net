@@ -28,9 +28,13 @@ route reasoning in the dated analysis docs.
   Checked on 2026-05-28 08:14 CST: no tmux/train process remained and GPU was
   idle, so the fair 100k run is complete. `best.pk` and `latest.pk` are both
   step `100000`, PSNR `32.2098`, SSIM `0.9844`, LF gate `0.0201`. It improved
-  early training at 10k, but the final result is below LF-v1 and CRPlus-v2; run
-  the planned per-image/residual/frequency diagnostics before choosing the next
-  LFCR weight or schedule.
+  early training at 10k, but the final result is below LF-v1 and CRPlus-v2.
+  Full 1000-image diagnostics are synced locally under
+  `experiment/HAZE4K/lfcr_v1_diagnostics/DEA-Net-LFCR-v1-w005-100k-20260528-084016`.
+  Read this as a useful negative: constant high `w=0.005` rescues some LF-v1
+  regression cases, but suppresses broader LF-v1 gains and lowers the LF gate.
+  The best next LFCR attempt is likely an early-only or decayed CRPlus-v2
+  schedule, not another constant high-weight run.
 - Local WSL accidental LFCR launch
   `DEA-Net-LFCR-v1-w0.005-H4K-scout100k-20260527-224613` was stopped on
   2026-05-27 before any valid gate. Do not resume it or use it as evidence.
@@ -138,7 +142,7 @@ gate policy. Use `docs/WORKFLOW.md` for exact launch/check/stop templates.
 | Selector route | Closed for now. Oracle headroom is real, but deployable proxies failed; only reopen with a changed target and fresh full-sample proxy audit. | `docs/HAZE4K_SELECTOR_EVIDENCE_CLOSURE_20260526.md` |
 | ResidualDirLoss | First `w_loss_residual_dir=0.005` fair scout failed the 30k hard gate and should not be resumed. | `docs/HAZE4K_RESIDUAL_DIRECTION_LOSS_SCALE_PLAN_20260526.md` |
 | CRPlus-v2 | Completed first fair scout at 100k: `32.3633 / 0.9847`. It is positive versus CR baseline (`+0.1396 dB` full-test mean delta), but below LF-v1 (`-0.0633 dB`) and ResidualCalib (`-0.0286 dB`) in PSNR while slightly higher in SSIM. Treat as a positive CR-only component candidate, not an LF-v1 replacement. | `docs/HAZE4K_CRPLUS_V2_FREQ_CURRICULUM_PLAN_20260526.md` |
-| LFCR-v1 w0.005 | Completed first high-upside combination scout at 100k: `32.2098 / 0.9844`, LF gate `0.0201`. The 10k gate was faster than all matched references, but final PSNR is below LF-v1, ResidualCalib, CRPlus-v2, and slightly below CR best; treat as useful negative/diagnostic evidence, not a promotion. | `docs/HAZE4K_LFCR_V1_COMBINATION_PLAN_20260527.md` |
+| LFCR-v1 w0.005 | Completed first high-upside combination scout at 100k: `32.2098 / 0.9844`, LF gate `0.0201`. Full diagnostics show LFCR vs LF-v1 mean `-0.2178 dB`, better/worse `461/539`; it improves `182/351` LF-v1 regression cases by at least `0.30 dB`, but loses at least `0.30 dB` on `264/453` LF-v1 gain cases. Treat as proof that CRPlus helps early/rescue behavior but is harmful as a full-run constant high weight. | `docs/HAZE4K_LFCR_V1_COMBINATION_PLAN_20260527.md` |
 
 ## Do Not Do
 

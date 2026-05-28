@@ -166,3 +166,63 @@ Matched gate references:
   regression/rescue, strong-baseline risk, residual-direction, and CRPlus-v2
   scale/frequency diagnostics to decide whether to lower `w`, schedule it, or
   apply it selectively.
+
+## Final Diagnostics
+
+Artifact:
+
+- Remote:
+  `/root/workspace/Dehaze-Net-audit-sync/experiment/HAZE4K/lfcr_v1_diagnostics/DEA-Net-LFCR-v1-w005-100k-20260528-084016`
+- Local compact sync:
+  `experiment/HAZE4K/lfcr_v1_diagnostics/DEA-Net-LFCR-v1-w005-100k-20260528-084016`
+
+Full-test pairwise metrics:
+
+- CR -> LF-v1: mean `+0.2030 dB`, better/worse `549/451`,
+  `>=0.30 / <=-0.30` counts `453/351`.
+- CR -> LFCR: mean `-0.0148 dB`, better/worse `513/487`,
+  `>=0.30 / <=-0.30` counts `414/410`.
+- LF-v1 -> LFCR: mean `-0.2178 dB`, better/worse `461/539`,
+  `>=0.30 / <=-0.30` counts `362/438`.
+- CRPlus-v2 -> LFCR: mean `-0.1544 dB`, better/worse `462/538`.
+- ResidualCalib -> LFCR: mean `-0.1830 dB`, better/worse `474/526`.
+
+Complement/rescue read:
+
+- LF-v1 has `351` regressions of at least `0.30 dB` versus CR. LFCR improves
+  `203` of them by at least `0.10 dB`, improves `182` by at least `0.30 dB`,
+  and fully rescues `84` back to at least CR.
+- LF-v1 has `453` gains of at least `0.30 dB` versus CR. LFCR preserves a
+  positive CR delta on `323`, but loses at least `0.30 dB` versus LF-v1 on
+  `264`.
+- Weak CR quartile: LF-v1 mean delta `+0.4891 dB`; LFCR mean delta
+  `+0.2172 dB`.
+- Strong CR quartile: LF-v1 mean delta `-0.0520 dB`; LFCR mean delta
+  `-0.1789 dB`.
+
+Mechanism read:
+
+- LF gate is suppressed relative to LF-v1: LF-v1 `0.0339`, LFCR `0.0201`.
+- Residual direction from LF-v1 to LFCR has wrong-direction count `245/1000`,
+  mean residual cosine `0.2194`, mean norm ratio `0.5831`, and LF MSE
+  improved/regressed `463/537`.
+- CRPlus-v2 final loss-scale on LFCR: selected combined ratio loss `0.3606`;
+  trained `w=0.005` corresponds to about `0.0805` of L1 on full-test images.
+  At margin `0.02`, selected activity is almost entirely `under_dehazed_mix`
+  (`343/1000` active), while `hazy` is `23/1000` and `output_lowpass` is
+  `0/1000`.
+
+Conclusion:
+
+- There is real complementarity, but it is asymmetric. LFCR rescues a meaningful
+  subset of LF-v1 regressions, yet it sacrifices more of LF-v1's broad gains and
+  worsens strong-sample risk.
+- The failure mode is not "CRPlus-v2 has no value"; it is "constant high
+  CRPlus-v2 pressure suppresses LF-v1's useful low-frequency branch and keeps
+  under-dehazed-mix pressure active late in training".
+- Best next attempt: keep the early acceleration signal, but make CRPlus-v2
+  early-only or decayed. A high-upside follow-up is LFCR-v2 with
+  `w_loss_crplus_v2=0.005` only through the early phase, then decay to `0.001`
+  or `0` after the 10k-20k region. This tests whether we can keep the 10k speed
+  gain without the late LF suppression. A constant lower weight such as `0.003`
+  is a secondary, lower-information fallback.
