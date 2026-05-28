@@ -69,6 +69,17 @@ route reasoning in the dated analysis docs.
   not be mixed into cold-start fair-candidate tables. Its default staged
   fine-tune schedule is LF-only through the 10k gate, then LF plus
   bottleneck/fusion through the 30k gate, then full-model tiny-LR unfreeze.
+- Active local warm-start LF-v1 scout:
+  `DEA-Net-OfficialWarmStart-LFv1-H4K-local-scout100k-20260528-152808` in
+  local WSL `/home/ubuntu/workspace/Dehaze-Net`, tmux
+  `ow-lfv1-local-20260528-152808`, log
+  `experiment/HAZE4K/_run_logs/DEA-Net-OfficialWarmStart-LFv1-H4K-local-scout100k-20260528-152808.log`.
+  Launched on 2026-05-28 15:28 CST from branch
+  `codex/haze4k-official-warmstart-finetune` commit `b4194b1` after the user
+  explicitly requested local execution. Official checkpoint conversion and
+  forward equivalence passed (`max_abs_diff=0.0`); startup showed LF-only
+  stage 0 with `1377/7790690` trainable params and GPU about `8396 MiB / 82%`.
+  First route gate is 10k and belongs only to the isolated warm-start route.
 - Selector evidence is closed for now: strict CSV, rich CSV, and
   activation-forward deployable proxies all failed the pass line. Do not launch
   another LFResidualSelector 100k scout from oracle evidence alone.
