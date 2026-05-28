@@ -62,6 +62,21 @@ route reasoning in the dated analysis docs.
   preserve recall and strong-CR recall. Do not launch a supervised preserve
   head or WaveletPreserve scout from this target. Details:
   `docs/HAZE4K_SUPERVISED_PRESERVE_PROXY_AUDIT_20260528.md`.
+- Completed residual-field confidence preflight on `runyun-ts`:
+  `HAZE4K-residual-field-confidence-preflight-runyun-20260528-full` in
+  `/root/workspace/Dehaze-Net-audit-sync`, branch
+  `codex/haze4k-residual-field-confidence` commit `cbdb1c4`. The audit used
+  HAZE4K train split, CR and LF-v1 best checkpoints at step `90000`, `3000`
+  images, and `12000` patches. `scikit-learn==1.7.2` was already installed on
+  runyun. The main continuous-confidence row
+  `hazy_wavelet_plus_teacher_outputs` + `sklearn_hgb` had high simulated gain
+  (`+0.8356 dB` vs LF-v1, recovery `0.7304`) and some confidence correlation
+  (`0.3751`), but failed the pass line because LF-v1 gain preserve recall was
+  only `0.6275 < 0.68` and intervention precision was only `0.5320 < 0.60`.
+  Held-out airlight/beta rows also failed. Recommendation:
+  `do_not_train_residual_field_confidence_yet`. Do not launch the prepared
+  CR-reference residual-field 100k scout from this evidence. Details:
+  `docs/HAZE4K_LF_RESIDUAL_FIELD_CONFIDENCE_PLAN_20260528.md`.
 - Latest LFCR-v1 run on `runyun-ts`:
   `DEA-Net-LFCR-v1-w005-H4K-scout100k-20260527-231728` in
   `/root/workspace/Dehaze-Net-audit-sync`, log
@@ -206,6 +221,7 @@ gate policy. Use `docs/WORKFLOW.md` for exact launch/check/stop templates.
 | CRPlus-v2 | Completed first fair scout at 100k: `32.3633 / 0.9847`. It is positive versus CR baseline (`+0.1396 dB` full-test mean delta), but below LF-v1 (`-0.0633 dB`) and ResidualCalib (`-0.0286 dB`) in PSNR while slightly higher in SSIM. Treat as a positive CR-only component candidate, not an LF-v1 replacement. | `docs/HAZE4K_CRPLUS_V2_FREQ_CURRICULUM_PLAN_20260526.md` |
 | LFCR-v1 w0.005 | Completed first high-upside combination scout at 100k: `32.2098 / 0.9844`, LF gate `0.0201`. Full diagnostics show LFCR vs LF-v1 mean `-0.2178 dB`, better/worse `461/539`; it improves `182/351` LF-v1 regression cases by at least `0.30 dB`, but loses at least `0.30 dB` on `264/453` LF-v1 gain cases. Treat as proof that CRPlus helps early/rescue behavior but is harmful as a full-run constant high weight. | `docs/HAZE4K_LFCR_V1_COMBINATION_PLAN_20260527.md` |
 | LFCR-v2 decay | Completed fair 100k scout: final/best `32.1516 / 0.9844`, independent verify `32.1518 / 0.9844`, LF gate `0.019099`. Negative/neutral ablation: schedule-off mechanism partly worked and rescue cases remained, but final quality was below CR best, LF-v1, ResidualCalib, CRPlus-v2, and LFCR-v1 final. | `docs/HAZE4K_LFCR_V2_DECAY_PLAN_20260528.md` |
+| ResidualFieldConfidence preflight | Continuous confidence has signal but is not safe enough: main random split `+0.8356 dB` simulated gain and `0.3751` confidence correlation, but preserve recall `0.6275` and intervention precision `0.5320` miss the pass line. Do not train LF-RFC v1 from this target. | `docs/HAZE4K_LF_RESIDUAL_FIELD_CONFIDENCE_PLAN_20260528.md` |
 | Route evidence review | Local aggregation across CR, LF-v1, ResidualCalib, CRPlus-v2, and LFCR-v1 confirms LF-v1 remains the best standalone mean-PSNR route, but all-five GT oracle reaches `33.5098` mean PSNR (`+1.0815 dB` over LF-v1). Treat the headroom as real but not deployable under current selector/proxy evidence. | `docs/HAZE4K_ROUTE_EVIDENCE_REVIEW_20260528.md` |
 
 ## Do Not Do
@@ -213,6 +229,9 @@ gate policy. Use `docs/WORKFLOW.md` for exact launch/check/stop templates.
 - Do not resume cancelled local CRPlus-v2 or failed ResidualDirLoss,
   ResidualSelector, Conditional LF, or Haze-Aware Mask runs.
 - Do not launch selector-v2 from oracle evidence alone.
+- Do not launch LF ResidualFieldConfidence / CR-reference residual-field 100k
+  scout from the 2026-05-28 preflight; it failed preservation and intervention
+  precision gates despite high simulated gain.
 - Do not treat short-horizon smoke, dry-run, or changed-LR-horizon resumes as
   fair candidate evidence.
 - Do not edit source directly on cloud servers for experiment variants. Make

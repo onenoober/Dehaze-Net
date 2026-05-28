@@ -2,9 +2,9 @@
 
 Date: 2026-05-28
 
-Status: route card plus preflight contract. Do not launch the 100k scout unless
-the residual-field confidence preflight returns
-`proceed_to_cr_ref_residual_field_scout`.
+Status: completed diagnostic preflight. The continuous target has signal, but
+it did not pass the preservation and precision gates, so do not launch the
+CR-reference residual-field 100k scout from this evidence.
 
 ## Most Valuable Attempt
 
@@ -186,3 +186,57 @@ If any line fails, record the diagnostic and do not launch the 100k scout.
 - If scout reaches 30k or final:
   run pairwise per-image comparison against CR, LF-v1, and ResidualCalib, plus
   residual direction diagnostics.
+
+## Preflight Result
+
+Run:
+
+```text
+HAZE4K-residual-field-confidence-preflight-runyun-20260528-full
+```
+
+Server and checkout:
+
+```text
+runyun-ts
+/root/workspace/Dehaze-Net-audit-sync
+branch codex/haze4k-residual-field-confidence
+commit cbdb1c4
+```
+
+Artifact:
+
+```text
+experiment/HAZE4K/residual_field_confidence_preflight/HAZE4K-residual-field-confidence-preflight-runyun-20260528-full
+```
+
+The run used HAZE4K train split, CR and LF-v1 best checkpoints at step `90000`,
+`3000` train images, and `12000` patches. `scikit-learn==1.7.2` was already
+available on runyun, so no dependency install was needed.
+
+Main row:
+
+| Feature set | Head | Split | Gain vs LF-v1 | Recovery | Preserve recall | Regression improve | Strong CR improve | Intervene precision | c corr | Decision |
+| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| hazy_wavelet_plus_teacher_outputs | sklearn_hgb | random-image | `+0.8356` | `0.7304` | `0.6275` | `1.0000` | `1.0000` | `0.5320` | `0.3751` | fail |
+| hazy_wavelet_plus_teacher_outputs | sklearn_hgb | airlight-held-out | `+0.8156` | `0.7170` | `0.6083` | `1.0000` | `1.0000` | `0.5113` | `0.3553` | fail |
+| hazy_wavelet_plus_teacher_outputs | sklearn_hgb | beta-held-out | `+0.8179` | `0.7124` | `0.6060` | `1.0000` | `1.0000` | `0.5290` | `0.3718` | fail |
+
+Recommendation:
+
+```text
+do_not_train_residual_field_confidence_yet
+```
+
+Interpretation:
+
+- The continuous target is more informative than the previous binary
+  preserve/intervene target: predicted-vs-oracle confidence correlation reached
+  `0.3751` on the main random split, and simulated gain/recovery were large.
+- The route still fails the exact safety problem it was meant to solve. The
+  learned confidence stayed near `0.5` and effectively intervened on all
+  samples, so intervention precision stayed far below the `0.60` pass line and
+  LF-v1 gain preservation stayed below the `0.68` pass line.
+- This is not a launchable architecture scout. Do not run
+  `scripts/runyun-haze4k-lf-residual-field-confidence-scout.sh` unless a future
+  route changes the target/head and passes a fresh preflight.
