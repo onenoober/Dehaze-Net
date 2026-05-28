@@ -21,18 +21,19 @@ route reasoning in the dated analysis docs.
   runyun work, first connect to public `runyun` and run
   `bash /root/workspace/tailscale-ssh/start.sh`, then use the Tailscale SSH
   alias `runyun-ts` for all repo, training, and evaluation commands.
-- Active LFCR-v2 decay scout on `runyun-ts`:
+- Completed LFCR-v2 decay scout on `runyun-ts`:
   `DEA-Net-LFCR-v2-decay-H4K-scout100k-20260528-091455` in
-  `/root/workspace/Dehaze-Net-audit-sync`, log
-  `experiment/HAZE4K/_run_logs/DEA-Net-LFCR-v2-decay-H4K-scout100k-20260528-091455.log`.
-  Launched on 2026-05-28 09:14 CST from branch
-  `codex/haze4k-lfcr-v2-decay` commit `9009515`. Tailscale was refreshed via
-  public `runyun`, source was synced through GitHub, smoke
-  `smoke-H4K-LFCR-v2-decay-runyun-20260528-091330` passed, and startup health
-  showed tmux/process active with GPU about `17263 MiB / 88%`. The route keeps
-  LF-v1 plus CRPlus-v2 at `w=0.005` through step `10000`, linearly decays to
-  `0.0` by step `20000`, then disables CRPlus-v2. First hard mechanism check:
-  20k confirms the schedule is off; 30k checks LF gate and trajectory recovery.
+  `/root/workspace/Dehaze-Net-audit-sync`, branch
+  `codex/haze4k-lfcr-v2-decay` commit `9009515`. The fair 100k run completed
+  with best/final checkpoint at step `100000`, PSNR/SSIM `32.1516 / 0.9844`;
+  independent full-test verification gave `32.1518 / 0.9844`, LF gate
+  `0.019099`. Compact final diagnostics are synced locally under
+  `experiment/HAZE4K/lfcr_v2_decay_diagnostics/DEA-Net-LFCR-v2-decay-H4K-scout100k-20260528-091455-final-20260528-verify`
+  (`5.2M`, no checkpoints). Conclusion: negative/neutral fair ablation. The
+  mechanism was partly valid because the schedule turned off and some LF-v1
+  regression rescue remained, but quality stayed below CR best, LF-v1,
+  ResidualCalib, CRPlus-v2, and LFCR-v1 final. Do not promote or resume this
+  exact schedule.
 - Latest LFCR-v1 run on `runyun-ts`:
   `DEA-Net-LFCR-v1-w005-H4K-scout100k-20260527-231728` in
   `/root/workspace/Dehaze-Net-audit-sync`, log
@@ -176,7 +177,7 @@ gate policy. Use `docs/WORKFLOW.md` for exact launch/check/stop templates.
 | ResidualDirLoss | First `w_loss_residual_dir=0.005` fair scout failed the 30k hard gate and should not be resumed. | `docs/HAZE4K_RESIDUAL_DIRECTION_LOSS_SCALE_PLAN_20260526.md` |
 | CRPlus-v2 | Completed first fair scout at 100k: `32.3633 / 0.9847`. It is positive versus CR baseline (`+0.1396 dB` full-test mean delta), but below LF-v1 (`-0.0633 dB`) and ResidualCalib (`-0.0286 dB`) in PSNR while slightly higher in SSIM. Treat as a positive CR-only component candidate, not an LF-v1 replacement. | `docs/HAZE4K_CRPLUS_V2_FREQ_CURRICULUM_PLAN_20260526.md` |
 | LFCR-v1 w0.005 | Completed first high-upside combination scout at 100k: `32.2098 / 0.9844`, LF gate `0.0201`. Full diagnostics show LFCR vs LF-v1 mean `-0.2178 dB`, better/worse `461/539`; it improves `182/351` LF-v1 regression cases by at least `0.30 dB`, but loses at least `0.30 dB` on `264/453` LF-v1 gain cases. Treat as proof that CRPlus helps early/rescue behavior but is harmful as a full-run constant high weight. | `docs/HAZE4K_LFCR_V1_COMBINATION_PLAN_20260527.md` |
-| LFCR-v2 decay | Active runyun fair scout launched 2026-05-28. Tests whether LFCR-v1's useful early/rescue signal can be kept while removing late CRPlus-v2 pressure. Decisive checks are `CRPlusV2_weight` off by 20k, LF gate recovery by 30k, and matched PSNR/SSIM/time-to-quality versus LFCR-v1/LF-v1/CRPlus-v2. | `docs/HAZE4K_LFCR_V2_DECAY_PLAN_20260528.md` |
+| LFCR-v2 decay | Completed fair 100k scout: final/best `32.1516 / 0.9844`, independent verify `32.1518 / 0.9844`, LF gate `0.019099`. Negative/neutral ablation: schedule-off mechanism partly worked and rescue cases remained, but final quality was below CR best, LF-v1, ResidualCalib, CRPlus-v2, and LFCR-v1 final. | `docs/HAZE4K_LFCR_V2_DECAY_PLAN_20260528.md` |
 | Route evidence review | Local aggregation across CR, LF-v1, ResidualCalib, CRPlus-v2, and LFCR-v1 confirms LF-v1 remains the best standalone mean-PSNR route, but all-five GT oracle reaches `33.5098` mean PSNR (`+1.0815 dB` over LF-v1). Treat the headroom as real but not deployable under current selector/proxy evidence. | `docs/HAZE4K_ROUTE_EVIDENCE_REVIEW_20260528.md` |
 
 ## Do Not Do

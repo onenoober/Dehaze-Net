@@ -2,7 +2,9 @@
 
 Date: 2026-05-28
 
-Status: active fair HAZE4K scout launched on runyun after LFCR-v1 diagnostics.
+Status: completed negative/neutral fair ablation. The schedule-off mechanism
+was partly validated, but final quality was insufficient, so this exact decay
+setting is closed and should not be promoted.
 
 ## Launch Record
 
@@ -23,6 +25,42 @@ Status: active fair HAZE4K scout launched on runyun after LFCR-v1 diagnostics.
 - Startup health:
   tmux/process active, GPU about `17263 MiB / 88%`, log reached about step
   `89/100000` with the declared fair config.
+
+## Final Result And Decision
+
+- Final checkpoint:
+  `best.pk` and `latest.pk` both reached step `100000`.
+- Final run metric:
+  `32.1516 / 0.9844`.
+- Independent verification:
+  full-test mean `32.1518 / 0.9844`, LF scalar gate `0.019099`.
+- Compact artifact:
+  `experiment/HAZE4K/lfcr_v2_decay_diagnostics/DEA-Net-LFCR-v2-decay-H4K-scout100k-20260528-091455-final-20260528-verify`
+  (`5.2M`, `48` files, no checkpoints).
+- Decision:
+  negative/neutral fair ablation. The route is useful evidence but not a
+  promotable model candidate.
+
+The mechanism read is mixed. The schedule did remove late CRPlus-v2 pressure
+and retained some LF-v1 regression rescue: among `351` LF-v1 regression cases,
+`186` improved over LF-v1 by at least `0.30 dB`, and `96` were fully rescued
+against CR. However, this did not preserve LF-v1's broad gains: among `453`
+LF-v1 gain cases, LFCR-v2 lost at least `0.30 dB` on `316`.
+
+Full-test pairwise mean delta PSNR is negative against all relevant
+references: CR baseline best `-0.0735`, LF-v1 best `-0.2765`, ResidualCalib
+best `-0.2417`, CRPlus-v2 final `-0.2131`, and LFCR-v1 final `-0.0587`.
+Residual diagnostics also remained weak: LF-v1 to LFCR-v2 cosine `0.1960`,
+norm ratio `0.5780`, wrong direction `264/1000`, and LF MSE
+improved/regressed `413/587`. Final loss-scale review still selected mostly
+`under_dehazed_mix` at margin `0.02` (`35.9%`; `hazy` `2.3%`;
+`output_lowpass` `0.0%`).
+
+Conclusion: time-localized CRPlus-v2 pressure is not enough to combine the
+early/rescue behavior of LFCR-v1 with LF-v1's final quality. Do not spend
+another blind 100k run on this exact decay family; only reopen with a changed
+guard/selectivity hypothesis or a cheaper preflight that directly addresses
+the LF-v1 gain-case loss.
 
 ## Most Valuable Attempt
 
@@ -125,6 +163,8 @@ the schedule fails.
   `32.2098 / 0.9844`.
 - LFCR-v1 final diagnostics:
   `experiment/HAZE4K/lfcr_v1_diagnostics/DEA-Net-LFCR-v1-w005-100k-20260528-084016`.
+- LFCR-v2 final diagnostics:
+  `experiment/HAZE4K/lfcr_v2_decay_diagnostics/DEA-Net-LFCR-v2-decay-H4K-scout100k-20260528-091455-final-20260528-verify`.
 
 ## Matched Gate References
 
@@ -174,12 +214,10 @@ the schedule fails.
 
 ## Analysis Plan
 
-- If stopped early:
-  record whether early-only CRPlus lost the 10k speed signal, failed to release
-  LF gate suppression, or simply underperformed despite a clean schedule.
-- If promoted:
-  run full-test pairwise diagnostics against CR, LF-v1, CRPlus-v2, and
-  ResidualCalib; run residual direction and CRPlus-v2 loss-scale diagnostics.
-- Required docs to update:
+- Completed:
+  full-test pairwise diagnostics against CR, LF-v1, ResidualCalib, CRPlus-v2,
+  and LFCR-v1; residual direction diagnostics; and CRPlus-v2 loss-scale
+  diagnostics.
+- Archived in:
   `docs/EXPERIMENT_LOG.md`, `docs/CURRENT_CONTEXT.md`,
   `docs/HAZE4K_RUN_MANIFEST.md`, and this route card.
