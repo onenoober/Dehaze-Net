@@ -159,6 +159,7 @@ gate policy. Use `docs/WORKFLOW.md` for exact launch/check/stop templates.
 | CRPlus-v2 | Completed first fair scout at 100k: `32.3633 / 0.9847`. It is positive versus CR baseline (`+0.1396 dB` full-test mean delta), but below LF-v1 (`-0.0633 dB`) and ResidualCalib (`-0.0286 dB`) in PSNR while slightly higher in SSIM. Treat as a positive CR-only component candidate, not an LF-v1 replacement. | `docs/HAZE4K_CRPLUS_V2_FREQ_CURRICULUM_PLAN_20260526.md` |
 | LFCR-v1 w0.005 | Completed first high-upside combination scout at 100k: `32.2098 / 0.9844`, LF gate `0.0201`. Full diagnostics show LFCR vs LF-v1 mean `-0.2178 dB`, better/worse `461/539`; it improves `182/351` LF-v1 regression cases by at least `0.30 dB`, but loses at least `0.30 dB` on `264/453` LF-v1 gain cases. Treat as proof that CRPlus helps early/rescue behavior but is harmful as a full-run constant high weight. | `docs/HAZE4K_LFCR_V1_COMBINATION_PLAN_20260527.md` |
 | LFCR-v2 decay | Active runyun fair scout launched 2026-05-28. Tests whether LFCR-v1's useful early/rescue signal can be kept while removing late CRPlus-v2 pressure. Decisive checks are `CRPlusV2_weight` off by 20k, LF gate recovery by 30k, and matched PSNR/SSIM/time-to-quality versus LFCR-v1/LF-v1/CRPlus-v2. | `docs/HAZE4K_LFCR_V2_DECAY_PLAN_20260528.md` |
+| Route evidence review | Local aggregation across CR, LF-v1, ResidualCalib, CRPlus-v2, and LFCR-v1 confirms LF-v1 remains the best standalone mean-PSNR route, but all-five GT oracle reaches `33.5098` mean PSNR (`+1.0815 dB` over LF-v1). Treat the headroom as real but not deployable under current selector/proxy evidence. | `docs/HAZE4K_ROUTE_EVIDENCE_REVIEW_20260528.md` |
 
 ## Do Not Do
 
@@ -186,3 +187,5 @@ Most common next reads:
 6. `docs/HAZE4K_RUN_MANIFEST.md`: artifact keep/delete policy and path index.
 7. `docs/DEA_NET_LFCR_HAZE4K_PLAN.md`: thesis route, stage plan, promotion
    rules, and reporting evidence chain.
+8. `docs/HAZE4K_ROUTE_EVIDENCE_REVIEW_20260528.md`: current route evidence
+   matrix, oracle headroom, failure modes, Pareto view, and next decision tree.

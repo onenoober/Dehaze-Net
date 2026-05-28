@@ -48,6 +48,7 @@ artifact 和方法分析混在一起。
 | CRPlus-v2 | `docs/HAZE4K_CRPLUS_V2_FREQ_CURRICULUM_PLAN_20260526.md` | 当前 CRPlus-v2 路线卡、scale 诊断、实现验证和 gates。 |
 | LFCR-v1 | `docs/HAZE4K_LFCR_V1_COMBINATION_PLAN_20260527.md` | LF-v1 + CRPlus-v2 组合路线卡、权重选择规则、机制指标和 gates。 |
 | LFCR-v2 decay | `docs/HAZE4K_LFCR_V2_DECAY_PLAN_20260528.md` | LFCR-v1 诊断后的调度路线卡：CRPlus-v2 早期高权重、10k-20k 衰减到 0。 |
+| 系统路线证据审查 | `docs/HAZE4K_ROUTE_EVIDENCE_REVIEW_20260528.md` | 汇总 CR、LF-v1、ResidualCalib、CRPlus-v2、LFCR-v1 的 per-image 证据、oracle 上限、失败模式和下一步决策树。 |
 | 历史清理记录 | `docs/archive/HAZE4K_CLEANUP_PLAN_20260523.md` | 仅用于追溯 2026-05-23 清理过程；日常 artifact 判断看 manifest。 |
 
 ## Authority Rules

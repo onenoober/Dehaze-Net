@@ -331,6 +331,20 @@ TTA / 真实域适配只作为扩展，不阻塞 HAZE4K 主结果。
 - 单因素变量清楚，能解释成功或失败。
 - 有可保留 artifact 路径和日志记录。
 
+从 `100k` scout 晋级到官方量级完整训练：
+
+- 必须先完成公平 `100k` scout；`30k` 或 `50k` 只能支持继续观察，不能直接触发完整训练。
+- best 或 final checkpoint 必须超过同协议 CR baseline，并且达到以下至少一项：
+  - mean PSNR/SSIM 超过当前最佳 standalone scout reference；
+  - 或接近当前最佳 standalone reference，但显著改善其关键失败组，例如强 baseline 回退、LF-v1 gain preservation、LF-v1 regression rescue、wrong-direction count 或 LF MSE regression；
+  - 或作为无推理成本 loss/component，稳定超过 CR baseline，并在强样本或视觉风险上提供明确互补价值。
+- full-test per-image 分析必须说明收益不是少数样本拉高均值；至少报告 mean/median delta、better/worse counts、`0.10 dB` 和 `0.30 dB` gain/regression bins、弱/强 baseline 分组。
+- 路线机制指标必须与 route card 假设一致；例如 LF/Residual 路线看 residual cosine、wrong-direction、LF MSE，LFCR/CRPlus 路线看 LF gate、CRPlus loss-scale、active negatives 和 LF-v1 gain preservation。
+- 视觉检查不得出现系统性偏色、halo、过锐化、大片雾残留或明显暗部噪声放大。
+- 必须补参数量、FLOPs/MACs、推理速度、显存峰值、LPIPS，以及 `.pk -> .pth` 或训练态评测合约说明。
+- 最终候选进入完整训练前，优先做一次不同 seed 或等价复查；资源不足时，至少记录为什么当前证据足以承担完整训练成本。
+- 完整训练仍需保留 CR baseline、LF-v1、ResidualCalib、CRPlus-v2 等 scout 参照；不能把完整训练结果和短程 scout 结果混在同一结论层级里。
+
 回退顺序：
 
 1. 保留 LF-v1 作为正向轻量消融。
