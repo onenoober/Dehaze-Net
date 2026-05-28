@@ -62,6 +62,11 @@ route reasoning in the dated analysis docs.
   2026-05-26 before the first 10k checkpoint. Do not resume it.
 - Current best standalone model evidence remains LF-v1. ResidualCalib and
   CRPlus-v2 are positive ablations/components, not replacements for LF-v1.
+- New isolated warm-start fine-tuning route:
+  `docs/HAZE4K_OFFICIAL_WARMSTART_FINETUNE_PLAN_20260528.md` on branch
+  `codex/haze4k-official-warmstart-finetune`. This route starts from the
+  official HAZE4K `.pth` via a converted step-0 training checkpoint and must
+  not be mixed into cold-start fair-candidate tables.
 - Selector evidence is closed for now: strict CSV, rich CSV, and
   activation-forward deployable proxies all failed the pass line. Do not launch
   another LFResidualSelector 100k scout from oracle evidence alone.
@@ -189,3 +194,6 @@ Most common next reads:
    rules, and reporting evidence chain.
 8. `docs/HAZE4K_ROUTE_EVIDENCE_REVIEW_20260528.md`: current route evidence
    matrix, oracle headroom, failure modes, Pareto view, and next decision tree.
+9. `docs/HAZE4K_OFFICIAL_WARMSTART_FINETUNE_PLAN_20260528.md`: isolated
+   official-weight warm-start fine-tuning route, conversion script, gates, and
+   DEA-Net reproduction pitfalls.
