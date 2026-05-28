@@ -34,6 +34,34 @@ route reasoning in the dated analysis docs.
   regression rescue remained, but quality stayed below CR best, LF-v1,
   ResidualCalib, CRPlus-v2, and LFCR-v1 final. Do not promote or resume this
   exact schedule.
+- Completed WaveletPreserve preflight audits on `runyun-ts`:
+  `HAZE4K-wavelet-preserve-proxy-runyun-20260528-hazy` and
+  `HAZE4K-wavelet-preserve-activation-proxy-runyun-20260528` in
+  `/root/workspace/Dehaze-Net-audit-sync`. Both are diagnostic only and both
+  returned `do_not_train_wavelet_preserve_yet`. Hazy-only wavelet features had
+  some signal on the LF-v1 preserve/intervene target, but missed the pass line
+  because random-split intervene precision was only `0.5541` against the
+  required `0.60`, with airlight/beta held-out precision lower. Adding frozen
+  CR/LF-v1 activation features worsened the primary target (`hazy_wavelet_plus_activation`
+  random balanced accuracy `0.5360`, intervene precision `0.4757`). Do not
+  launch a WaveletPreserve architecture scout from this evidence; only reopen
+  with a changed supervised/distilled preservation target and a fresh
+  full-sample proxy audit. Details:
+  `docs/HAZE4K_WAVELET_PRESERVE_PROXY_AUDIT_20260528.md`.
+- Completed supervised/distilled preserve-target preflight on `runyun-ts`:
+  `HAZE4K-supervised-preserve-proxy-runyun-20260528-train-p4-sklearn-liblinear`
+  in `/root/workspace/Dehaze-Net-audit-sync`, using HAZE4K train teacher
+  labels from CR and LF-v1 best checkpoints. `scikit-learn==1.7.2` was
+  installed in runyun `/opt/anaconda/envs/py310` for the final solver audit.
+  The decisive patch target had `10055` samples (`4947` preserve, `5108`
+  intervene). Best reliable `hazy_wavelet_plus_teacher_outputs` sklearn
+  logistic random-image split failed the pass line: balanced accuracy
+  `0.5889`, preserve recall `0.5951`, intervene precision `0.5934`,
+  strong-CR regression intervene recall `0.5347`, despite positive simulated
+  gain `+0.1955 dB`. A small MLP random-only check got closer but still missed
+  preserve recall and strong-CR recall. Do not launch a supervised preserve
+  head or WaveletPreserve scout from this target. Details:
+  `docs/HAZE4K_SUPERVISED_PRESERVE_PROXY_AUDIT_20260528.md`.
 - Latest LFCR-v1 run on `runyun-ts`:
   `DEA-Net-LFCR-v1-w005-H4K-scout100k-20260527-231728` in
   `/root/workspace/Dehaze-Net-audit-sync`, log

@@ -1,6 +1,6 @@
 # Core Training Server Runbook
 
-Last updated: 2026-05-27
+Last updated: 2026-05-28
 
 Purpose: record the current server facts needed before changing environment,
 dataset links, or training assumptions. Exact SSH, sync, smoke, evaluation, and
@@ -110,6 +110,9 @@ Metric: step 2, SSIM 0.0651, PSNR 7.2473
 - Clean Git-backed checkout: `/root/workspace/Dehaze-Net-audit-sync`.
 - Python: `/opt/anaconda/envs/py310/bin/python`.
 - Access is usually from Windows PowerShell via `ssh runyun-ts`.
+- Additional runyun `py310` packages installed on 2026-05-28 for supervised
+  proxy audits: `scikit-learn==1.7.2`, `scipy==1.15.3`, `joblib==1.5.3`,
+  `threadpoolctl==3.6.0`.
 
 Use AutoDL first for new work unless the user names runyun or AutoDL is
 unavailable. Before using runyun, verify the intended checkout, branch, process
