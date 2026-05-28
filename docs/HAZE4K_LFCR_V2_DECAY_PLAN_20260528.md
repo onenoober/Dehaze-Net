@@ -2,7 +2,27 @@
 
 Date: 2026-05-28
 
-Status: route card for the next fair HAZE4K scout after LFCR-v1 diagnostics.
+Status: active fair HAZE4K scout launched on runyun after LFCR-v1 diagnostics.
+
+## Launch Record
+
+- Smoke:
+  `smoke-H4K-LFCR-v2-decay-runyun-20260528-091330` passed on `runyun-ts`.
+  The diagnostic schedule used decay steps `1/2`; checkpoint `loss_log`
+  recorded `CRPlusV2_weight [0.005]` before the weight reached zero, confirming
+  the schedule disables CRPlus-v2 after the tiny decay window.
+- Fair run:
+  `DEA-Net-LFCR-v2-decay-H4K-scout100k-20260528-091455`.
+- Server and checkout:
+  `runyun-ts`, `/root/workspace/Dehaze-Net-audit-sync`.
+- Branch/commit:
+  `codex/haze4k-lfcr-v2-decay` / `9009515`.
+- tmux/log:
+  `h4k_lfcr_v2_decay_20260528_091455`,
+  `experiment/HAZE4K/_run_logs/DEA-Net-LFCR-v2-decay-H4K-scout100k-20260528-091455.log`.
+- Startup health:
+  tmux/process active, GPU about `17263 MiB / 88%`, log reached about step
+  `89/100000` with the declared fair config.
 
 ## Most Valuable Attempt
 
