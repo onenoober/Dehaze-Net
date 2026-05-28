@@ -54,7 +54,10 @@ route reasoning in the dated analysis docs.
   activation-forward deployable proxies all failed the pass line. Do not launch
   another LFResidualSelector 100k scout from oracle evidence alone.
 - Before any new model/loss/selector/mask/guard scout, write or update a route
-  card using `docs/HAZE4K_MODEL_CHANGE_PROTOCOL.md`.
+  card using `docs/HAZE4K_MODEL_CHANGE_PROTOCOL.md`. The route must satisfy the
+  most-valuable-attempt standard: highest route-decision value per training
+  cost, with cheap preflight evidence, an earliest decisive gate, speed metrics,
+  and mechanism metrics.
 
 ## Storage And Server Roles
 

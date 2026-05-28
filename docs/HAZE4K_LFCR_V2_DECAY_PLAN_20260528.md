@@ -1,0 +1,132 @@
+# HAZE4K LFCR-v2 Decayed CRPlus Schedule
+
+Date: 2026-05-28
+
+Status: route card for the next fair HAZE4K scout after LFCR-v1 diagnostics.
+
+## Hypothesis
+
+- Prior evidence:
+  LFCR-v1 constant `w_loss_crplus_v2=0.005` reached only
+  `32.2098 / 0.9844` at 100k, below LF-v1, ResidualCalib, CRPlus-v2, and the
+  CR best checkpoint. However, it beat all matched 10k references and the
+  full-test diagnostics show real rescue behavior on LF-v1 regression cases.
+- Target failure mode:
+  constant high CRPlus-v2 pressure suppresses LF-v1's useful low-frequency
+  branch late in training.
+- Mechanism hypothesis:
+  If CRPlus-v2 is kept strong only early and then decayed away, early
+  optimization speed should be retained while LF-v1's late low-frequency
+  correction and scalar gate recover.
+
+## Change
+
+- Code branch:
+  `codex/haze4k-lfcr-v2-decay`.
+- Primary variable:
+  CRPlus-v2 weight schedule.
+- Architecture/loss definition:
+  same LF-v1 architecture and CRPlus-v2 loss as LFCR-v1. Only the effective
+  CRPlus-v2 loss weight changes over step:
+  `0.005` through step `10000`, linearly decays to `0.0` by step `20000`, then
+  stays disabled.
+- Enabled flags:
+  `use_lf_prior=true`, `lf_prior_channels=8`, `lf_prior_pool=8`,
+  `lf_prior_injection=pre_mix`, `w_loss_crplus_v2=0.005`,
+  `crplus_v2_weight_schedule=linear_decay`,
+  `crplus_v2_weight_decay_start_step=10000`,
+  `crplus_v2_weight_decay_end_step=20000`, `crplus_v2_min_weight=0.0`.
+- Explicitly disabled related mechanisms:
+  ResidualCalib, selector, teacher guard, residual direction loss, low-frequency
+  reconstruction loss, haze-aware mask, and conditional mask.
+
+## Review Decision
+
+The route passes the "is tuning still worth trying" review for one reason:
+LFCR-v1 is not a pure negative. It improved `182/351` LF-v1 regression cases by
+at least `0.30 dB`, fully rescued `84`, and gave the best 10k trajectory.
+
+It does not justify another constant-weight search as the first follow-up.
+Constant `0.005` lowered the LF gate (`0.0201` vs LF-v1 `0.0339`), worsened
+strong CR regressions (`-0.1789 dB` vs LF-v1 `-0.0520 dB`), and left final
+CRPlus selected pressure mostly on `under_dehazed_mix` (`343/1000` active).
+Therefore the most valuable next trial is a time-localized schedule, not a
+lower constant weight. A constant `0.003` remains a secondary fallback only if
+the schedule fails.
+
+## References
+
+- CR baseline:
+  `DEA-Net-CR-H4K-Baseline-scout-20260520-101334`, best 90k
+  `32.2255 / 0.9844`.
+- LF-v1:
+  `DEA-Net-LF-H4K-scout-20260521-003100`, best 90k
+  `32.4281 / 0.9845`.
+- ResidualCalib:
+  `DEA-Net-LF-ResidualCalib-H4K-scout100k-20260525-122654`, best 90k
+  `32.3936 / 0.9845`.
+- CRPlus-v2:
+  `DEA-Net-CRPlusV2-w003-H4K-scout100k-20260526-225540`, final/best 100k
+  `32.3633 / 0.9847`.
+- Direct predecessor:
+  `DEA-Net-LFCR-v1-w005-H4K-scout100k-20260527-231728`, final/best 100k
+  `32.2098 / 0.9844`.
+- LFCR-v1 final diagnostics:
+  `experiment/HAZE4K/lfcr_v1_diagnostics/DEA-Net-LFCR-v1-w005-100k-20260528-084016`.
+
+## Matched Gate References
+
+| Step | CR | LF-v1 | CRPlus-v2 | LFCR-v1 |
+| ---: | --- | --- | --- | --- |
+| 10000 | `27.1101 / 0.9615` | `26.2651 / 0.9631` | `26.7627 / 0.9629` | `27.3004 / 0.9660` |
+| 20000 | TBD | TBD | `29.2182 / 0.9714` | `28.0104 / 0.9648` |
+| 30000 | TBD | `30.6253 / 0.9776` | `30.1416 / 0.9769` | `30.2119 / 0.9752` |
+| 50000 | `31.2384 / 0.9817` | `31.3419 / 0.9817` | `31.3717 / 0.9824` | `30.8358 / 0.9797` |
+| 90000 | `32.2255 / 0.9844` | `32.4281 / 0.9845` | `32.3067 / 0.9844` | `32.0620 / 0.9842` |
+| 100000 | `32.0952 / 0.9844` | final checkpoint not promotion source | `32.3633 / 0.9847` | `32.2098 / 0.9844` |
+
+## Mechanism Metrics
+
+| Metric | Why it matches this route | Gate subset | Full-test artifact |
+| --- | --- | --- | --- |
+| `CRPlusV2_weight` log | Confirms scheduled loss is active early and off after 20k. | checkpoint/loss log | `loss_log` in checkpoint |
+| LF scalar gate | Tests whether late CRPlus pressure suppression is removed. | every checkpoint | pairwise/per-image summary |
+| LFCR vs LF-v1 mean delta | Direct predecessor quality comparison. | every 10k eval | full-test pairwise CSV |
+| LF-v1 regression rescue count | Checks retained complementarity. | 30k/50k diagnostic if needed | full-test pairwise CSV |
+| strong CR regression count | Checks whether the schedule avoids the v1 strong-sample harm. | 30k/50k diagnostic if needed | full-test pairwise CSV |
+| residual cosine / LF MSE delta | Verifies LFCR changes do not push LF-v1 in the wrong direction. | later gate diagnostic | residual-direction artifact |
+| CRPlus-v2 final loss-scale activity | Checks whether under-dehazed-mix pressure is no longer active late. | final only | loss-scale artifact |
+
+## Fair Training Contract
+
+- Dataset: HAZE4K.
+- Total target: `20 * 5000 = 100000` steps.
+- Batch/patch: `bs=16`, `patch_size=256`.
+- Loss weights:
+  `w_loss_L1=1.0`, `w_loss_CR=0.1`, CRPlus-v2 scheduled from `0.005` to `0`.
+- Optimizer schedule:
+  `start_lr=0.0001`, `end_lr=0.000001`.
+- Eval/checkpoint cadence:
+  every `10000` steps, `save_epoch_checkpoints=false`.
+
+## Gates
+
+| Step | Image metric rule | Mechanism metric rule | Stop/continue rule |
+| ---: | --- | --- | --- |
+| 10000 | Should be near LFCR-v1 10k and above collapse line. | `CRPlusV2_weight` still near `0.005`; LF gate nonzero. | Continue if PSNR/SSIM healthy and scheduled loss active. |
+| 20000 | Must not trail LFCR-v1 badly; compare to CRPlus-v2 20k. | `CRPlusV2_weight` reaches `0.0`; later logs should stop appending CRPlusV2. | Continue if schedule works and quality is plausible. |
+| 30000 | Prefer close to LF-v1/CRPlus-v2 30k, or clear recovery from LFCR-v1 30k. | LF gate should be trending closer to LF-v1 than LFCR-v1. | Stop if worse than LFCR-v1 and LF gate remains suppressed. |
+| 50000 | Must recover above LFCR-v1 50k and preferably be close to CR/LF-v1/CRPlus-v2. | Strong-sample risk should not exceed LFCR-v1 pattern if a diagnostic is run. | Continue only if image trajectory and mechanism are both plausible. |
+| 90000/100000 | Promotion requires beating or approaching LF-v1, or materially better speed/rescue evidence with no strong regression. | Full diagnostics required. | Record as positive candidate, positive ablation, or negative fair ablation. |
+
+## Analysis Plan
+
+- If stopped early:
+  record whether early-only CRPlus lost the 10k speed signal, failed to release
+  LF gate suppression, or simply underperformed despite a clean schedule.
+- If promoted:
+  run full-test pairwise diagnostics against CR, LF-v1, CRPlus-v2, and
+  ResidualCalib; run residual direction and CRPlus-v2 loss-scale diagnostics.
+- Required docs to update:
+  `docs/EXPERIMENT_LOG.md`, `docs/CURRENT_CONTEXT.md`,
+  `docs/HAZE4K_RUN_MANIFEST.md`, and this route card.

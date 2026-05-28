@@ -378,7 +378,7 @@ def train(net, loader_train, loader_test, optim, criterion, writer=None, trainin
     if 'loss_log' in training_state:
         loss_log = training_state['loss_log']
     for key in (
-        'CRPlusV2', 'LF_gate', 'LowFreq', 'ResidualDir', 'TeacherGuard',
+        'CRPlusV2', 'CRPlusV2_weight', 'LF_gate', 'LowFreq', 'ResidualDir', 'TeacherGuard',
         'LF_mask_mean', 'LF_mask_std', 'LF_mask_min', 'LF_mask_max',
         'LF_alpha_mean', 'LF_alpha_std', 'LF_alpha_min', 'LF_alpha_max',
         'LF_selector_mean', 'LF_selector_std', 'LF_selector_min', 'LF_selector_max'
@@ -424,13 +424,14 @@ def train(net, loader_train, loader_test, optim, criterion, writer=None, trainin
             if opt.w_loss_CR > 0:
                 loss_CR = criterion[1](out, y, x)
             loss_lf_gate = lf_gate_regularization(net)
+            loss_crplus_v2_weight = crplus_v2_weight(step)
             loss_crplus_v2 = crplus_v2_loss(out, y, x, step, criterion[2])
             loss_lowfreq = low_frequency_loss(out, y)
             loss_residual_dir = residual_direction_loss(out, x, y, step)
             loss_teacher_guard = teacher_guard_loss(out, x, y, step, teacher_net)
             loss = opt.w_loss_L1 * loss_L1 + opt.w_loss_CR * loss_CR
             if loss_crplus_v2 is not None:
-                loss = loss + opt.w_loss_crplus_v2 * loss_crplus_v2
+                loss = loss + loss_crplus_v2_weight * loss_crplus_v2
             if loss_lf_gate is not None:
                 loss = loss + opt.w_loss_lf_gate * loss_lf_gate
             if loss_lowfreq is not None:
@@ -451,6 +452,7 @@ def train(net, loader_train, loader_test, optim, criterion, writer=None, trainin
             loss_log_tmp['total'].append(loss.item())
             if loss_crplus_v2 is not None:
                 loss_log_tmp['CRPlusV2'].append(loss_crplus_v2.item())
+                loss_log_tmp['CRPlusV2_weight'].append(loss_crplus_v2_weight)
             if loss_lf_gate is not None:
                 loss_log_tmp['LF_gate'].append(loss_lf_gate.item())
             if loss_lowfreq is not None:
@@ -476,7 +478,8 @@ def train(net, loader_train, loader_test, optim, criterion, writer=None, trainin
                 writer.add_scalar('train/loss_CR_weighted', opt.w_loss_CR * loss_CR.item(), step)
                 if loss_crplus_v2 is not None:
                     writer.add_scalar('train/loss_crplus_v2', loss_crplus_v2.item(), step)
-                    writer.add_scalar('train/loss_crplus_v2_weighted', opt.w_loss_crplus_v2 * loss_crplus_v2.item(), step)
+                    writer.add_scalar('train/loss_crplus_v2_weight', loss_crplus_v2_weight, step)
+                    writer.add_scalar('train/loss_crplus_v2_weighted', loss_crplus_v2_weight * loss_crplus_v2.item(), step)
                 if loss_lf_gate is not None:
                     writer.add_scalar('train/loss_lf_gate', loss_lf_gate.item(), step)
                     writer.add_scalar('train/loss_lf_gate_weighted', opt.w_loss_lf_gate * loss_lf_gate.item(), step)
@@ -611,9 +614,33 @@ def lf_gate_regularization(net):
 
 
 def crplus_v2_loss(out, target, hazy, step, criterion):
-    if opt.w_loss_crplus_v2 <= 0 or criterion is None:
+    if crplus_v2_weight(step) <= 0 or criterion is None:
         return None
     return criterion(out, target, hazy, step)
+
+
+def crplus_v2_weight(step):
+    if opt.w_loss_crplus_v2 <= 0:
+        return 0.0
+    if opt.crplus_v2_weight_schedule == 'constant':
+        return opt.w_loss_crplus_v2
+    if opt.crplus_v2_weight_schedule == 'linear_decay':
+        start = opt.crplus_v2_weight_decay_start_step
+        end = opt.crplus_v2_weight_decay_end_step
+        min_weight = opt.crplus_v2_min_weight
+        if start < 0 or end < 0:
+            raise ValueError('CRPlus-v2 weight decay steps must be non-negative')
+        if min_weight < 0:
+            raise ValueError('crplus_v2_min_weight must be non-negative')
+        if end <= start:
+            return min_weight if step >= start else opt.w_loss_crplus_v2
+        if step <= start:
+            return opt.w_loss_crplus_v2
+        if step >= end:
+            return min_weight
+        ratio = float(step - start) / float(end - start)
+        return opt.w_loss_crplus_v2 + ratio * (min_weight - opt.w_loss_crplus_v2)
+    raise ValueError('Unsupported CRPlus-v2 weight schedule: {}'.format(opt.crplus_v2_weight_schedule))
 
 
 def lf_prior_mask_stats(net):
@@ -826,8 +853,12 @@ if __name__ == "__main__":
             ratio_cap=opt.crplus_v2_ratio_cap
         ))
         print(
-            'Using CRPlus-v2: weight={} negatives={} start_negatives={} curriculum_steps={} pool={} freq_weight={} lowfreq_weight={} mix={} ratio_cap={}'.format(
+            'Using CRPlus-v2: weight={} schedule={} min_weight={} decay_start={} decay_end={} negatives={} start_negatives={} curriculum_steps={} pool={} freq_weight={} lowfreq_weight={} mix={} ratio_cap={}'.format(
                 opt.w_loss_crplus_v2,
+                opt.crplus_v2_weight_schedule,
+                opt.crplus_v2_min_weight,
+                opt.crplus_v2_weight_decay_start_step,
+                opt.crplus_v2_weight_decay_end_step,
                 opt.crplus_v2_negative_modes,
                 opt.crplus_v2_start_negative_modes,
                 opt.crplus_v2_curriculum_steps,

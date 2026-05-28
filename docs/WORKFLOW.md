@@ -468,8 +468,16 @@ server.
 Before changing model architecture or training loss, open
 `docs/HAZE4K_MODEL_CHANGE_PROTOCOL.md` and create or update the route's dated
 experiment card. A long fair scout should not start until the card contains the
-failure mode, mechanism hypothesis, enabled/disabled flags, route-specific
-mechanism metrics, and written gate rules.
+most-valuable-attempt rationale, failure mode, mechanism hypothesis,
+enabled/disabled flags, route-specific mechanism metrics, speed metrics, and
+written gate rules.
+
+The standard question before launch is not only "could this reach the highest
+final PSNR?" It is "does this have the highest route-decision value per unit of
+training cost?" A candidate should either reach useful quality earlier, or use
+an early gate to reduce the number of future attempts. If success and failure
+would both leave the next step ambiguous, do another cheap diagnostic before a
+long scout.
 
 Formal HAZE4K candidate/scout runs must start with the same target horizon and
 core training protocol:
@@ -511,6 +519,22 @@ from the route's own target:
 
 Use the list above as examples, not a fixed template. Each new route should
 name its own mechanism metrics in the experiment card before the long scout.
+
+Every gate report should include these standard fields when available:
+
+- image quality: PSNR/SSIM, matched-step references, and best/final checkpoint
+  step.
+- training efficiency: wall time to gate, iteration speed, steps-to-baseline or
+  steps-to-current-best when applicable, and whether the curve is faster than
+  the direct predecessor.
+- route activity: active flags, scheduled weights at the gate, scalar gates,
+  loss-component tails, and any non-finite or degenerate signals.
+- mechanism evidence: the route-specific diagnostics from the experiment card.
+- regression control: per-image gain/regression split, current-best rescue,
+  current-best gain preservation, and weak/strong reference splits when cheap
+  enough to compute.
+- decision value: stop/continue decision plus what this gate taught about the
+  next attempt.
 
 | Step | Role | Rule |
 | ---: | --- | --- |

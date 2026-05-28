@@ -4,7 +4,8 @@ Date: 2026-05-26
 
 Purpose: define the required evidence chain for any future HAZE4K model,
 architecture, loss, selector, mask, or guard change. The goal is to make each
-candidate scientifically reviewable rather than a PSNR/SSIM-only trial.
+candidate scientifically reviewable and compute-efficient rather than a
+PSNR/SSIM-only trial.
 
 ## Core Rule
 
@@ -21,9 +22,64 @@ PSNR and SSIM are global quality guardrails. They are necessary but not
 sufficient. A candidate must also be judged against the mechanism it claims to
 improve.
 
+## Most Valuable Attempt Standard
+
+The earlier rule "choose the highest-upside attempt, and make failure
+informative" is directionally right but incomplete. It can still waste training
+if the route only has a large possible payoff at 100k and no early way to
+decide whether the mechanism is working.
+
+For this project, the most valuable attempt is the candidate with the highest
+route-decision value per unit of training cost. It should either get a better
+checkpoint earlier, or reduce the number of future training attempts by making
+the next decision clear at an early gate.
+
+A candidate may be called the most valuable current attempt only if all of
+these constraints are written before launch:
+
+1. **Known target**: it targets a documented failure mode, complementarity gap,
+   or training-speed bottleneck of the current best evidence, not a generic
+   hope for higher PSNR.
+2. **Cheap preflight**: it has a diagnostic from existing checkpoints, a scale
+   test, proxy audit, subset analysis, or prior full-test split that makes the
+   first fair scout worth the compute.
+3. **Decision value**: the route card says what we will learn if it succeeds
+   and what we will learn if it fails. A failed run should narrow the next
+   choice, for example by deciding between lower weight, schedule, selector,
+   or abandoning the mechanism.
+4. **Earliest decisive gate**: the route card names the earliest gate expected
+   to be informative and what evidence is required there. A route that can
+   only be judged at 100k needs stronger preflight evidence than a route with
+   a credible 20k or 30k mechanism check.
+5. **Primary variable**: the first fair scout changes one primary variable
+   whenever possible. A combination is allowed only when prior diagnostics show
+   a specific complementary failure pattern and the interaction itself is the
+   primary variable.
+6. **Speed metric**: the test records training-efficiency evidence, such as
+   matched-step curve, time-to-threshold, steps-to-baseline, iteration speed,
+   or whether it reaches the current reference quality earlier.
+7. **Mechanism metric**: the test includes route-specific mechanism metrics
+   that can explain a win or a failure, not only PSNR/SSIM.
+8. **Stop value**: if the candidate fails a written gate, the stop reason must
+   state what future attempt is now deprioritized or what constrained variant
+   is justified next.
+
+The standard is not "safe and conservative." A high-upside route can be the
+right choice when its failure would be decisive. The standard is also not
+"try the largest possible change." If a route lacks preflight evidence,
+mechanism metrics, or an early decision gate, it is not the most valuable
+attempt even if the imagined final gain is large.
+
 ## Required Evidence Chain
 
 Every new route should follow this order:
+
+0. **Candidate value**
+   - State why this is the most valuable current attempt under the standard
+     above.
+   - Name the cheaper diagnostic already done, the earliest decisive gate, and
+     the decision that will be made if the route fails.
+   - State how the route could reduce future attempts or training time.
 
 1. **Observed failure**
    - Name the prior run or diagnostic that motivates the route.
@@ -80,6 +136,22 @@ These examples are not a fixed checklist. Use the metrics that match the route.
 | low-frequency reconstruction | The low-frequency image target improves without causing color/tone artifacts. | LF L1/MSE, luma LF MSE, color/luma bias, delta-E or objective visual metrics, PSNR/SSIM split by baseline strength |
 | insertion-point or backbone change | The changed feature path carries useful signal and does not simply slow or destabilize training. | matched-step curve, branch/gate activation stats, feature-path ablation, parameter/runtime change, per-group gains/regressions |
 
+## Standard Test Metrics
+
+Every fair candidate gate should report the smallest useful set from these
+families. Route-specific metrics may add to the list, but should not replace
+the image-quality and speed evidence.
+
+| Metric family | Required use | Examples |
+| --- | --- | --- |
+| image quality | gate and final | PSNR/SSIM at matched steps versus CR baseline, LF-v1 or current best, and direct predecessor |
+| training efficiency | gate and final | time to gate, iteration speed, steps-to-baseline, earliest step matching a reference, curve area when available |
+| route activity | gate and final | enabled flags, current scheduled weights, scalar gates, loss-component tails, non-finite checks |
+| per-image split | final, and gate when cheap | mean/median delta, better/worse counts, gain/regression counts at `0.10 dB` and `0.30 dB`, weak/strong reference quartiles |
+| regression control | final, and gate when cheap | strong-baseline regression count, current-best regression rescue count, current-best gain preservation |
+| mechanism diagnostics | route-specific | residual cosine/wrong-direction count, LF MSE delta, CRPlus-v2 loss-scale and active negatives, selector entropy, guard active count |
+| cost and deployability | final, and gate if affected | parameter change, VRAM, inference speed, training speed, added inference-time modules |
+
 ## Gate Policy
 
 The fair run still uses validation every `10000` steps. Gates should be written
@@ -87,13 +159,13 @@ before launch.
 
 | Step | Role | Required decision evidence |
 | ---: | --- | --- |
-| 10000 | sanity gate | Training health, PSNR/SSIM collapse check, and proof that the new branch/loss is active. |
-| 20000 | early trajectory gate | Matched PSNR/SSIM against baseline and predecessor, plus first mechanism metric check. |
-| 30000 | first hard gate | Continue only if close to predecessor or clearly improving the stated mechanism. |
-| 50000 | promotion gate | Must be at least close to baseline and preferably close to predecessor, with mechanism metrics not worse. |
+| 10000 | sanity gate | Training health, PSNR/SSIM collapse check, proof that the new branch/loss is active, and current training speed. |
+| 20000 | early trajectory gate | Matched PSNR/SSIM against baseline and predecessor, first mechanism metric check, and whether the route is improving time-to-quality. |
+| 30000 | first hard gate | Continue only if close to predecessor, clearly improving the stated mechanism, or producing decisive route information worth the next block. |
+| 50000 | promotion gate | Must be at least close to baseline and preferably close to predecessor, with mechanism metrics and regression control not worse. |
 | 70000 | late confirmation | Continue only if both quality and mechanism metrics remain plausible. |
 | 90000 | best-checkpoint check | Compare against known best-step behavior and decide whether full-test analysis is worth running. |
-| 100000 | final scout point | Record final/best checkpoints, full-test metrics, mechanism metrics, and decision. |
+| 100000 | final scout point | Record final/best checkpoints, full-test metrics, mechanism metrics, cost metrics, and what next attempt is now justified or ruled out. |
 
 For emergency compute saving, a route may be stopped using a small fixed subset
 or gate-only diagnostic. Such a stop is valid for resource decisions. Formal
@@ -106,6 +178,16 @@ Use this outline for every future dated route plan.
 
 ```text
 # <Route Name>
+
+## Most Valuable Attempt
+
+- Why this is the most valuable current attempt:
+- Cheap preflight evidence:
+- Earliest decisive gate:
+- Expected training-time or attempt-count saving:
+- What success decides:
+- What failure decides:
+- Why a cheaper diagnostic is not enough:
 
 ## Hypothesis
 
