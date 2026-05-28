@@ -66,7 +66,9 @@ route reasoning in the dated analysis docs.
   `docs/HAZE4K_OFFICIAL_WARMSTART_FINETUNE_PLAN_20260528.md` on branch
   `codex/haze4k-official-warmstart-finetune`. This route starts from the
   official HAZE4K `.pth` via a converted step-0 training checkpoint and must
-  not be mixed into cold-start fair-candidate tables.
+  not be mixed into cold-start fair-candidate tables. Its default staged
+  fine-tune schedule is LF-only through the 10k gate, then LF plus
+  bottleneck/fusion through the 30k gate, then full-model tiny-LR unfreeze.
 - Selector evidence is closed for now: strict CSV, rich CSV, and
   activation-forward deployable proxies all failed the pass line. Do not launch
   another LFResidualSelector 100k scout from oracle evidence alone.

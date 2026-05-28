@@ -111,6 +111,7 @@ parser.add_argument('--early_stop_patience_evals', type=int, default=0, help='st
 parser.add_argument('--early_stop_min_delta', type=float, default=0.0, help='minimum metric improvement required to reset early-stop patience')
 parser.add_argument('--early_stop_after_step', type=int, default=0, help='do not count early-stop patience before this training step')
 parser.add_argument('--early_stop_metric', type=str, default='psnr', choices=['psnr', 'ssim'], help='metric used for early stopping')
+parser.add_argument('--trainable_schedule', type=str, default='none', help="optional staged fine-tune schedule, e.g. '0:lf_prior;10001:lf_prior,bottleneck,fusion;30001:all'; 'none' keeps all params trainable")
 
 # only need for resume
 parser.add_argument('--resume', type=str2bool, nargs='?', const=True, default=False)

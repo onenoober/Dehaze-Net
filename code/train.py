@@ -1,4 +1,5 @@
 import os, time, math
+import json
 import numpy as np
 
 import torch
@@ -19,6 +20,7 @@ from model import DEANet
 from loss import CRPlusV2Loss, ContrastLoss
 from option_train import opt
 from data.data_loader import TrainDataset, TestDataset, resolve_pair_dirs
+from warmstart_freeze import TrainableSchedule
 
 
 start_time = time.time()
@@ -369,7 +371,28 @@ def build_checkpoint(epoch, step, max_psnr, max_ssim, ssims, psnrs, losses, loss
     }
 
 
-def train(net, loader_train, loader_test, optim, criterion, writer=None, training_state=None, teacher_net=None):
+def log_trainable_stage(step, stats):
+    message = (
+        'Trainable stage at step {}: {} | params {}/{} | tensors {}/{}'.format(
+            step,
+            stats['stage_label'],
+            stats['trainable_params'],
+            stats['total_params'],
+            stats['trainable_tensors'],
+            stats['total_tensors']
+        )
+    )
+    print(message)
+    if opt.dry_run:
+        return
+    os.makedirs(opt.saved_data_dir, exist_ok=True)
+    payload = dict(stats)
+    payload['step'] = step
+    with open(os.path.join(opt.saved_data_dir, 'trainable_schedule.jsonl'), 'a') as f:
+        f.write(json.dumps(payload) + '\n')
+
+
+def train(net, loader_train, loader_test, optim, criterion, writer=None, training_state=None, teacher_net=None, trainable_schedule=None):
     training_state = training_state or {}
     losses = list(training_state.get('losses', []))
 
@@ -381,7 +404,8 @@ def train(net, loader_train, loader_test, optim, criterion, writer=None, trainin
         'CRPlusV2', 'CRPlusV2_weight', 'LF_gate', 'LowFreq', 'ResidualDir', 'TeacherGuard',
         'LF_mask_mean', 'LF_mask_std', 'LF_mask_min', 'LF_mask_max',
         'LF_alpha_mean', 'LF_alpha_std', 'LF_alpha_min', 'LF_alpha_max',
-        'LF_selector_mean', 'LF_selector_std', 'LF_selector_min', 'LF_selector_max'
+        'LF_selector_mean', 'LF_selector_std', 'LF_selector_min', 'LF_selector_max',
+        'TrainableParamCount', 'TrainableStage'
     ):
         loss_log.setdefault(key, [])
         loss_log_tmp.setdefault(key, [])
@@ -408,6 +432,11 @@ def train(net, loader_train, loader_test, optim, criterion, writer=None, trainin
     try:
         for step in progress_bar:
             net.train()
+            trainable_stats = None
+            if trainable_schedule is not None:
+                trainable_stats = trainable_schedule.apply(net, step)
+                if trainable_stats.get('changed'):
+                    log_trainable_stage(step, trainable_stats)
             lr = opt.start_lr
             if not opt.no_lr_sche:
                 lr = lr_schedule_cosdecay(step, T)
@@ -470,6 +499,9 @@ def train(net, loader_train, loader_test, optim, criterion, writer=None, trainin
             if lf_selector_stats is not None:
                 for key, value in lf_selector_stats.items():
                     loss_log_tmp['LF_selector_' + key].append(value)
+            if trainable_stats is not None:
+                loss_log_tmp['TrainableParamCount'].append(trainable_stats['trainable_params'])
+                loss_log_tmp['TrainableStage'].append(trainable_stats['stage_index'])
 
             if writer is not None and opt.tb_log_interval > 0 and (step == 1 or step % opt.tb_log_interval == 0):
                 writer.add_scalar('train/loss_total', loss.item(), step)
@@ -501,6 +533,9 @@ def train(net, loader_train, loader_test, optim, criterion, writer=None, trainin
                 if lf_selector_stats is not None:
                     for key, value in lf_selector_stats.items():
                         writer.add_scalar('train/lf_selector_' + key, value, step)
+                if trainable_stats is not None:
+                    writer.add_scalar('train/trainable_param_count', trainable_stats['trainable_params'], step)
+                    writer.add_scalar('train/trainable_stage', trainable_stats['stage_index'], step)
                 writer.add_scalar('train/lr', lr, step)
 
             if opt.no_tqdm:
@@ -830,8 +865,9 @@ if __name__ == "__main__":
     if opt.device == 'cuda':
         cudnn.benchmark = True
 
-    pytorch_total_params = sum(p.numel() for p in net.parameters() if p.requires_grad)
-    print("Total_params: ==> {}".format(pytorch_total_params))
+    trainable_schedule = TrainableSchedule(opt.trainable_schedule)
+    if trainable_schedule.enabled:
+        print('Using trainable schedule:', trainable_schedule.describe())
 
     criterion = []
     criterion.append(nn.L1Loss().to(opt.device))
@@ -872,10 +908,19 @@ if __name__ == "__main__":
     else:
         criterion.append(None)
 
-    optimizer = optim.Adam(params=filter(lambda x: x.requires_grad, net.parameters()), lr=opt.start_lr, betas=(0.9, 0.999),
+    optimizer = optim.Adam(params=net.parameters(), lr=opt.start_lr, betas=(0.9, 0.999),
                            eps=1e-08)
     optimizer.zero_grad()
     training_state = load_training_state(net, optimizer)
+    trainable_stats = trainable_schedule.apply(
+        net,
+        int(training_state.get('step', 0)),
+        force=trainable_schedule.enabled
+    )
+    if trainable_schedule.enabled:
+        log_trainable_stage(int(training_state.get('step', 0)), trainable_stats)
+    print("Total_params: ==> {}".format(trainable_stats['total_params']))
+    print("Trainable_params: ==> {}".format(trainable_stats['trainable_params']))
     teacher_net = create_teacher_model()
     if opt.dry_run:
         print('Dry run complete.')
@@ -884,7 +929,8 @@ if __name__ == "__main__":
         raise SystemExit(0)
     writer = create_summary_writer(int(training_state.get('step', 0)))
     try:
-        train(net, loader_train, loader_test, optimizer, criterion, writer, training_state, teacher_net)
+        trainable_schedule_for_loop = trainable_schedule if trainable_schedule.enabled else None
+        train(net, loader_train, loader_test, optimizer, criterion, writer, training_state, teacher_net, trainable_schedule_for_loop)
     finally:
         if writer is not None:
             writer.close()

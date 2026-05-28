@@ -19,6 +19,7 @@ CHECKPOINT_INTERVAL_STEPS_VALUE="${CHECKPOINT_INTERVAL_STEPS:-10000}"
 EVAL_INTERVAL_STEPS_VALUE="${EVAL_INTERVAL_STEPS:-10000}"
 USE_LF_PRIOR_VALUE="${USE_LF_PRIOR:-1}"
 CHECK_FORWARD_VALUE="${CHECK_FORWARD:-1}"
+TRAINABLE_SCHEDULE_VALUE="${TRAINABLE_SCHEDULE:-}"
 PYTHON_BIN="${PYTHON_BIN:-}"
 
 if [[ -z "$PYTHON_BIN" ]]; then
@@ -63,6 +64,14 @@ fi
 mkdir -p "$LOG_DIR"
 cd "$CODE_DIR"
 
+if [[ -z "$TRAINABLE_SCHEDULE_VALUE" ]]; then
+  if [[ "$USE_LF_PRIOR_VALUE" == "1" ]]; then
+    TRAINABLE_SCHEDULE_VALUE="0:lf_prior;10001:lf_prior,bottleneck,fusion;30001:all"
+  else
+    TRAINABLE_SCHEDULE_VALUE="none"
+  fi
+fi
+
 ARCH_FLAGS=()
 if [[ "$USE_LF_PRIOR_VALUE" == "1" ]]; then
   ARCH_FLAGS+=(
@@ -103,6 +112,7 @@ echo "START_LR=$START_LR_VALUE"
 echo "END_LR=$END_LR_VALUE"
 echo "USE_LF_PRIOR=$USE_LF_PRIOR_VALUE"
 echo "CHECK_FORWARD=$CHECK_FORWARD_VALUE"
+echo "TRAINABLE_SCHEDULE=$TRAINABLE_SCHEDULE_VALUE"
 if [[ "$TOTAL_STEPS" -ne 100000 ]]; then
   echo "WARNING: ALLOW_SHORT_WARMSTART=1; this run is diagnostic only."
 fi
@@ -140,6 +150,7 @@ fi
     --checkpoint_interval_steps "$CHECKPOINT_INTERVAL_STEPS_VALUE" \
     --eval_interval_steps "$EVAL_INTERVAL_STEPS_VALUE" \
     --save_epoch_checkpoints false \
+    --trainable_schedule "$TRAINABLE_SCHEDULE_VALUE" \
     --no_pdf_plots \
     "${ARCH_FLAGS[@]}" \
     "$@"
