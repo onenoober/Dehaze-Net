@@ -587,6 +587,67 @@ the run id, branch/commit, protocol, checkpoint path, metrics, and decision in
 `docs/EXPERIMENT_LOG.md`. Record important artifact directories in
 `docs/HAZE4K_RUN_MANIFEST.md`.
 
+## Formal HAZE4K full-training command
+
+Use this only after a cold-start candidate has passed the standard `100000`
+step scout promotion rules and the corresponding CR/baseline comparison plan is
+clear. For HAZE4K cold-start formal training, the default full-training target
+is `300000` steps (`epochs=60`, `iters_per_epoch=5000`), not the upstream
+README's ITS-only `300 * 5000` command. The HAZE4K public checkpoint is an eval
+reference in the upstream README, while this repository's HAZE4K data has about
+`3000` training pairs; at `bs=16`, `300000` steps is already about `1600`
+random crop/rotation exposures per training image.
+
+Do not turn a completed `100000`-step scout into this run by resuming with
+`epochs=60`. Start a new formal run from step 0, because `train.py` uses
+`epochs * iters_per_epoch` as the cosine-LR horizon. If the final selected
+route is not LF-v1, keep the same formal schedule and core protocol, but replace
+the LF-v1 flags below with the route-specific flags from the route card. A
+formal superiority claim also needs a matched formal CR/baseline reference; do
+not compare a `300000`-step candidate only against a `100000`-step scout.
+
+Default AutoDL LF-v1 formal command:
+
+```bash
+cd /root/autodl-tmp/workspace/Dehaze-Net/code
+
+RUN=DEA-Net-LF-H4K-formal300k-$(date +%Y%m%d-%H%M%S)
+mkdir -p ../experiment/HAZE4K/_run_logs
+
+/root/miniconda3/envs/py310/bin/python train.py \
+  --use_lf_prior \
+  --lf_prior_channels 8 \
+  --lf_prior_pool 8 \
+  --lf_prior_gate_init 0.0 \
+  --lf_prior_injection pre_mix \
+  --model_name "$RUN" \
+  --dataset HAZE4K \
+  --epochs 60 \
+  --iters_per_epoch 5000 \
+  --bs 16 \
+  --patch_size 256 \
+  --num_workers 12 \
+  --test_num_workers 4 \
+  --pin_memory \
+  --persistent_workers \
+  --prefetch_factor 2 \
+  --w_loss_L1 1.0 \
+  --w_loss_CR 0.1 \
+  --start_lr 0.0001 \
+  --end_lr 0.000001 \
+  --exp_dir ../experiment/ \
+  --checkpoint_interval_steps 10000 \
+  --eval_interval_steps 10000 \
+  --save_epoch_checkpoints false \
+  --no_pdf_plots \
+  --no_tqdm \
+  2>&1 | tee "../experiment/HAZE4K/_run_logs/${RUN}.log"
+```
+
+For runyun, first refresh the Tailscale connection as described above, then use
+the intended runyun checkout and replace the Python path with
+`/opt/anaconda/envs/py310/bin/python`.
+
 ## Long runs and stopping
 
 For long HAZE4K runs, use `tmux` and write logs under
