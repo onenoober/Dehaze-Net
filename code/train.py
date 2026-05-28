@@ -185,6 +185,32 @@ def create_teacher_model():
     return teacher
 
 
+def create_cr_ref_model():
+    if opt.w_loss_cr_ref_residual <= 0:
+        return None
+    checkpoint_path = resolve_checkpoint_path(opt.cr_ref_checkpoint)
+    if checkpoint_path is None:
+        raise ValueError('--cr_ref_checkpoint is required when --w_loss_cr_ref_residual > 0')
+
+    teacher = DEANet(base_dim=32)
+    checkpoint = load_checkpoint_file(checkpoint_path)
+    teacher.load_state_dict(strip_module_prefix(checkpoint['model']))
+    teacher.to(opt.device)
+    teacher.eval()
+    for param in teacher.parameters():
+        param.requires_grad = False
+    print(
+        'Using CR reference residual-field checkpoint: {} | weight={} pool={} warmup={} magnitude_weight={}'.format(
+            checkpoint_path,
+            opt.w_loss_cr_ref_residual,
+            opt.cr_ref_residual_pool,
+            opt.cr_ref_residual_warmup_steps,
+            opt.cr_ref_residual_magnitude_weight
+        )
+    )
+    return teacher
+
+
 def should_evaluate(step, loader_train_len):
     if opt.eval_interval_steps > 0:
         return step % opt.eval_interval_steps == 0 or step == steps
@@ -305,6 +331,54 @@ def residual_direction_loss(out, hazy, target, step):
     return (1.0 - cosine).mean()
 
 
+def cr_ref_residual_field_loss(out, hazy, target, step, cr_ref_net):
+    if cr_ref_net is None or opt.w_loss_cr_ref_residual <= 0:
+        return None
+    if step < opt.cr_ref_residual_warmup_steps:
+        return None
+    if opt.cr_ref_residual_pool <= 0:
+        raise ValueError('cr_ref_residual_pool must be positive')
+    with torch.no_grad():
+        ref = cr_ref_net(hazy).clamp(0, 1)
+    low_out = F.avg_pool2d(
+        out,
+        kernel_size=opt.cr_ref_residual_pool,
+        stride=opt.cr_ref_residual_pool,
+        ceil_mode=True
+    )
+    low_ref = F.avg_pool2d(
+        ref,
+        kernel_size=opt.cr_ref_residual_pool,
+        stride=opt.cr_ref_residual_pool,
+        ceil_mode=True
+    )
+    low_target = F.avg_pool2d(
+        target,
+        kernel_size=opt.cr_ref_residual_pool,
+        stride=opt.cr_ref_residual_pool,
+        ceil_mode=True
+    )
+    pred_residual = low_out - low_ref.detach()
+    target_residual = low_target - low_ref.detach()
+    pred_vec = pred_residual.reshape(pred_residual.shape[0], -1)
+    target_vec = target_residual.reshape(target_residual.shape[0], -1)
+    pred_norm = pred_vec.norm(dim=1)
+    target_norm = target_vec.norm(dim=1)
+    valid = target_norm > opt.cr_ref_residual_target_norm_floor
+    if not valid.any():
+        return out.new_zeros(())
+    cosine = (pred_vec[valid] * target_vec[valid]).sum(dim=1)
+    cosine = cosine / (pred_norm[valid] * target_norm[valid] + 1e-8)
+    loss = (1.0 - cosine).mean()
+    if opt.cr_ref_residual_magnitude_weight > 0:
+        ratio = pred_norm[valid] / (target_norm[valid] + 1e-8)
+        if opt.cr_ref_residual_magnitude_cap > 0:
+            ratio = ratio.clamp(max=opt.cr_ref_residual_magnitude_cap)
+        magnitude_target = torch.ones_like(ratio)
+        loss = loss + opt.cr_ref_residual_magnitude_weight * F.smooth_l1_loss(ratio, magnitude_target)
+    return loss
+
+
 def per_sample_l1(a, b, pool_size=0):
     if pool_size < 0:
         raise ValueError('teacher_guard_patch_pool must be non-negative')
@@ -392,7 +466,7 @@ def log_trainable_stage(step, stats):
         f.write(json.dumps(payload) + '\n')
 
 
-def train(net, loader_train, loader_test, optim, criterion, writer=None, training_state=None, teacher_net=None, trainable_schedule=None):
+def train(net, loader_train, loader_test, optim, criterion, writer=None, training_state=None, teacher_net=None, cr_ref_net=None, trainable_schedule=None):
     training_state = training_state or {}
     losses = list(training_state.get('losses', []))
 
@@ -401,7 +475,7 @@ def train(net, loader_train, loader_test, optim, criterion, writer=None, trainin
     if 'loss_log' in training_state:
         loss_log = training_state['loss_log']
     for key in (
-        'CRPlusV2', 'CRPlusV2_weight', 'LF_gate', 'LowFreq', 'ResidualDir', 'TeacherGuard',
+        'CRPlusV2', 'CRPlusV2_weight', 'LF_gate', 'LowFreq', 'ResidualDir', 'CRRefResidual', 'TeacherGuard',
         'LF_mask_mean', 'LF_mask_std', 'LF_mask_min', 'LF_mask_max',
         'LF_alpha_mean', 'LF_alpha_std', 'LF_alpha_min', 'LF_alpha_max',
         'LF_selector_mean', 'LF_selector_std', 'LF_selector_min', 'LF_selector_max',
@@ -457,6 +531,7 @@ def train(net, loader_train, loader_test, optim, criterion, writer=None, trainin
             loss_crplus_v2 = crplus_v2_loss(out, y, x, step, criterion[2])
             loss_lowfreq = low_frequency_loss(out, y)
             loss_residual_dir = residual_direction_loss(out, x, y, step)
+            loss_cr_ref_residual = cr_ref_residual_field_loss(out, x, y, step, cr_ref_net)
             loss_teacher_guard = teacher_guard_loss(out, x, y, step, teacher_net)
             loss = opt.w_loss_L1 * loss_L1 + opt.w_loss_CR * loss_CR
             if loss_crplus_v2 is not None:
@@ -467,6 +542,8 @@ def train(net, loader_train, loader_test, optim, criterion, writer=None, trainin
                 loss = loss + opt.w_loss_lowfreq * loss_lowfreq
             if loss_residual_dir is not None:
                 loss = loss + opt.w_loss_residual_dir * loss_residual_dir
+            if loss_cr_ref_residual is not None:
+                loss = loss + opt.w_loss_cr_ref_residual * loss_cr_ref_residual
             if loss_teacher_guard is not None:
                 loss = loss + opt.w_loss_teacher_guard * loss_teacher_guard
             loss.backward()
@@ -488,6 +565,8 @@ def train(net, loader_train, loader_test, optim, criterion, writer=None, trainin
                 loss_log_tmp['LowFreq'].append(loss_lowfreq.item())
             if loss_residual_dir is not None:
                 loss_log_tmp['ResidualDir'].append(loss_residual_dir.item())
+            if loss_cr_ref_residual is not None:
+                loss_log_tmp['CRRefResidual'].append(loss_cr_ref_residual.item())
             if loss_teacher_guard is not None:
                 loss_log_tmp['TeacherGuard'].append(loss_teacher_guard.item())
             if lf_mask_stats is not None:
@@ -521,6 +600,9 @@ def train(net, loader_train, loader_test, optim, criterion, writer=None, trainin
                 if loss_residual_dir is not None:
                     writer.add_scalar('train/loss_residual_dir', loss_residual_dir.item(), step)
                     writer.add_scalar('train/loss_residual_dir_weighted', opt.w_loss_residual_dir * loss_residual_dir.item(), step)
+                if loss_cr_ref_residual is not None:
+                    writer.add_scalar('train/loss_cr_ref_residual', loss_cr_ref_residual.item(), step)
+                    writer.add_scalar('train/loss_cr_ref_residual_weighted', opt.w_loss_cr_ref_residual * loss_cr_ref_residual.item(), step)
                 if loss_teacher_guard is not None:
                     writer.add_scalar('train/loss_teacher_guard', loss_teacher_guard.item(), step)
                     writer.add_scalar('train/loss_teacher_guard_weighted', opt.w_loss_teacher_guard * loss_teacher_guard.item(), step)
@@ -922,6 +1004,7 @@ if __name__ == "__main__":
     print("Total_params: ==> {}".format(trainable_stats['total_params']))
     print("Trainable_params: ==> {}".format(trainable_stats['trainable_params']))
     teacher_net = create_teacher_model()
+    cr_ref_net = create_cr_ref_model()
     if opt.dry_run:
         print('Dry run complete.')
         print('Training target steps: {}'.format(steps))
@@ -930,7 +1013,7 @@ if __name__ == "__main__":
     writer = create_summary_writer(int(training_state.get('step', 0)))
     try:
         trainable_schedule_for_loop = trainable_schedule if trainable_schedule.enabled else None
-        train(net, loader_train, loader_test, optimizer, criterion, writer, training_state, teacher_net, trainable_schedule_for_loop)
+        train(net, loader_train, loader_test, optimizer, criterion, writer, training_state, teacher_net, cr_ref_net, trainable_schedule_for_loop)
     finally:
         if writer is not None:
             writer.close()
