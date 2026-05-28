@@ -1,0 +1,154 @@
+# HAZE4K LF-v2 Multiscale Bottleneck Refiner Plan
+
+Date: 2026-05-28
+
+Status: proposed route card. This document does not authorize a 100k scout by
+itself. Implement the change, pass the preflight checks, then decide whether a
+fair run is worth launching. Current run state belongs in
+`docs/CURRENT_CONTEXT.md`; run facts belong in `docs/EXPERIMENT_LOG.md`.
+
+## Most Valuable Attempt
+
+- Why this is the most valuable current attempt:
+  LF-v1 remains the best cold-start standalone checkpoint, but LFCR-v1,
+  LFCR-v2, WaveletPreserve, supervised preserve, and ResidualFieldConfidence
+  all show the same failure: they can rescue some LF-v1 regressions but cannot
+  preserve enough LF-v1 wins. The next attempt should change the representation
+  that produces the low-frequency residual, not add another decision head over
+  current features.
+- Cheap preflight evidence:
+  route evidence review, LF-v1 residual-direction diagnosis, ResidualCalib,
+  LFCR-v2 final diagnostics, WaveletPreserve proxy audit, supervised preserve
+  proxy audit, and ResidualFieldConfidence preflight.
+- Earliest decisive gate:
+  implementation preflight before training; then the 30k hard gate for a fair
+  100k scout if preflight passes.
+- Expected training-time or attempt-count saving:
+  a failed scoped refiner would deprioritize more LF bottleneck architecture
+  tweaks and move the project toward isolated warm-start or larger-backbone
+  routes. A passed route would make the next attempt an LF-v2 refinement rather
+  than another selector/proxy/CRPlus schedule search.
+- What success decides:
+  whether a small multiscale/frequency feature path can improve LF residual
+  direction and LF-v1 gain preservation while keeping DEA-Net entrypoints and
+  cost nearly stable.
+- What failure decides:
+  if neutral-init, branch activity, cost, and 30k preservation gates fail, stop
+  scoped LF bottleneck architecture tweaks for now.
+- Why a cheaper diagnostic is not enough:
+  train-free proxies over current outputs already failed. The open question is
+  whether a changed residual feature generator can learn a safer correction.
+
+## Hypothesis
+
+- Prior evidence:
+  LF-v1 best 90k `32.4281 / 0.9845` remains the current best standalone
+  checkpoint. ResidualCalib is positive but lower than LF-v1. LFCR-v2 final
+  `32.1516 / 0.9844` shows scheduling CRPlus pressure is not enough. RFC has
+  high simulated gain but failed preservation and precision gates.
+- Target failure mode:
+  current LF-side routes over-correct samples where LF-v1 or CR is already
+  reliable; proxies can detect some regressions but cannot intervene precisely.
+- Mechanism hypothesis:
+  If a small multiscale/frequency refiner is inserted at the LF-v1 bottleneck,
+  residual direction and LF MSE should improve because the branch can model
+  haze-scale structure and detail-preserving skip paths before the residual is
+  produced, instead of choosing among already flawed outputs afterward.
+
+## Change
+
+- Code branch:
+  TBD.
+- Primary variable:
+  add one scoped LF-v2 multiscale bottleneck refiner path.
+- Architecture definition:
+  a compact branch near the existing LF-v1 bottleneck or `mix1` region that
+  combines a low-resolution or wavelet-like context path with a detail-preserving
+  skip and a learnable residual gate initialized near neutral.
+- Enabled flags:
+  TBD implementation flags; the first route should expose an explicit option
+  and keep the official `code/train.py` and `code/eval.py` entrypoints stable.
+- Explicitly disabled related mechanisms:
+  CRPlus-v2 schedule, WaveletPreserve head, supervised preserve head,
+  ResidualFieldConfidence loss/head, selector-v2, new teacher guard, and large
+  Transformer/Mamba/diffusion backbone replacement.
+
+## References
+
+- Baseline run/checkpoint:
+  DEA-Net-CR best 90k `32.2255 / 0.9844`.
+- Direct predecessor run/checkpoint:
+  LF-v1 best 90k `32.4281 / 0.9845`.
+- Mechanism references:
+  ResidualCalib best 90k `32.3936 / 0.9845`; CRPlus-v2 final `32.3633 /
+  0.9847`; LFCR-v2 final `32.1516 / 0.9844`; RFC preflight preserve recall
+  `0.6275` and intervention precision `0.5320`.
+- Matched gate reference table:
+  fill exact LF-v1, CR, and direct predecessor gate rows from
+  `docs/EXPERIMENT_LOG.md` before launch.
+
+## Preflight
+
+Preflight must pass before any fair 100k training launch:
+
+| Check | Pass line | Stop meaning |
+| --- | --- | --- |
+| Parameter budget | Prefer `<= +3%` versus LF-v1; explain any exception. | If much larger, this is no longer a lightweight LF route. |
+| Inference latency | Prefer `<= +8%` versus LF-v1 on the same GPU and input size. | If slower, defer until a stronger reason exists. |
+| Neutral-init output | In neutral mode, fixed minibatch output should match LF-v1 within tiny numerical tolerance. | If not neutral, the route risks confounding architecture with initialization shock. |
+| Branch activity | Gate/activation stats must be finite and non-degenerate after smoke or early diagnostic steps. | If dead or saturated, do not spend 100k. |
+| Training smoke | No non-finite loss; checkpoint and eval path still work. | If smoke fails, fix implementation before route evaluation. |
+
+## Mechanism Metrics
+
+| Metric | Why it matches this route | Gate subset | Full-test artifact |
+| --- | --- | --- | --- |
+| residual cosine vs GT correction | Directly tests low-frequency residual direction. | 30k compact diagnostic if quality is plausible. | residual diagnostic CSV/MD |
+| wrong-direction count | Explains strong regressions better than global PSNR alone. | 30k compact diagnostic. | full-test residual diagnostic |
+| LF MSE improved/regressed | Tests whether the refiner improves low-frequency reconstruction. | 30k compact diagnostic. | full-test LF MSE table |
+| LF-v1 gain preservation | Main failure in LFCR-v1/v2 and RFC. | 30k if cheap, final required. | per-image pairwise CSV |
+| LF-v1 regression rescue | Keep the useful part of LFCR/RFC evidence. | 30k if cheap, final required. | per-image pairwise CSV |
+| strong-CR regression count | Guards against harming already reliable CR cases. | 30k if cheap, final required. | group breakdown |
+| branch gate/activation stats | Proves the new path is alive but not saturated. | every gate. | checkpoint/log summary |
+| params, latency, VRAM | Keeps the route lightweight and deployable. | preflight and final. | cost report |
+
+## Fair Training Contract
+
+- Dataset:
+  HAZE4K.
+- Total target:
+  `epochs=20`, `iters_per_epoch=5000`, total `100000` steps.
+- Batch/patch:
+  `bs=16`, `patch_size=256`.
+- Loss weights:
+  keep baseline `w_loss_L1=1.0`, `w_loss_CR=0.1`; do not enable CRPlus-v2 or
+  preservation losses in the first scout.
+- Eval/checkpoint cadence:
+  every `10000` steps; `save_epoch_checkpoints=false`.
+
+## Gates
+
+| Step | Image metric rule | Mechanism metric rule | Stop/continue rule |
+| ---: | --- | --- | --- |
+| preflight | No quality claim. | Cost, neutral-init, branch activity, and smoke pass. | Stop if any preflight pass line fails. |
+| 10000 | No collapse; should be in the same broad trajectory family as LF-v1/CR. | Branch alive; no saturated gate; no non-finite stats. | Stop only for collapse or dead branch. |
+| 20000 | Should be clearly above CR collapse line and not obviously worse than failed LF routes. | First branch stats should show useful variance. | Continue only if quality and activity are plausible. |
+| 30000 | First hard gate: should approach LF-v1 30k or show a clear mechanism improvement worth more compute. | Residual cosine/wrong-direction/LF MSE and LF-v1 gain preservation must improve versus the most relevant failed route. | Stop if below references and mechanism is not improved. |
+| 50000 | Must be close to LF-v1 or show strong mechanism evidence. | Preservation and strong-CR regression cannot be worse than LFCR-v2/RFC patterns. | Stop if it repeats rescue-without-preservation. |
+| 90000 | Compare against LF-v1 best-step behavior. | Full or compact diagnostics should justify final evaluation. | Continue to final only if promotable or diagnostically decisive. |
+| 100000 | Final/best comparison against CR, LF-v1, ResidualCalib, CRPlus-v2, and LFCR-v2. | Full per-image, residual, and cost diagnostics required. | Promote only if mean quality or preservation/residual mechanism is clearly better. |
+
+## Analysis Plan
+
+- If stopped:
+  record whether the failure was cost, dead branch, training curve, residual
+  direction, LF MSE, LF-v1 gain preservation, or strong-CR regression. State
+  which future route is deprioritized.
+- If promoted:
+  sync compact diagnostics, update `EXPERIMENT_LOG.md`,
+  `HAZE4K_RUN_MANIFEST.md`, this route card, and the main LFCR plan. Then run
+  full per-image comparison and visual review before any larger training claim.
+- Required docs to update:
+  `docs/CURRENT_CONTEXT.md`, `docs/EXPERIMENT_LOG.md`,
+  `docs/HAZE4K_RUN_MANIFEST.md`, this route card, and
+  `docs/DEA_NET_LFCR_HAZE4K_PLAN.md`.

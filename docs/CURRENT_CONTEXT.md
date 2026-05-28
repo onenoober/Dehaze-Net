@@ -106,6 +106,12 @@ route reasoning in the dated analysis docs.
   2026-05-26 before the first 10k checkpoint. Do not resume it.
 - Current best standalone model evidence remains LF-v1. ResidualCalib and
   CRPlus-v2 are positive ablations/components, not replacements for LF-v1.
+- Current best next cold-start architecture direction is the proposed LF-v2
+  multiscale bottleneck refiner route card:
+  `docs/HAZE4K_LF_V2_MULTISCALE_BOTTLENECK_REFINER_PLAN_20260528.md`. Treat it
+  as a planning route only until implementation preflight passes cost,
+  neutral-init, branch-activity, smoke, and preservation gates. Do not launch a
+  100k scout from this card alone.
 - New isolated warm-start fine-tuning route:
   `docs/HAZE4K_OFFICIAL_WARMSTART_FINETUNE_PLAN_20260528.md` on branch
   `codex/haze4k-official-warmstart-finetune`. This route starts from the
@@ -221,8 +227,9 @@ gate policy. Use `docs/WORKFLOW.md` for exact launch/check/stop templates.
 | CRPlus-v2 | Completed first fair scout at 100k: `32.3633 / 0.9847`. It is positive versus CR baseline (`+0.1396 dB` full-test mean delta), but below LF-v1 (`-0.0633 dB`) and ResidualCalib (`-0.0286 dB`) in PSNR while slightly higher in SSIM. Treat as a positive CR-only component candidate, not an LF-v1 replacement. | `docs/HAZE4K_CRPLUS_V2_FREQ_CURRICULUM_PLAN_20260526.md` |
 | LFCR-v1 w0.005 | Completed first high-upside combination scout at 100k: `32.2098 / 0.9844`, LF gate `0.0201`. Full diagnostics show LFCR vs LF-v1 mean `-0.2178 dB`, better/worse `461/539`; it improves `182/351` LF-v1 regression cases by at least `0.30 dB`, but loses at least `0.30 dB` on `264/453` LF-v1 gain cases. Treat as proof that CRPlus helps early/rescue behavior but is harmful as a full-run constant high weight. | `docs/HAZE4K_LFCR_V1_COMBINATION_PLAN_20260527.md` |
 | LFCR-v2 decay | Completed fair 100k scout: final/best `32.1516 / 0.9844`, independent verify `32.1518 / 0.9844`, LF gate `0.019099`. Negative/neutral ablation: schedule-off mechanism partly worked and rescue cases remained, but final quality was below CR best, LF-v1, ResidualCalib, CRPlus-v2, and LFCR-v1 final. | `docs/HAZE4K_LFCR_V2_DECAY_PLAN_20260528.md` |
+| Preserve/proxy family | WaveletPreserve, wavelet+activation, supervised preserve, and continuous confidence preflights all found some signal but failed preservation or intervention precision. Current feature/proxy family is not safe for a 100k scout. | `docs/HAZE4K_WAVELET_PRESERVE_PROXY_AUDIT_20260528.md`, `docs/HAZE4K_SUPERVISED_PRESERVE_PROXY_AUDIT_20260528.md`, `docs/HAZE4K_LF_RESIDUAL_FIELD_CONFIDENCE_PLAN_20260528.md` |
 | ResidualFieldConfidence preflight | Continuous confidence has signal but is not safe enough: main random split `+0.8356 dB` simulated gain and `0.3751` confidence correlation, but preserve recall `0.6275` and intervention precision `0.5320` miss the pass line. Do not train LF-RFC v1 from this target. | `docs/HAZE4K_LF_RESIDUAL_FIELD_CONFIDENCE_PLAN_20260528.md` |
-| Route evidence review | Local aggregation across CR, LF-v1, ResidualCalib, CRPlus-v2, and LFCR-v1 confirms LF-v1 remains the best standalone mean-PSNR route, but all-five GT oracle reaches `33.5098` mean PSNR (`+1.0815 dB` over LF-v1). Treat the headroom as real but not deployable under current selector/proxy evidence. | `docs/HAZE4K_ROUTE_EVIDENCE_REVIEW_20260528.md` |
+| Route evidence review / next route | Local aggregation across CR, LF-v1, ResidualCalib, CRPlus-v2, and LFCR-v1 confirms LF-v1 remains the best standalone mean-PSNR route, but all-five GT oracle reaches `33.5098` mean PSNR (`+1.0815 dB` over LF-v1). After later preflights failed, the best next cold-start direction is a scoped LF-v2 multiscale bottleneck refiner, not another selector/proxy/CRPlus schedule. | `docs/HAZE4K_ROUTE_EVIDENCE_REVIEW_20260528.md`, `docs/HAZE4K_LF_V2_MULTISCALE_BOTTLENECK_REFINER_PLAN_20260528.md` |
 
 ## Do Not Do
 
@@ -232,6 +239,10 @@ gate policy. Use `docs/WORKFLOW.md` for exact launch/check/stop templates.
 - Do not launch LF ResidualFieldConfidence / CR-reference residual-field 100k
   scout from the 2026-05-28 preflight; it failed preservation and intervention
   precision gates despite high simulated gain.
+- Do not launch WaveletPreserve, supervised preserve-head, or another
+  preserve/intervene proxy scout from the 2026-05-28 preflights.
+- Do not spend another 100k on LFCR weight/decay scheduling unless a new
+  selectivity or representation mechanism is written and preflighted.
 - Do not treat short-horizon smoke, dry-run, or changed-LR-horizon resumes as
   fair candidate evidence.
 - Do not edit source directly on cloud servers for experiment variants. Make
@@ -255,6 +266,8 @@ Most common next reads:
    rules, and reporting evidence chain.
 8. `docs/HAZE4K_ROUTE_EVIDENCE_REVIEW_20260528.md`: current route evidence
    matrix, oracle headroom, failure modes, Pareto view, and next decision tree.
-9. `docs/HAZE4K_OFFICIAL_WARMSTART_FINETUNE_PLAN_20260528.md`: isolated
+9. `docs/HAZE4K_LF_V2_MULTISCALE_BOTTLENECK_REFINER_PLAN_20260528.md`:
+   proposed next cold-start architecture route card and preflight gates.
+10. `docs/HAZE4K_OFFICIAL_WARMSTART_FINETUNE_PLAN_20260528.md`: isolated
    official-weight warm-start fine-tuning route, conversion script, gates, and
    DEA-Net reproduction pitfalls.

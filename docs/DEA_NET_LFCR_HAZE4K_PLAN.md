@@ -51,7 +51,11 @@ DEA-Net 的主要优势来自 DEConv 的局部细节建模和 CGA 的内容引�
 
 > 保持 DEConv 和 CGA 主体稳定，在 bottleneck、fusion 和 loss 附近做单假设、小步验证。
 
-第一阶段不引入大型 Transformer、Mamba、多任务框架或深层双分支重写。
+第一阶段不引入大型 Transformer、Mamba、多任务框架或深层双分支重写。LFCR-v2
+和多轮 preserve/proxy 预检失败后，可以考虑一个受控的小型表示层改动：
+仍然围绕 bottleneck / `mix1`，保持 DEA-Net 主干和官方入口稳定，并在 route card
+里先写清参数量、推理速度、neutral-init、branch activity、LF-v1 gain preservation
+和 residual-direction gates。
 
 ## 4. 权威运行规则
 
@@ -110,6 +114,10 @@ dataset/HAZE4K/
 | LF-v1 | 当前唯一正向单模块候选 | `DEA-Net-LF-H4K-scout-20260521-003100` best 90k `32.4281 / 0.9845`，full per-image mean delta `+0.2030 dB` | 保留为 LF 对照；需补稳定性、复杂度和视觉风险 |
 | ResidualCalib | 正向消融，但不替代 LF-v1 | `DEA-Net-LF-ResidualCalib-H4K-scout100k-20260525-122654` best 90k `32.3936 / 0.9845`；full per-image vs baseline `+0.1682 dB`，vs LF-v1 `-0.0347 dB`；wrong-direction vs CR `163`、vs LF-v1 `211` | 保留为 residual calibration 消融；下一步只做能直接减少 wrong-direction 和强 baseline 样本回退的候选 |
 | CRPlus-v2 | 正向 CR-only 组件候选，但不替代 LF-v1 | `DEA-Net-CRPlusV2-w003-H4K-scout100k-20260526-225540` best/final 100k `32.3633 / 0.9847`；full per-image vs CR `+0.1396 dB`，vs LF-v1 `-0.0633 dB`，vs ResidualCalib `-0.0286 dB` | 保留为无推理成本的正向 loss 消融；下一步若继续，应优先做 lite/组合并减少强样本回退 |
+| LFCR-v1 constant | 失败，但有机制价值 | `DEA-Net-LFCR-v1-w005-H4K-scout100k-20260527-231728` final/best 100k `32.2098 / 0.9844`；救回部分 LF-v1 regression，但损坏太多 LF-v1 gain cases | 不重复 constant high-weight；仅保留为 CRPlus-on-LF 会救回但也会压制的证据 |
+| LFCR-v2 decay | 失败/中性 | `DEA-Net-LFCR-v2-decay-H4K-scout100k-20260528-091455` final/best `32.1516 / 0.9844`，independent verify `32.1518 / 0.9844`；schedule-off 机制部分成立但质量低于所有主要参照 | 不继续盲目 CRPlus-on-LF weight/decay search |
+| WaveletPreserve / supervised preserve / RFC preflights | 诊断失败 | wavelet、activation、teacher-output 和 continuous confidence 目标均有信号但未过 preservation / intervention precision gates | 不从这些预检直接启动 head/selector/guard 100k；下一步转向改变 residual representation |
+| LF-v2 multiscale bottleneck refiner | 当前建议的下一张冷启动架构路线卡 | `docs/HAZE4K_LF_V2_MULTISCALE_BOTTLENECK_REFINER_PLAN_20260528.md` | 先实现并过 cost、neutral-init、branch activity、smoke 和 preservation preflight；通过后才考虑 100k |
 | Conservative LF | 失败 | 100k `32.1083 / 0.9843`，低于 baseline/LF-v1 | 不继续此强约束组合 |
 | CRPlus-P1 lowpass negative | 失败 | 10k `24.9623 / 0.9504` | 不继续同一 negative 设计 |
 | LowFreqLoss / LF+LowFreqLoss | 失败 | 20k/50k 均低于对应参照 | 不继续简单低频 L1 路线 |
@@ -249,7 +257,34 @@ CRPlus 必须保持为独立消融，不依赖 LF 输出，不新增推理参数
 
 组合模型必须沿用公平 `100k` scout，不能直接跳到长训。
 
-### 7.5 可选阶段：真实域或 TTA
+当前更新（2026-05-28）：LFCR-v1 constant 和 LFCR-v2 decay 都已完成且不晋级。
+结论不是“CRPlus 完全无用”，而是“CRPlus-on-LF 的简单权重或时间调度不足以
+同时保留 LF-v1 收益和救回 LF-v1 回退”。CRPlus-v2 继续作为 CR-only 正向
+消融存在；LFCR 组合不再是下一次最有价值的冷启动长训。
+
+### 7.5 阶段五：LF-v2 小型表示层路线
+
+目标：在不重写 DEA-Net 主干的前提下，验证小型 multiscale / frequency
+bottleneck refiner 是否能改善 LF residual direction、LF MSE 和 LF-v1 gain
+preservation。
+
+当前路线卡：
+
+- `docs/HAZE4K_LF_V2_MULTISCALE_BOTTLENECK_REFINER_PLAN_20260528.md`
+
+启动前必须满足：
+
+- 明确单一变量和显式 option。
+- 参数量和推理延迟预算写入 route card，并在 preflight 实测。
+- neutral-init 或等价稳定初始化通过固定 batch smoke。
+- branch/gate activation 非退化。
+- 训练前写清 30k hard gate：不仅看 PSNR/SSIM，还看 residual cosine、wrong-direction
+  count、LF MSE regression、LF-v1 gain preservation 和 strong-CR regression。
+
+该阶段不等同于大型 backbone replacement。若这个 scoped route 失败，才把下一步
+转向 official warm-start、完整 backbone 或真实域路线。
+
+### 7.6 可选阶段：真实域或 TTA
 
 TTA / 真实域适配只作为扩展，不阻塞 HAZE4K 主结果。
 
@@ -303,8 +338,10 @@ TTA / 真实域适配只作为扩展，不阻塞 HAZE4K 主结果。
 | A3 | DEA-Net-LF-v2-HazeAwareMask | Yes | No | No | TBD | TBD | TBD | TBD | TBD | 30k gate 失败，mask 激活但指标不晋级 |
 | A4 | DEA-Net-LF-ResidualCalib | Yes | No | No | TBD | TBD | `32.3936` | `0.9845` | TBD | 正向消融但未超过 LF-v1；保留 residual calibration 证据 |
 | A5 | DEA-Net-CRPlus-v2 | No | Yes | No | TBD | TBD | `32.3633` | `0.9847` | TBD | 正向 CR-only loss 消融；未超过 LF-v1/ResidualCalib PSNR |
-| A6 | DEA-Net-LFCR | Yes | Yes | No | TBD | TBD | TBD | TBD | TBD | 最终组合候选 |
-| A7 | DEA-Net-LFCR-TTA | Yes | Yes | Yes | TBD | TBD | TBD | TBD | TBD | 可选扩展 |
+| A6 | DEA-Net-LFCR-v1 | Yes | Yes | No | TBD | TBD | `32.2098` | `0.9844` | TBD | constant high-weight 组合失败；有 rescue 但损坏 LF-v1 gains |
+| A7 | DEA-Net-LFCR-v2-decay | Yes | Yes | No | TBD | TBD | `32.1516` | `0.9844` | TBD | decay 组合失败/中性；不继续同类 schedule search |
+| A8 | DEA-Net-LF-v2-MBR | Yes | No | No | TBD | TBD | TBD | TBD | TBD | 拟议小型 multiscale bottleneck refiner；需先过 preflight |
+| A9 | DEA-Net-LFCR-TTA | Yes | Yes | Yes | TBD | TBD | TBD | TBD | TBD | 可选扩展 |
 
 如果某条路线没有通过公平 scout，不进入主结果表；可以进入失败消融表或讨论章节。
 
@@ -319,6 +356,12 @@ TTA / 真实域适配只作为扩展，不阻塞 HAZE4K 主结果。
 - CRPlus-v2 已完成 100k：强于 baseline 且无推理成本，但 PSNR 低于 LF-v1
   和 ResidualCalib；记录为“正向 CR-only 组件候选”，不直接晋级为 standalone
   最终模型。
+- LFCR-v1 已完成 100k：final/best `32.2098 / 0.9844`，低于 LF-v1、
+  ResidualCalib 和 CRPlus-v2；记录为“rescue-without-preservation”的负证据。
+- LFCR-v2 decay 已完成 100k：final/best `32.1516 / 0.9844`，schedule-off
+  机制部分成立但仍损坏太多 LF-v1 gain cases；不继续同类 weight/decay search。
+- WaveletPreserve、supervised preserve 和 ResidualFieldConfidence 预检均未过
+  preservation / precision pass line；不能直接启动对应 100k scout。
 - loss 不稳定或训练异常无法解释。
 - 输出出现系统性 halo、偏色、过锐化或大片雾残留。
 - 复杂度增长明显，但指标或视觉收益很小。
@@ -348,10 +391,11 @@ TTA / 真实域适配只作为扩展，不阻塞 HAZE4K 主结果。
 回退顺序：
 
 1. 保留 LF-v1 作为正向轻量消融。
-2. ResidualCalib 保留为正向但不足的机制证据；若再试，必须直接减少 wrong-direction 或强 baseline 回退。
-3. Conditional LF 当前设置已失败；若再试，必须先判断是调 mask bias、换 mask 输入，还是放弃 LF 条件化。
-4. 若 CRPlus 继续失败，停止 loss 路线，把失败原因写入方法讨论。
-5. 若最终没有稳定超过 baseline 的候选，论文主线转为“强 baseline + 正向 LF-v1 小收益 + 系统失败分析 + 可复现证据链”。
+2. ResidualCalib 保留为正向但不足的机制证据；若再试，必须直接减少 wrong-direction、LF MSE regression 或强 baseline 回退。
+3. CRPlus-v2 保留为 CR-only 正向消融；不再把简单 CRPlus-on-LF schedule 作为下一次长训。
+4. 下一次冷启动架构优先尝试 LF-v2 multiscale bottleneck refiner；若 preflight 或 gate 失败，记录其失败机制并停止 scoped LF bottleneck tweaks。
+5. Conditional LF、HazeAwareMask、selector/proxy、WaveletPreserve、supervised preserve 和 RFC 当前设置均不排队长训；若重启必须先有新 target 或新 representation。
+6. 若最终没有稳定超过 baseline 的候选，论文主线转为“强 baseline + 正向 LF-v1 小收益 + 系统失败分析 + 可复现证据链”。
 
 ## 11. 推荐时间线
 
@@ -364,9 +408,12 @@ TTA / 真实域适配只作为扩展，不阻塞 HAZE4K 主结果。
 | 5 | LF-v2 Haze-Aware Mask 公平 `100k` scout | 已在 30k gate 停止，不晋级 |
 | 6 | ResidualCalib 公平 `100k` scout + full per-image / residual 诊断 | 正向消融但不替代 LF-v1；后续只围绕方向/幅度约束继续 |
 | 7 | CRPlus-v2 公平 scout + final diagnostics | 已完成；正向 CR-only 组件候选，但不替代 LF-v1 |
-| 8 | 最终候选 full eval、复杂度、可视化 | 论文主表和图 |
-| 9 | 可选 TTA / 真实域测试 | 扩展章节证据 |
-| 10 | 汇总方法、消融、失败讨论和局限 | 毕业论文初稿 |
+| 8 | LFCR-v1 / LFCR-v2 组合 scout | 均已完成且不晋级；证明简单 CRPlus-on-LF 组合不足 |
+| 9 | WaveletPreserve / supervised preserve / RFC 预检 | 均未过 preservation / precision gates；不启动对应 100k |
+| 10 | LF-v2 multiscale bottleneck refiner route card + preflight | 当前下一步；先做实现和便宜门槛，再决定是否 runyun 100k |
+| 11 | 最终候选 full eval、复杂度、可视化 | 论文主表和图 |
+| 12 | 可选 TTA / 真实域测试 | 扩展章节证据 |
+| 13 | 汇总方法、消融、失败讨论和局限 | 毕业论文初稿 |
 
 ## 12. 后续代码实现注意事项
 

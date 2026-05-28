@@ -2,10 +2,12 @@
 
 Date: 2026-05-28
 
-Status: system evidence review for choosing the next HAZE4K model route. It is
-not a route card and does not authorize a new long scout by itself. Current
-active run state still belongs in `docs/CURRENT_CONTEXT.md`; single-run facts
-belong in `docs/EXPERIMENT_LOG.md`.
+Status: system evidence review for choosing the next HAZE4K model route,
+updated after LFCR-v2 decay, WaveletPreserve, supervised preserve, and
+ResidualFieldConfidence evidence. It is not a route card and does not authorize
+a new long scout by itself. Current active run state still belongs in
+`docs/CURRENT_CONTEXT.md`; single-run facts belong in
+`docs/EXPERIMENT_LOG.md`.
 
 ## Purpose
 
@@ -101,7 +103,10 @@ the target safely.
 | Selector/proxy | Per-image route choice among LF-family outputs | Closed diagnostic | Reopen only with a changed supervised/distilled target and fresh full-sample proxy audit. |
 | CRPlus-v2 | Frequency/degradation-aware contrastive curriculum loss | Positive CR-only component | Keep as no-inference-cost loss ablation and possible curriculum signal. |
 | LFCR-v1 constant w0.005 | LF-v1 plus constant high CRPlus-v2 pressure | Negative fair ablation with useful mechanism evidence | Do not repeat constant high weight; it proves early help and late suppression. |
-| LFCR-v2 decay | Time-localized CRPlus-v2 on LF-v1 | Active decisive route | Wait for 20k/30k gates before launching any new long scout. |
+| LFCR-v2 decay | Time-localized CRPlus-v2 on LF-v1 | Negative/neutral fair ablation with useful mechanism evidence | Do not continue this schedule family without a changed selectivity mechanism. |
+| WaveletPreserve proxy | Hazy wavelet/degradation features and frozen activation features for preserve/intervene choice | Failed preflight | Do not train current WaveletPreserve gate or wavelet+activation preserve scout. |
+| Supervised preserve proxy | CR/LF-v1 teacher-labeled patch preserve/intervene target | Failed preflight | Do not train this preserve-head target; the reliable head missed preservation and strong-CR recall. |
+| ResidualFieldConfidence | Continuous CR-reference residual-field confidence target | Failed preflight with signal | Do not launch LF-RFC v1; high simulated gain was not selective enough. |
 
 ## Failure Modes
 
@@ -163,7 +168,7 @@ already failed. This creates a hard boundary:
   supervised/distilled selector target, then pass a fresh full-sample proxy
   audit before any 100k training.
 
-### 5. LFCR-v1 supports schedule, not constant weight
+### 5. CRPlus-on-LF scheduling is now closed as a first-order fix
 
 LFCR-v1 constant `w=0.005` is not a pure negative. It gave the best early 10k
 trajectory and rescued `182/351` large LF-v1 regressions by at least `0.30 dB`.
@@ -171,8 +176,17 @@ But it ended below LF-v1, CRPlus-v2, ResidualCalib, and even the CR best
 checkpoint. Final diagnostics show lowered LF gate and late selected CRPlus
 pressure dominated by `under_dehazed_mix`.
 
-This justifies exactly one high-value follow-up: LFCR-v2 decay. It does not
-justify a blind sweep of constant weights.
+LFCR-v2 decay was the right decisive follow-up, and it failed as a final model:
+best/final `32.1516 / 0.9844`, independent verify `32.1518 / 0.9844`, below
+CR best, LF-v1, ResidualCalib, CRPlus-v2, and LFCR-v1 final. The schedule-off
+mechanism partly worked and LF-v1 regression rescue remained, but it still lost
+at least `0.30 dB` on `316/453` LF-v1 gain cases.
+
+This closes blind CRPlus-on-LF weight and decay scheduling as the next most
+valuable route. CRPlus-v2 remains useful as CR-only evidence and as a
+no-inference-cost ablation, but the next LF-side attempt must change the
+representation that produces the residual or its preservation behavior, not
+only the CRPlus timing.
 
 ## Literature Cross-Check, 2023-2026
 
@@ -185,10 +199,10 @@ recent work without a stable proceedings page.
 
 | Core bottleneck from this review | Recent literature signal | Local cross-check | Current answer |
 | --- | --- | --- | --- |
-| A stronger backbone might improve global PSNR. | DehazeFormer and later Transformer/Mamba image-restoration work show that better global modeling can lift dehazing/restoration benchmarks. | Local failures are not capacity-only: LF-v1 is already positive, CRPlus-v2 helps strong-CR cases, and oracle winners are spread across existing outputs. | Not the most valuable next solution. A new backbone would be expensive and still must prove weak/strong split, LF-v1 preservation, and residual-direction health. |
-| Low-frequency and frequency signals help but can damage strong cases. | Wavelet/Fourier/dual-domain/Retinex papers repeatedly separate low-frequency haze, detail restoration, and color/illumination correction. | This matches LF-v1, ResidualCalib, and CRPlus-v2 positives, but failed LowFreqLoss, HazeAwareMask, ResidualDirLoss, and constant LFCR show that coarse LF pressure is unsafe. | Partially solved as a design family, not as a local route. The next usable form must target residual direction/magnitude or preservation, not another scalar LF loss or mask. |
-| The model needs to know when not to apply a correction. | PromptIR, DA-CLIP, PTTD, HazeCLIP, LMHaze, and other degradation-aware/prompt/MoE work support input-conditioned restoration. | The selector target is real by oracle, but strict/rich/activation deployable proxy audits failed. Current proxies cannot infer the target safely. | Not solved locally. Reopen only with a changed supervised/distilled target and a fresh full-sample proxy audit before training. |
-| Strong CR and LF-v1 wins must be preserved. | Recent signal-preservation and teacher/pseudo-label work supports guarding or selecting reliable regions/features instead of always rewriting them. | The first TeacherGuard setting failed, and LFCR-v1 lost too many LF-v1 gain cases. The issue is not "add a teacher"; it is when, where, and how weak the guard should act. | Preflight-ready, not launch-ready. A new guard must name guarded-regression, strong-baseline regression, and LF-v1 gain-preservation metrics before any 100k scout. |
+| A stronger backbone might improve global PSNR. | DehazeFormer and later Transformer/Mamba image-restoration work show that better global modeling can lift dehazing/restoration benchmarks. | Local failures are not capacity-only: LF-v1 is already positive, CRPlus-v2 helps strong-CR cases, and oracle winners are spread across existing outputs. | A large backbone replacement is still too expensive for the next step. A scoped bottleneck/frequency representation change is now reasonable if it keeps DEA-Net entrypoints and has strict cost and preservation gates. |
+| Low-frequency and frequency signals help but can damage strong cases. | Wavelet/Fourier/dual-domain/Retinex papers repeatedly separate low-frequency haze, detail restoration, and color/illumination correction. | This matches LF-v1, ResidualCalib, and CRPlus-v2 positives, but failed LowFreqLoss, HazeAwareMask, ResidualDirLoss, LFCR-v1, and LFCR-v2 show that coarse LF pressure is unsafe. | The next usable form should be a representation-level LF/multiscale refiner with detail-preserving skip, not another scalar LF loss, mask, or schedule. |
+| The model needs to know when not to apply a correction. | PromptIR, DA-CLIP, PTTD, HazeCLIP, LMHaze, and other degradation-aware/prompt/MoE work support input-conditioned restoration. | Selector, WaveletPreserve, supervised preserve, and continuous-confidence proxies all failed preservation or precision gates. Current features cannot infer the preserve/intervene target safely. | Do not train another head over current features. Reopen only if the representation itself changes or a new proxy clears a full-sample audit. |
+| Strong CR and LF-v1 wins must be preserved. | Recent signal-preservation and teacher/pseudo-label work supports guarding or selecting reliable regions/features instead of always rewriting them. | TeacherGuard failed, LFCR-v1/v2 lost too many LF-v1 gain cases, and RFC over-intervened despite high simulated gain. | Preservation is mandatory for the next architecture route, not a post-hoc diagnostic. |
 | Real-world dehazing generalization may need priors, prompts, or pseudo-labels. | CORUN, Dehaze-RetinexGAN, PromptHaze, PTTD, and Diff-Dehazer address unpaired/real-world haze with physical, Retinex, prompt, or diffusion priors. | HAZE4K here is a supervised synthetic benchmark with strict PSNR/SSIM gates. These papers help later real-world discussion, but they do not explain current HAZE4K per-image regressions by themselves. | Defer as a separate phase. Do not mix real-world adaptation with the current LFCR-v2 HAZE4K decision. |
 | Diffusion/generative models may improve perceptual quality. | Diffusion dehazing/restoration papers use strong generative priors and sometimes frequency/physics guidance. | Current promotion is still PSNR/SSIM plus mechanism diagnostics; diffusion can hallucinate or trade fidelity for perceptual quality and usually adds inference cost. | Not a near-term solution for this HAZE4K route. Keep only as later visual-refiner or real-world reference. |
 
@@ -210,20 +224,22 @@ recent work without a stable proceedings page.
    emphasizes signal preservation, pseudo-label reliability, and adaptive
    conditioning. Locally, the decisive missing quantity is not only better mean
    PSNR; it is LF-v1 gain preservation and strong-CR regression control.
-5. **LFCR-v2 decay remains the only immediate long-run answer.** The literature
-   does not give a shortcut around the active experiment. LFCR-v2 directly tests
-   the local diagnosis that CRPlus-v2 is useful early but harmful as constant
-   late pressure.
+5. **The next attempt should change representation, not another decision head.**
+   LFCR-v2, WaveletPreserve, supervised preserve, and RFC all found signal but
+   failed preservation/selectivity. The best current route-decision value is a
+   small LF/multiscale bottleneck refiner that can alter the residual features
+   themselves while preserving LF-v1 wins by construction and by gate.
 
 ### What Counts As A Solved Problem Here
 
 | Problem | Solved enough for next action? | Required evidence before a 100k scout |
 | --- | --- | --- |
-| LFCR constant-weight suppression | Yes. LFCR-v1 diagnosed it; LFCR-v2 decay is already the proper decisive test. | Wait for LFCR-v2 20k/30k gates. |
-| Low-frequency direction/magnitude errors | Partially. Literature and local residual diagnostics agree on the target. | A cheap diagnostic showing reduced wrong-direction count or LF MSE regression without destroying LF-v1 gain cases. |
-| Strong-case/no-regression guard | Partially. Literature supports the idea; local TeacherGuard setting failed. | A new route card with late/weak/conditional guard design plus guarded-regression and gain-preservation gates. |
-| Deployable selector | No. Oracle headroom is real, but current proxies failed. | A changed supervised/distilled target and full-sample proxy audit that clears the written pass line. |
-| Backbone replacement | No for the current phase. | Only after LFCR-v2 and guard/residual-preservation routes fail or plateau, with complexity/runtime and per-image split gates. |
+| LFCR constant-weight suppression | Yes. LFCR-v1 diagnosed it and LFCR-v2 decay tested the obvious schedule follow-up. | Do not spend another 100k on weight/decay search without a new selectivity mechanism. |
+| Low-frequency direction/magnitude errors | Partially. Literature and local residual diagnostics agree on the target. | A route card for a representation-level residual refiner plus cheap cost/smoke checks before any 100k scout. |
+| Strong-case/no-regression guard | Partially. Literature supports the idea; local TeacherGuard setting failed and preserve proxies were not safe. | Preserve metrics must be embedded in the next architecture gates; do not train a standalone guard head from current features. |
+| Deployable selector | No. Oracle headroom is real, but current strict/rich/activation, wavelet, supervised, and continuous-confidence proxies failed. | A changed representation or target plus full-sample proxy audit that clears the written pass line. |
+| Scoped bottleneck representation change | Yes for planning, not for training. | A dated route card with parameter/runtime limits, neutral-init smoke, branch-activity checks, and LF-v1 gain-preservation gates. |
+| Large backbone replacement | No for the current phase. | Only after the scoped representation route and isolated warm-start route fail or plateau, with complexity/runtime and per-image split gates. |
 | Diffusion or real-world prompt adaptation | No for HAZE4K PSNR route. | Separate objective: real-world or perceptual benchmark, not mixed into current HAZE4K decision. |
 
 ### Integrated Literature Index
@@ -270,73 +286,77 @@ Under this view:
   best strong-CR behavior.
 - ResidualCalib is Pareto-relevant as a mechanism ablation and weak-sample
   booster, but not as an LF-v1 replacement.
-- LFCR-v1 is not Pareto-relevant as a final model, but it is route-decision
-  relevant because it motivates the decay schedule.
+- LFCR-v1 and LFCR-v2 are not Pareto-relevant as final models, but they are
+  route-decision relevant because they show CRPlus-on-LF can rescue some
+  regressions while destroying too many LF-v1 gains.
 
 ## Next Decision Tree
 
 ### Immediate next step
 
-Do not launch a new long scout before LFCR-v2 decay reaches its written gates.
-This is the highest route-decision-value experiment already running.
+The next most valuable cold-start architecture direction is **LF-v2
+multiscale bottleneck refiner**: a small frequency/multiscale feature path near
+the LF-v1 bottleneck or `mix1` region, with a detail-preserving skip and
+near-neutral initialization. It should change the representation that produces
+the residual, not add another selector/proxy over the same outputs.
 
-At 20k:
+This direction has the best current route-decision value because:
 
-- Confirm `CRPlusV2_weight` has reached `0.0`.
-- Check PSNR/SSIM against LFCR-v1 and CRPlus-v2 20k.
-- Check whether logs stop appending active CRPlus-v2 loss after the decay
-  window.
+- the oracle target is real, but every current deployable head over existing
+  features over-intervenes;
+- residual direction and LF MSE remain causal signals, so changing the residual
+  feature generator is more informative than another label/head attempt;
+- WaveDH/WDMamba/MambaIR-style literature supports small frequency or
+  long-range restoration modules, but the local evidence argues for a scoped
+  DEA-Net insertion instead of a full backbone swap;
+- a failed scoped refiner would decisively deprioritize more bottleneck LF
+  architecture tweaks and move the project toward warm-start/backbone-scale
+  routes.
 
-At 30k:
+Use the dated route card
+`docs/HAZE4K_LF_V2_MULTISCALE_BOTTLENECK_REFINER_PLAN_20260528.md`. Before any
+100k scout, pass its cheap checks:
 
-- Compare matched PSNR/SSIM against LFCR-v1, LF-v1, and CRPlus-v2.
-- Check LF gate recovery relative to LF-v1 and LFCR-v1.
-- If cheap enough, run a compact pairwise/residual diagnostic to see whether
-  the schedule preserves LF-v1 gains better than LFCR-v1.
+- parameter/runtime budget: preferably `<= +3%` parameters and `<= +8%`
+  inference latency versus LF-v1, or explain the exception;
+- neutral-init smoke: the added branch must not perturb LF-v1 output before
+  training beyond tiny numerical tolerance if configured as residual-gated;
+- branch activity: after smoke/early steps, its gate/activation statistics must
+  be non-degenerate;
+- first hard gate: by 30k it must be close to LF-v1 trajectory or show
+  materially better residual direction/LF MSE and LF-v1 gain preservation.
 
-If LFCR-v2 passes:
+### Lower-priority follow-up families
 
-- The next route should tune schedule shape, decay end, or late min-weight.
-- Do not change architecture at the same time.
-- The promotion criterion should be preservation of LF-v1 gain cases, not only
-  better early PSNR.
+1. **Representation-aware preservation guard**
+   A guard may still be useful, but only coupled to a changed feature path or a
+   new target that passes preflight. Do not train a standalone preserve head
+   from the current wavelet/activation/teacher-output feature families.
 
-If LFCR-v2 fails:
+2. **Residual direction/magnitude correction v2**
+   Still valid only if it changes the architecture or target enough to reduce
+   wrong-direction count or LF MSE regression. Another scalar loss is low value.
 
-- Deprioritize CRPlus-on-LF weight search.
-- Keep CRPlus-v2 as CR-only ablation and no-inference-cost component evidence.
-- Move the next long-scout priority to a guard/residual-preservation route,
-  but only after a cheap diagnostic defines the target.
+3. **Supervised/distilled selector target**
+   Oracle headroom remains large, but current selector/proxy evidence blocks
+   training. Reopen only with a changed representation or a proxy audit that
+   passes preservation and precision gates.
 
-### Best follow-up families after LFCR-v2
-
-1. **LF-v1 preservation guard**  
-   Motivation: CR still wins `187/1000` images in the five-output oracle, and
-   all current candidates regress CR by at least `0.30 dB` on `122` images.
-   A useful guard must protect strong CR/LF-v1 wins without causing the
-   TeacherGuard early-collapse pattern. It needs a new preflight card.
-
-2. **Residual direction/magnitude correction v2**  
-   Motivation: residual cosine and LF MSE repeatedly explain gains and losses.
-   Any new route must name a mechanism metric such as wrong-direction count or
-   LF MSE regression count, not only add another loss term.
-
-3. **Supervised/distilled selector target**  
-   Motivation: oracle headroom is huge. Constraint: current strict/rich/
-   activation proxies failed, so this is only valid if the target definition
-   changes and a full-sample proxy audit passes before training.
-
-4. **CRPlus-v2-lite or late-minweight schedule**  
-   Motivation: CRPlus-v2 has the best strong-CR behavior and no inference cost.
-   It is worth revisiting only if the route is designed to reduce LF-v1 gain
-   destruction, not merely raise CRPlus weight.
+4. **CRPlus-v2-lite or late-minweight schedule**
+   Low priority after LFCR-v2. Keep CRPlus-v2 as a CR-only ablation unless a
+   new mechanism explicitly protects LF-v1 gain cases.
 
 ## What Not To Do Next
 
-- Do not start a large Transformer/Mamba/diffusion backbone replacement while
-  LFCR-v2 is still unresolved.
+- Do not start a large Transformer/Mamba/diffusion backbone replacement as the
+  next cold-start attempt; the next architecture step should stay scoped and
+  gated.
 - Do not launch another selector-v2 from oracle headroom alone.
 - Do not run another constant high-weight LFCR scout.
+- Do not run another LFCR-v2-style weight/decay scout without a new selectivity
+  mechanism.
+- Do not train WaveletPreserve, supervised preserve, or RFC heads from the
+  failed 2026-05-28 preflights.
 - Do not add a new LF mask without a residual-direction/magnitude target.
 - Do not treat SSIM-only gains as promotion when PSNR and per-image splits show
   strong LF-v1 or CR regressions.
@@ -351,5 +371,6 @@ This review can support a thesis or paper narrative:
 - Selector/oracle evidence shows why naive averages hide real complementarity.
 - Failed routes are informative because they identify preservation, direction,
   and deployability as the bottlenecks.
-- The next experiment is not a random module swap; it is a direct test of
-  whether early CRPlus pressure can help LF-v1 without late suppression.
+- The next experiment should not be a random module swap or another decision
+  head; it should test whether a small multiscale/frequency bottleneck refiner
+  can improve the LF residual representation while preserving LF-v1 wins.

@@ -47,8 +47,12 @@ artifact 和方法分析混在一起。
 | ResidualDirLoss | `docs/HAZE4K_RESIDUAL_DIRECTION_LOSS_SCALE_PLAN_20260526.md` | scale 诊断、实现验证和 30k 失败结果。 |
 | CRPlus-v2 | `docs/HAZE4K_CRPLUS_V2_FREQ_CURRICULUM_PLAN_20260526.md` | 当前 CRPlus-v2 路线卡、scale 诊断、实现验证和 gates。 |
 | LFCR-v1 | `docs/HAZE4K_LFCR_V1_COMBINATION_PLAN_20260527.md` | LF-v1 + CRPlus-v2 组合路线卡、权重选择规则、机制指标和 gates。 |
-| LFCR-v2 decay | `docs/HAZE4K_LFCR_V2_DECAY_PLAN_20260528.md` | LFCR-v1 诊断后的调度路线卡：CRPlus-v2 早期高权重、10k-20k 衰减到 0。 |
-| 系统路线证据审查 | `docs/HAZE4K_ROUTE_EVIDENCE_REVIEW_20260528.md` | 汇总 CR、LF-v1、ResidualCalib、CRPlus-v2、LFCR-v1 的 per-image 证据、oracle 上限、失败模式和下一步决策树。 |
+| LFCR-v2 decay | `docs/HAZE4K_LFCR_V2_DECAY_PLAN_20260528.md` | LFCR-v1 诊断后的调度路线卡和最终负结论：CRPlus-v2 早期高权重、10k-20k 衰减到 0，但 100k 未保住 LF-v1 收益。 |
+| WaveletPreserve proxy | `docs/HAZE4K_WAVELET_PRESERVE_PROXY_AUDIT_20260528.md` | hazy wavelet / frozen activation preserve-intervene 预检；未过 precision / generalization pass line。 |
+| Supervised preserve proxy | `docs/HAZE4K_SUPERVISED_PRESERVE_PROXY_AUDIT_20260528.md` | CR/LF-v1 teacher label patch 预检；监督 preserve head 仍未过 preserve recall 和 strong-CR recall。 |
+| ResidualFieldConfidence | `docs/HAZE4K_LF_RESIDUAL_FIELD_CONFIDENCE_PLAN_20260528.md` | 连续 residual-field confidence 预检；有模拟收益但 preservation 和 intervention precision 不够，不能长训。 |
+| LF-v2 multiscale bottleneck refiner | `docs/HAZE4K_LF_V2_MULTISCALE_BOTTLENECK_REFINER_PLAN_20260528.md` | 当前建议的下一张路线卡：小型多尺度/频域 bottleneck refiner，先过 cost、neutral-init、branch activity 和 preservation gates。 |
+| 系统路线证据审查 | `docs/HAZE4K_ROUTE_EVIDENCE_REVIEW_20260528.md` | 汇总 CR、LF-v1、ResidualCalib、CRPlus-v2、LFCR-v1、LFCR-v2 和 preserve/RFC 预检证据，给出下一步 scoped architecture 决策。 |
 | 历史清理记录 | `docs/archive/HAZE4K_CLEANUP_PLAN_20260523.md` | 仅用于追溯 2026-05-23 清理过程；日常 artifact 判断看 manifest。 |
 
 ## Authority Rules
