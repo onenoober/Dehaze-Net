@@ -151,3 +151,18 @@ Matched gate references:
   CRPlus-v2 10k `26.7627 / 0.9629`. Checkpoint health: LF scalar gate
   `0.0073388`, active `CRPlusV2` loss log tail around `0.63`. Decision:
   continue to 20k.
+- 2026-05-28 100k: same run completed; no tmux/train process remained and GPU
+  was idle when checked. `best.pk` and `latest.pk` are both step `100000`,
+  epoch `20`, with PSNR `32.2098`, SSIM `0.9844`, LF scalar gate `0.0201`.
+  Full curve: 10k `27.3004 / 0.9660`, 20k `28.0104 / 0.9648`, 30k
+  `30.2119 / 0.9752`, 40k `30.5169 / 0.9795`, 50k `30.8358 / 0.9797`, 60k
+  `31.6434 / 0.9828`, 70k `31.8741 / 0.9836`, 80k `32.1133 / 0.9840`, 90k
+  `32.0620 / 0.9842`, 100k `32.2098 / 0.9844`. Final result is below LF-v1
+  best `32.4281 / 0.9845`, ResidualCalib best `32.3936 / 0.9845`,
+  CRPlus-v2 final `32.3633 / 0.9847`, and slightly below CR baseline best
+  `32.2255 / 0.9844`. Current conclusion: the high-upside `w=0.005`
+  combination proved faster early optimization, but did not produce better final
+  quality. Before launching another combination run, run per-image LF-v1
+  regression/rescue, strong-baseline risk, residual-direction, and CRPlus-v2
+  scale/frequency diagnostics to decide whether to lower `w`, schedule it, or
+  apply it selectively.
