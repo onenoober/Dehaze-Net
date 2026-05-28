@@ -58,7 +58,7 @@ fair run is worth launching. Current run state belongs in
 ## Change
 
 - Code branch:
-  TBD.
+  `codex/haze4k-lf-v2-mbr`.
 - Primary variable:
   add one scoped LF-v2 multiscale bottleneck refiner path.
 - Architecture definition:
@@ -66,12 +66,30 @@ fair run is worth launching. Current run state belongs in
   combines a low-resolution or wavelet-like context path with a detail-preserving
   skip and a learnable residual gate initialized near neutral.
 - Enabled flags:
-  TBD implementation flags; the first route should expose an explicit option
-  and keep the official `code/train.py` and `code/eval.py` entrypoints stable.
+  `--use_lf_prior --lf_multiscale_refiner --lf_mbr_channels 8
+  --lf_mbr_pool_sizes 4,8,16 --lf_prior_gate_init 0.0
+  --lf_prior_injection pre_mix`. The official `code/train.py` and
+  `code/eval.py` entrypoints stay stable; the new path is default-off.
 - Explicitly disabled related mechanisms:
   CRPlus-v2 schedule, WaveletPreserve head, supervised preserve head,
   ResidualFieldConfidence loss/head, selector-v2, new teacher guard, and large
   Transformer/Mamba/diffusion backbone replacement.
+
+## Implementation Notes
+
+- `code/model/backbone_train.py` adds a default-off `MultiscaleBottleneckRefiner`
+  inside `LowFrequencyPrior`.
+- The branch builds low-pass features from pool sizes `4,8,16`, adds a
+  low-frequency detail difference, fuses them with a detached bottleneck target
+  hint, and produces a gated residual at the same insertion point as LF-v1.
+- Neutral initialization is supplied by the existing scalar LF gate
+  (`--lf_prior_gate_init 0.0`), so the candidate should match LF-v1 output
+  before training while still reporting branch statistics.
+- `code/preflight_lf_v2_mbr.py` checks parameter overhead, inference latency,
+  neutral-init equivalence, branch non-degeneracy, and random backward health.
+- `scripts/runyun-haze4k-lf-v2-mbr-preflight.sh` runs the static preflight and
+  a cloud HAZE4K smoke. `scripts/runyun-haze4k-lf-v2-mbr-scout.sh` is the fair
+  100k launcher and must only be used after preflight passes.
 
 ## References
 

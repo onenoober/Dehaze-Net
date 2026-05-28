@@ -9,6 +9,61 @@ def default_conv(in_channels, out_channels, kernel_size, bias=True):
     return nn.Conv2d(in_channels, out_channels, kernel_size, padding=(kernel_size // 2), bias=bias)
 
 
+def parse_pool_sizes(pool_sizes):
+    if isinstance(pool_sizes, str):
+        values = [item.strip() for item in pool_sizes.split(',') if item.strip()]
+        if not values:
+            raise ValueError('pool_sizes string must contain at least one value')
+        return tuple(int(item) for item in values)
+    return tuple(int(item) for item in pool_sizes)
+
+
+class MultiscaleBottleneckRefiner(nn.Module):
+    def __init__(self, out_channels, hidden_channels=8, pool_sizes=(4, 8, 16)):
+        super(MultiscaleBottleneckRefiner, self).__init__()
+        if hidden_channels <= 0:
+            raise ValueError('hidden_channels must be positive')
+        pool_sizes = parse_pool_sizes(pool_sizes)
+        if not pool_sizes:
+            raise ValueError('pool_sizes must contain at least one value')
+        if any(size <= 0 for size in pool_sizes):
+            raise ValueError('all pool sizes must be positive')
+        self.pool_sizes = pool_sizes
+        image_channels = 3 * (len(pool_sizes) + 1)
+        self.image_encoder = nn.Sequential(
+            nn.Conv2d(image_channels, hidden_channels, kernel_size=3, stride=1, padding=1, bias=True),
+            nn.ReLU(True),
+            nn.Conv2d(hidden_channels, hidden_channels, kernel_size=3, stride=1, padding=1, bias=True),
+            nn.ReLU(True)
+        )
+        self.target_encoder = nn.Sequential(
+            nn.Conv2d(out_channels, hidden_channels, kernel_size=1, stride=1, padding=0, bias=True),
+            nn.ReLU(True)
+        )
+        self.fusion = nn.Sequential(
+            nn.Conv2d(hidden_channels * 2, hidden_channels, kernel_size=3, stride=1, padding=1, bias=True),
+            nn.ReLU(True),
+            nn.Conv2d(hidden_channels, out_channels, kernel_size=1, stride=1, padding=0, bias=True)
+        )
+
+    def lowpass(self, hazy, pool_size, target_size):
+        low = F.avg_pool2d(
+            hazy,
+            kernel_size=pool_size,
+            stride=pool_size,
+            ceil_mode=True
+        )
+        return F.interpolate(low, size=target_size, mode='bilinear', align_corners=False)
+
+    def forward(self, hazy, target):
+        target_size = target.shape[-2:]
+        lows = [self.lowpass(hazy, pool_size, target_size) for pool_size in self.pool_sizes]
+        detail = lows[0] - lows[-1]
+        image_feat = self.image_encoder(torch.cat(lows + [detail], dim=1))
+        target_feat = self.target_encoder(target.detach())
+        return self.fusion(torch.cat([image_feat, target_feat], dim=1))
+
+
 class LowFrequencyPrior(nn.Module):
     def __init__(
         self,
@@ -29,7 +84,10 @@ class LowFrequencyPrior(nn.Module):
         calib_alpha_max=1.0,
         residual_selector=False,
         selector_hidden_channels=8,
-        selector_init_bias=2.0
+        selector_init_bias=2.0,
+        multiscale_refiner=False,
+        mbr_hidden_channels=8,
+        mbr_pool_sizes=(4, 8, 16)
     ):
         super(LowFrequencyPrior, self).__init__()
         if pool_size <= 0:
@@ -50,6 +108,8 @@ class LowFrequencyPrior(nn.Module):
             raise ValueError('selector_hidden_channels must be positive')
         if residual_selector and not residual_calibration:
             raise ValueError('residual_selector requires residual_calibration')
+        if mbr_hidden_channels <= 0:
+            raise ValueError('mbr_hidden_channels must be positive')
         self.pool_size = pool_size
         self.residual_center = residual_center
         self.train_dropout = train_dropout
@@ -63,11 +123,22 @@ class LowFrequencyPrior(nn.Module):
         self.last_mask_stats = None
         self.last_alpha_stats = None
         self.last_selector_stats = None
-        self.adapter = nn.Sequential(
-            nn.Conv2d(3, adapter_channels, kernel_size=3, stride=1, padding=1, bias=True),
-            nn.ReLU(True),
-            nn.Conv2d(adapter_channels, out_channels, kernel_size=1, stride=1, padding=0, bias=True)
-        )
+        self.multiscale_refiner = multiscale_refiner
+        self.last_multiscale_stats = None
+        if multiscale_refiner:
+            self.adapter = None
+            self.multiscale_adapter = MultiscaleBottleneckRefiner(
+                out_channels=out_channels,
+                hidden_channels=mbr_hidden_channels,
+                pool_sizes=mbr_pool_sizes
+            )
+        else:
+            self.adapter = nn.Sequential(
+                nn.Conv2d(3, adapter_channels, kernel_size=3, stride=1, padding=1, bias=True),
+                nn.ReLU(True),
+                nn.Conv2d(adapter_channels, out_channels, kernel_size=1, stride=1, padding=0, bias=True)
+            )
+            self.multiscale_adapter = None
         if residual_calibration:
             self.calib_low_encoder = nn.Sequential(
                 nn.Conv2d(3, calib_hidden_channels, kernel_size=3, stride=1, padding=1, bias=True),
@@ -128,7 +199,19 @@ class LowFrequencyPrior(nn.Module):
             ceil_mode=True
         )
         low = F.interpolate(low, size=target.shape[-2:], mode='bilinear', align_corners=False)
-        prior = self.adapter(low)
+        if self.multiscale_refiner:
+            prior = self.multiscale_adapter(hazy, target)
+            with torch.no_grad():
+                detached_prior = prior.detach()
+                self.last_multiscale_stats = {
+                    'mean': detached_prior.mean(),
+                    'std': detached_prior.std(unbiased=False),
+                    'min': detached_prior.min(),
+                    'max': detached_prior.max()
+                }
+        else:
+            prior = self.adapter(low)
+            self.last_multiscale_stats = None
         if self.residual_calibration:
             lf_prior = prior
             calib_low = self.calib_low_encoder(low)
@@ -220,7 +303,10 @@ class DEANet(nn.Module):
         lf_calib_alpha_max=1.0,
         lf_residual_selector=False,
         lf_selector_hidden_channels=8,
-        lf_selector_init_bias=2.0
+        lf_selector_init_bias=2.0,
+        lf_multiscale_refiner=False,
+        lf_mbr_channels=8,
+        lf_mbr_pool_sizes=(4, 8, 16)
     ):
         super(DEANet, self).__init__()
         if lf_prior_injection not in ('pre_mix', 'post_mix'):
@@ -290,7 +376,10 @@ class DEANet(nn.Module):
                 calib_alpha_max=lf_calib_alpha_max,
                 residual_selector=lf_residual_selector,
                 selector_hidden_channels=lf_selector_hidden_channels,
-                selector_init_bias=lf_selector_init_bias
+                selector_init_bias=lf_selector_init_bias,
+                multiscale_refiner=lf_multiscale_refiner,
+                mbr_hidden_channels=lf_mbr_channels,
+                mbr_pool_sizes=lf_mbr_pool_sizes
             )
         else:
             self.lf_prior = None

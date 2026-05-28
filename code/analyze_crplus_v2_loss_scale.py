@@ -94,6 +94,9 @@ def parse_args():
     parser.add_argument('--lf_residual_selector', action='store_true')
     parser.add_argument('--lf_selector_hidden_channels', type=int, default=8)
     parser.add_argument('--lf_selector_init_bias', type=float, default=2.0)
+    parser.add_argument('--lf_multiscale_refiner', action='store_true')
+    parser.add_argument('--lf_mbr_channels', type=int, default=8)
+    parser.add_argument('--lf_mbr_pool_sizes', type=str, default='4,8,16')
     return parser.parse_args()
 
 
@@ -231,7 +234,10 @@ def load_model(args):
         lf_calib_alpha_max=args.lf_calib_alpha_max,
         lf_residual_selector=args.lf_residual_selector,
         lf_selector_hidden_channels=args.lf_selector_hidden_channels,
-        lf_selector_init_bias=args.lf_selector_init_bias
+        lf_selector_init_bias=args.lf_selector_init_bias,
+        lf_multiscale_refiner=args.lf_multiscale_refiner,
+        lf_mbr_channels=args.lf_mbr_channels,
+        lf_mbr_pool_sizes=args.lf_mbr_pool_sizes
     )
     checkpoint = load_checkpoint(args.checkpoint)
     state_dict = checkpoint['model'] if isinstance(checkpoint, dict) and 'model' in checkpoint else checkpoint

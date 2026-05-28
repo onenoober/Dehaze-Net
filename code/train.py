@@ -164,7 +164,10 @@ def create_teacher_model():
         lf_calib_alpha_max=opt.lf_calib_alpha_max,
         lf_residual_selector=opt.lf_residual_selector if opt.teacher_use_lf_prior else False,
         lf_selector_hidden_channels=opt.lf_selector_hidden_channels,
-        lf_selector_init_bias=opt.lf_selector_init_bias
+        lf_selector_init_bias=opt.lf_selector_init_bias,
+        lf_multiscale_refiner=opt.lf_multiscale_refiner if opt.teacher_use_lf_prior else False,
+        lf_mbr_channels=opt.lf_mbr_channels,
+        lf_mbr_pool_sizes=opt.lf_mbr_pool_sizes
     )
     checkpoint = load_checkpoint_file(checkpoint_path)
     teacher.load_state_dict(strip_module_prefix(checkpoint['model']))
@@ -479,6 +482,7 @@ def train(net, loader_train, loader_test, optim, criterion, writer=None, trainin
         'LF_mask_mean', 'LF_mask_std', 'LF_mask_min', 'LF_mask_max',
         'LF_alpha_mean', 'LF_alpha_std', 'LF_alpha_min', 'LF_alpha_max',
         'LF_selector_mean', 'LF_selector_std', 'LF_selector_min', 'LF_selector_max',
+        'LF_mbr_mean', 'LF_mbr_std', 'LF_mbr_min', 'LF_mbr_max',
         'TrainableParamCount', 'TrainableStage'
     ):
         loss_log.setdefault(key, [])
@@ -552,6 +556,7 @@ def train(net, loader_train, loader_test, optim, criterion, writer=None, trainin
             lf_mask_stats = lf_prior_mask_stats(net)
             lf_alpha_stats = lf_prior_alpha_stats(net)
             lf_selector_stats = lf_prior_selector_stats(net)
+            lf_mbr_stats = lf_prior_multiscale_stats(net)
             losses.append(loss.item())
             loss_log_tmp['L1'].append(loss_L1.item())
             loss_log_tmp['CR'].append(loss_CR.item())
@@ -578,6 +583,9 @@ def train(net, loader_train, loader_test, optim, criterion, writer=None, trainin
             if lf_selector_stats is not None:
                 for key, value in lf_selector_stats.items():
                     loss_log_tmp['LF_selector_' + key].append(value)
+            if lf_mbr_stats is not None:
+                for key, value in lf_mbr_stats.items():
+                    loss_log_tmp['LF_mbr_' + key].append(value)
             if trainable_stats is not None:
                 loss_log_tmp['TrainableParamCount'].append(trainable_stats['trainable_params'])
                 loss_log_tmp['TrainableStage'].append(trainable_stats['stage_index'])
@@ -615,6 +623,9 @@ def train(net, loader_train, loader_test, optim, criterion, writer=None, trainin
                 if lf_selector_stats is not None:
                     for key, value in lf_selector_stats.items():
                         writer.add_scalar('train/lf_selector_' + key, value, step)
+                if lf_mbr_stats is not None:
+                    for key, value in lf_mbr_stats.items():
+                        writer.add_scalar('train/lf_mbr_' + key, value, step)
                 if trainable_stats is not None:
                     writer.add_scalar('train/trainable_param_count', trainable_stats['trainable_params'], step)
                     writer.add_scalar('train/trainable_stage', trainable_stats['stage_index'], step)
@@ -790,6 +801,16 @@ def lf_prior_selector_stats(net):
     return {key: float(value.detach().cpu().item()) for key, value in stats.items()}
 
 
+def lf_prior_multiscale_stats(net):
+    lf_prior = resolve_lf_prior_module(net)
+    if lf_prior is None:
+        return None
+    stats = getattr(lf_prior, 'last_multiscale_stats', None)
+    if stats is None:
+        return None
+    return {key: float(value.detach().cpu().item()) for key, value in stats.items()}
+
+
 def pad_img(x, patch_size):
     _, _, h, w = x.size()
     mod_pad_h = (patch_size - h % patch_size) % patch_size
@@ -909,12 +930,15 @@ if __name__ == "__main__":
         lf_calib_alpha_max=opt.lf_calib_alpha_max,
         lf_residual_selector=opt.lf_residual_selector,
         lf_selector_hidden_channels=opt.lf_selector_hidden_channels,
-        lf_selector_init_bias=opt.lf_selector_init_bias
+        lf_selector_init_bias=opt.lf_selector_init_bias,
+        lf_multiscale_refiner=opt.lf_multiscale_refiner,
+        lf_mbr_channels=opt.lf_mbr_channels,
+        lf_mbr_pool_sizes=opt.lf_mbr_pool_sizes
     )
     net = net.to(opt.device)
     if opt.use_lf_prior:
         print(
-            'Using LF prior: channels={} pool={} gate_init={} residual_center={} train_dropout={} gate_max={} injection={} conditional_mask={} mask_hidden={} mask_init_bias={} haze_aware_mask={} haze_mask_strength={} residual_calibration={} calib_hidden={} calib_alpha_max={} residual_selector={} selector_hidden={} selector_init_bias={} gate_l2={}'.format(
+            'Using LF prior: channels={} pool={} gate_init={} residual_center={} train_dropout={} gate_max={} injection={} conditional_mask={} mask_hidden={} mask_init_bias={} haze_aware_mask={} haze_mask_strength={} residual_calibration={} calib_hidden={} calib_alpha_max={} residual_selector={} selector_hidden={} selector_init_bias={} multiscale_refiner={} mbr_channels={} mbr_pool_sizes={} gate_l2={}'.format(
                 opt.lf_prior_channels,
                 opt.lf_prior_pool,
                 opt.lf_prior_gate_init,
@@ -933,6 +957,9 @@ if __name__ == "__main__":
                 opt.lf_residual_selector,
                 opt.lf_selector_hidden_channels,
                 opt.lf_selector_init_bias,
+                opt.lf_multiscale_refiner,
+                opt.lf_mbr_channels,
+                opt.lf_mbr_pool_sizes,
                 opt.w_loss_lf_gate
             )
         )
