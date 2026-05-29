@@ -187,7 +187,8 @@ route reasoning in the dated analysis docs.
 
 - Local WSL workspace: `/home/ubuntu/workspace/Dehaze-Net`.
 - Local Windows workspace reference: `D:\Dehaze\Dehaze-Net`.
-- GitHub repo: `https://github.com/onenoober/Dehaze-Net` (private). GitHub
+- GitHub repo: `https://github.com/onenoober/Dehaze-Net` (public as of
+  2026-05-30). GitHub
   should carry code, docs, scripts, compact metrics, conclusions, and curated
   text-only AI project packages under `docs/ai_text_packages/`. When a text
   package is created or updated for AI analysis, commit and push that package

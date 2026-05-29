@@ -280,15 +280,15 @@ ssh runyun-ts "hostname && pwd"
 
 ## Server GitHub sync
 
-The private GitHub repository should be accessed from the server through SSH:
+The GitHub repository is public as of 2026-05-30, so servers may fetch it over
+HTTPS for read-only sync. Use SSH when pushing or when write access is needed:
 
 ```bash
 git remote set-url origin git@github.com:onenoober/Dehaze-Net.git
 ssh -T git@github.com
 ```
 
-The SSH test should authenticate as `onenoober`. Do not use HTTPS for the
-private repo on the server unless deliberately debugging credentials.
+The SSH test should authenticate as `onenoober` before any push.
 Use `git fetch --dry-run origin` as a non-mutating connectivity check. Only run
 `git pull --ff-only` after confirming the server checkout is the intended target
 and `git status -sb` is clean enough for the operation.
