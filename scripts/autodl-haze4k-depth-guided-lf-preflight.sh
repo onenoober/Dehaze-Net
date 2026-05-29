@@ -13,6 +13,7 @@ LOG_FILE="${LOG_FILE:-$LOG_DIR/$RUN_ID.log}"
 BASELINE_CHECKPOINT="${BASELINE_CHECKPOINT:-$ROOT/experiment/HAZE4K/DEA-Net-CR-H4K-Baseline-scout-20260520-101334/saved_model/best.pk}"
 LFV1_CHECKPOINT="${LFV1_CHECKPOINT:-$ROOT/experiment/HAZE4K/DEA-Net-LF-H4K-scout-20260521-003100/saved_model/best.pk}"
 DEPTH_MODEL="${DEPTH_MODEL:-depth-anything/Depth-Anything-V2-Small-hf}"
+export HF_ENDPOINT="${HF_ENDPOINT:-https://hf-mirror.com}"
 
 mkdir -p "$OUTPUT_DIR" "$DEPTH_CACHE_DIR" "$LOG_DIR"
 exec > >(tee -a "$LOG_FILE") 2>&1
@@ -25,6 +26,7 @@ echo "LOG_FILE=$LOG_FILE"
 echo "BASELINE_CHECKPOINT=$BASELINE_CHECKPOINT"
 echo "LFV1_CHECKPOINT=$LFV1_CHECKPOINT"
 echo "DEPTH_MODEL=$DEPTH_MODEL"
+echo "HF_ENDPOINT=$HF_ENDPOINT"
 date
 
 "$PY" - <<'PY' || "$PY" -m pip install scikit-learn==1.7.2 transformers safetensors huggingface_hub

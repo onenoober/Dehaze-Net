@@ -49,6 +49,25 @@ Additional AutoDL system tools installed on 2026-05-29:
 tmux 3.2a
 ```
 
+Additional AutoDL `py310` packages installed on 2026-05-29 for the
+Depth-Guided LF preflight:
+
+```text
+scikit-learn==1.7.2
+scipy==1.15.3
+joblib==1.5.3
+threadpoolctl==3.6.0
+transformers==5.9.0
+safetensors==0.7.0
+huggingface_hub==1.17.0
+```
+
+AutoDL could reach `https://hf-mirror.com` for Depth Anything V2 files, while
+direct `https://huggingface.co` access timed out during the 2026-05-29
+preflight launch. Use `HF_ENDPOINT=https://hf-mirror.com` for Hugging Face model
+downloads on AutoDL unless later connectivity checks show the direct endpoint is
+reliable.
+
 Dependency policy from 2026-05-29: when a cloud server is missing a required
 dependency for the requested task, install it directly without asking for
 confirmation. Record durable server facts here when they matter for future
