@@ -46,11 +46,25 @@ model and evidence chain. It must not include datasets, images, checkpoints,
 model weights, tensor/array dumps, inference image outputs, or large feature
 matrices that are not practical for AI reading.
 
+Post-sync audit is mandatory for every created or updated AI text package:
+
+- Compare the local source package file set with the committed
+  `docs/ai_text_packages/<date-or-id>/` copy. Missing and extra files must be
+  zero, except explicitly documented package metadata.
+- Compare `git ls-files docs/ai_text_packages` with
+  `git ls-tree -r --name-only origin/<branch> docs/ai_text_packages`; missing
+  and extra remote files must be zero before claiming GitHub sync is complete.
+- Scan tracked package files for forbidden extensions:
+  images, datasets, checkpoints, model weights, `.npy`/`.npz`, and other
+  binary dumps.
+- If byte hashes differ only because of line endings or intentional package
+  metadata edits, document the allowed differences in this manifest.
+
 Current package index:
 
 | Package | Source artifact | Contents | Git policy |
 | --- | --- | --- | --- |
-| `docs/ai_text_packages/20260529-ai-text` | `experiment/dehaze-net-ai-text-pack-20260529-ai-text` | 569 text files, about 25.31 MB uncompressed; code, docs, scripts, compact HAZE4K logs/args/metrics/diagnostics; excludes images, weights, arrays, and large feature CSVs | `COMMIT_AND_PUSH` |
+| `docs/ai_text_packages/20260529-ai-text` | `experiment/dehaze-net-ai-text-pack-20260529-ai-text` | 569 text files, about 25.31 MB uncompressed; code, docs, scripts, compact HAZE4K logs/args/metrics/diagnostics; excludes images, weights, arrays, and large feature CSVs. Sync audit on 2026-05-29: source and package file sets both `569`, missing/extra `0/0`; local tracked and remote tracked `docs/ai_text_packages` files both `570`, missing/extra remote `0/0`; forbidden tracked extensions `0`; normalized content differences limited to package metadata `.gitignore` and `PACKAGE_README.md`. | `COMMIT_AND_PUSH_AUDIT_REMOTE` |
 
 ## Keep Policy
 

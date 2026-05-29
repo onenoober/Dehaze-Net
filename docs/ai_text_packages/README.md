@@ -13,6 +13,8 @@ Policy:
   arrays, inference image outputs, or large feature matrices.
 - Keep raw generated artifacts in ignored `experiment/`; only the curated
   text-only package copy belongs here.
+- After pushing, audit local package parity, remote GitHub parity, and forbidden
+  extensions; record the result in `docs/HAZE4K_RUN_MANIFEST.md`.
 
 Current packages:
 

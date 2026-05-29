@@ -11,6 +11,10 @@ This repository is a private research fork of DEA-Net.
   or updated, so external AI review can use GitHub links. These packages may
   include copied compact logs/CSV/JSON/MD text, but never images, datasets,
   checkpoints, arrays, or model weights.
+- After pushing an AI text package, audit that the local source package,
+  committed `docs/ai_text_packages/` copy, and GitHub remote branch have the
+  same intended file set, with no forbidden binary/model extensions. Record the
+  audit result in `docs/HAZE4K_RUN_MANIFEST.md`.
 
 ## Working conventions
 - For continuity across new conversations, read `docs/CURRENT_CONTEXT.md` before changing server, GitHub, dataset, or training workflow assumptions.
