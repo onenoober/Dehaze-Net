@@ -80,6 +80,23 @@ route reasoning in the dated analysis docs.
   `do_not_train_residual_field_confidence_yet`. Do not launch the prepared
   CR-reference residual-field 100k scout from this evidence. Details:
   `docs/HAZE4K_LF_RESIDUAL_FIELD_CONFIDENCE_PLAN_20260528.md`.
+- Completed Depth-Guided LF-v1 preflight on `autodl-dehaze`:
+  `HAZE4K-depth-guided-lf-preflight-autodl-20260529-204105` in
+  `/root/autodl-tmp/workspace/Dehaze-Net`, branch
+  `codex/haze4k-depth-guided-lf-preflight` commit `88cc498`. The audit used
+  HAZE4K train split, CR and LF-v1 best checkpoints at step `90000`, `3000`
+  images, `12000` patches, and `depth-anything/Depth-Anything-V2-Small-hf`
+  cached relative depth maps. AutoDL needed `HF_ENDPOINT=https://hf-mirror.com`
+  because direct `huggingface.co` access timed out. Main row
+  `hazy_depth_plus_teacher_outputs` + `sklearn_hgb` had high simulated gain
+  (`+0.8347 dB`) but failed the hard gates: preserve recall `0.6342 < 0.68`,
+  intervention precision `0.5255 < 0.60`, and confidence correlation
+  `0.4035 < 0.45`; airlight/beta held-out rows also failed. Shuffled-depth
+  control was very close (`+0.8479 dB`, preserve `0.6273`, precision
+  `0.5352`, corr `0.3968`), so depth did not add a reliable new signal.
+  Recommendation: `do_not_train_depth_guided_lf_yet`. Do not launch
+  Depth-Guided LF-v1 training from this evidence. Details:
+  `docs/HAZE4K_DEPTH_GUIDED_LF_PREFLIGHT_PLAN_20260529.md`.
 - Latest LFCR-v1 run on `runyun-ts`:
   `DEA-Net-LFCR-v1-w005-H4K-scout100k-20260527-231728` in
   `/root/workspace/Dehaze-Net-audit-sync`, log
@@ -251,7 +268,8 @@ gate policy. Use `docs/WORKFLOW.md` for exact launch/check/stop templates.
 | LFCR-v2 decay | Completed fair 100k scout: final/best `32.1516 / 0.9844`, independent verify `32.1518 / 0.9844`, LF gate `0.019099`. Negative/neutral ablation: schedule-off mechanism partly worked and rescue cases remained, but final quality was below CR best, LF-v1, ResidualCalib, CRPlus-v2, and LFCR-v1 final. | `docs/HAZE4K_LFCR_V2_DECAY_PLAN_20260528.md` |
 | Preserve/proxy family | WaveletPreserve, wavelet+activation, supervised preserve, and continuous confidence preflights all found some signal but failed preservation or intervention precision. Current feature/proxy family is not safe for a 100k scout. | `docs/HAZE4K_WAVELET_PRESERVE_PROXY_AUDIT_20260528.md`, `docs/HAZE4K_SUPERVISED_PRESERVE_PROXY_AUDIT_20260528.md`, `docs/HAZE4K_LF_RESIDUAL_FIELD_CONFIDENCE_PLAN_20260528.md` |
 | ResidualFieldConfidence preflight | Continuous confidence has signal but is not safe enough: main random split `+0.8356 dB` simulated gain and `0.3751` confidence correlation, but preserve recall `0.6275` and intervention precision `0.5320` miss the pass line. Do not train LF-RFC v1 from this target. | `docs/HAZE4K_LF_RESIDUAL_FIELD_CONFIDENCE_PLAN_20260528.md` |
-| Route evidence review / next route | Local aggregation across CR, LF-v1, ResidualCalib, CRPlus-v2, and LFCR-v1 confirms LF-v1 remains the best standalone mean-PSNR route, but all-five GT oracle reaches `33.5098` mean PSNR (`+1.0815 dB` over LF-v1). After later preflights failed, the scoped LF-v2 multiscale bottleneck refiner became the next cold-start route; its implementation preflight has now passed and a runyun fair 100k scout is active. | `docs/HAZE4K_ROUTE_EVIDENCE_REVIEW_20260528.md`, `docs/HAZE4K_LF_V2_MULTISCALE_BOTTLENECK_REFINER_PLAN_20260528.md` |
+| Depth-Guided LF preflight | Frozen relative depth did not clear the stricter pass line: main random split `+0.8347 dB` simulated gain, but preserve recall `0.6342`, intervention precision `0.5255`, and confidence correlation `0.4035` failed; airlight/beta held-out rows failed and shuffled-depth control was too close. Do not train Depth-Guided LF-v1 from this target. | `docs/HAZE4K_DEPTH_GUIDED_LF_PREFLIGHT_PLAN_20260529.md` |
+| Route evidence review / next route | Local aggregation across CR, LF-v1, ResidualCalib, CRPlus-v2, and LFCR-v1 confirms LF-v1 remains the best standalone mean-PSNR route, but all-five GT oracle reaches `33.5098` mean PSNR (`+1.0815 dB` over LF-v1). Later scoped LF-v2 MBR and Depth-Guided LF preflights/runs did not clear their gates, so no new cold-start LF route is currently authorized without a fresh route card and preflight. | `docs/HAZE4K_ROUTE_EVIDENCE_REVIEW_20260528.md`, `docs/HAZE4K_LF_V2_MULTISCALE_BOTTLENECK_REFINER_PLAN_20260528.md`, `docs/HAZE4K_DEPTH_GUIDED_LF_PREFLIGHT_PLAN_20260529.md` |
 
 ## Do Not Do
 
@@ -263,6 +281,9 @@ gate policy. Use `docs/WORKFLOW.md` for exact launch/check/stop templates.
   precision gates despite high simulated gain.
 - Do not launch WaveletPreserve, supervised preserve-head, or another
   preserve/intervene proxy scout from the 2026-05-28 preflights.
+- Do not launch Depth-Guided LF-v1 training from the 2026-05-29 depth preflight;
+  frozen relative depth failed preservation, precision, correlation, and
+  held-out stability gates, and shuffled-depth control was too close.
 - Do not spend another 100k on LFCR weight/decay scheduling unless a new
   selectivity or representation mechanism is written and preflighted.
 - Do not treat short-horizon smoke, dry-run, or changed-LR-horizon resumes as

@@ -2,9 +2,77 @@
 
 Date: 2026-05-29
 
-Status: route card for a diagnostic preflight only. Do not launch a 100k
-Depth-Guided LF-v1 scout unless this preflight writes
-`preflight_passed_depth_guided_lf_scout_allowed`.
+Status: completed diagnostic preflight. The depth-augmented proxy did not pass
+the preservation, intervention precision, confidence-correlation, or
+held-out-stability gates, so do not launch a 100k Depth-Guided LF-v1 scout from
+this evidence.
+
+## Completed Preflight Result
+
+AutoDL run:
+
+```text
+HAZE4K-depth-guided-lf-preflight-autodl-20260529-204105
+```
+
+Checkout:
+
+```text
+/root/autodl-tmp/workspace/Dehaze-Net
+branch codex/haze4k-depth-guided-lf-preflight
+commit 88cc498
+```
+
+Artifact:
+
+```text
+experiment/HAZE4K/depth_guided_lf_preflight/HAZE4K-depth-guided-lf-preflight-autodl-20260529-204105
+```
+
+Setup:
+
+- HAZE4K train split, `3000` images, `12000` patches.
+- CR and LF-v1 best checkpoints at step `90000`.
+- Depth model: `depth-anything/Depth-Anything-V2-Small-hf`.
+- AutoDL used `HF_ENDPOINT=https://hf-mirror.com`; direct `huggingface.co`
+  access timed out during the first launch attempt.
+- Depth cache generated `3000` maps under ignored experiment storage.
+
+Recommendation:
+
+```text
+do_not_train_depth_guided_lf_yet
+```
+
+Main rows:
+
+| Feature set | Split | Gain vs LF-v1 | Preserve recall | Intervene precision | Strong-CR recall | c corr | Decision |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | --- |
+| `hazy_depth_plus_teacher_outputs` | random-image | `+0.8347` | `0.6342` | `0.5255` | `1.0000` | `0.4035` | fail |
+| `hazy_depth_plus_teacher_outputs` | airlight-held-out | `+0.8236` | `0.6129` | `0.5046` | `1.0000` | `0.3782` | fail |
+| `hazy_depth_plus_teacher_outputs` | beta-held-out | `+0.8288` | `0.6077` | `0.5245` | `1.0000` | `0.3915` | fail |
+
+Important ablations:
+
+| Feature set | Split | Gain vs LF-v1 | Preserve recall | Intervene precision | c corr |
+| --- | --- | ---: | ---: | ---: | ---: |
+| `hazy_wavelet_plus_teacher_outputs` | random-image | `+0.8563` | `0.6193` | `0.5266` | `0.4005` |
+| `hazy_shuffled_depth_plus_teacher_outputs` | random-image | `+0.8479` | `0.6273` | `0.5352` | `0.3968` |
+| `hazy_depth` | random-image | `+0.8433` | `0.6054` | `0.5196` | `0.3074` |
+| `depth_only` | random-image | `+0.7838` | `0.5896` | `0.4894` | `0.2400` |
+
+Interpretation:
+
+- The high simulated gain repeats the ResidualFieldConfidence failure mode:
+  the regressor effectively intervenes too often, which yields high oracle-like
+  recovery but destroys too many LF-v1 gain cases.
+- True depth did not create a decisive improvement over depthless
+  teacher-output features. The shuffled-depth control is very close to the
+  true-depth row and is slightly better on some random-split metrics, so the
+  external depth signal is not reliable enough as a launch gate.
+- The route is useful as a negative diagnostic: frozen relative depth from hazy
+  images is not the missing variable for LF-v1 residual confidence under the
+  current target/head.
 
 ## Most Valuable Attempt
 
