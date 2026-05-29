@@ -62,6 +62,7 @@ def parse_args():
     parser.add_argument('--brf_dir_norm_floor', type=float, default=0.01)
     parser.add_argument('--brf_preserve_target_thr', type=float, default=0.015)
     parser.add_argument('--brf_preserve_warmup_steps', type=int, default=0)
+    parser.add_argument('--brf_preserve_gate_weight', type=float, default=1.0)
     parser.add_argument('--w_loss_L1', type=float, default=1.0)
     parser.add_argument('--w_loss_brf_res_lf', type=float, default=0.10)
     parser.add_argument('--w_loss_brf_dir', type=float, default=0.02)
@@ -226,7 +227,9 @@ def brf_losses(out_dict, target, args, step=0):
     if args.brf_preserve_warmup_steps > 0 and step < args.brf_preserve_warmup_steps:
         loss_preserve = out.new_zeros(())
     else:
-        loss_preserve = torch.mean(preserve_mask * (out_dict['c_lf'].abs() + out_dict['gate_lf']))
+        loss_preserve = torch.mean(
+            preserve_mask * (out_dict['c_lf'].abs() + args.brf_preserve_gate_weight * out_dict['gate_lf'])
+        )
     loss_bound = (out_dict['c_lf'] + out_dict['c_color'] + out_dict['c_hf']).abs().mean()
     loss_color = F.l1_loss(out.mean(dim=(2, 3)), target.mean(dim=(2, 3)))
     loss_l1 = F.l1_loss(out, target)

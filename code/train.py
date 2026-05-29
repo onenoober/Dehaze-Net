@@ -441,7 +441,7 @@ def brf_loss_terms(out_dict, target, step):
         loss_preserve = out.new_zeros(())
     else:
         loss_preserve = torch.mean(
-            preserve_mask * (out_dict['c_lf'].abs() + out_dict['gate_lf'])
+            preserve_mask * (out_dict['c_lf'].abs() + opt.brf_preserve_gate_weight * out_dict['gate_lf'])
         )
     total_correction = out_dict['c_lf'] + out_dict['c_color'] + out_dict['c_hf']
     loss_bound = total_correction.abs().mean()

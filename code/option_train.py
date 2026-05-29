@@ -125,6 +125,7 @@ parser.add_argument('--brf_mid_pool', type=int, default=4, help='mid-frequency p
 parser.add_argument('--brf_dir_norm_floor', type=float, default=0.01, help='ignore CBRFRC direction samples below this target residual norm')
 parser.add_argument('--brf_preserve_target_thr', type=float, default=0.015, help='preserve samples whose mean abs target LF residual is below this threshold')
 parser.add_argument('--brf_preserve_warmup_steps', type=int, default=0, help='do not apply CBRFRC preserve loss before this step')
+parser.add_argument('--brf_preserve_gate_weight', type=float, default=1.0, help='relative gate penalty inside CBRFRC preserve loss')
 
 parser.add_argument('--exp_dir', type=str, default='../experiment')
 parser.add_argument('--model_name', type=str, default='MDCTDN')
