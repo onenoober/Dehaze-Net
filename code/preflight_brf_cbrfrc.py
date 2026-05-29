@@ -8,9 +8,9 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 from PIL import Image
-from torch.utils.data import DataLoader, Subset
+from torch.utils.data import DataLoader, TensorDataset
 
-from data.data_loader import TrainDataset, find_clear_image, list_image_files, resolve_pair_dirs
+from data.data_loader import find_clear_image, list_image_files, resolve_pair_dirs
 from metric import psnr, ssim
 from model import BaselineRelativeFrequencyResidualCorrector, DEANet, DEANetCBRFRC
 
@@ -147,6 +147,15 @@ def pad_img(x, patch_size):
 def pil_to_tensor(image):
     array = np.asarray(image, dtype=np.float32) / 255.0
     return torch.from_numpy(array).permute(2, 0, 1)
+
+
+def center_crop(image, patch_size):
+    width, height = image.size
+    if width < patch_size or height < patch_size:
+        raise ValueError('Image {}x{} is smaller than patch size {}'.format(width, height, patch_size))
+    left = (width - patch_size) // 2
+    top = (height - patch_size) // 2
+    return image.crop((left, top, left + patch_size, top + patch_size))
 
 
 def lowpass(x, pool_size):
@@ -353,17 +362,28 @@ def run_micro_overfit(args):
         return None, []
     train_root = Path('../dataset') / args.dataset / 'train'
     hazy_dir, clear_dir = resolve_pair_dirs(train_root)
-    dataset = TrainDataset(hazy_dir, clear_dir, patch_size=args.patch_size)
-    subset_size = min(args.micro_subset_size, len(dataset))
-    dataset = Subset(dataset, list(range(subset_size)))
+    names = list_image_files(hazy_dir)[:args.micro_subset_size]
+    hazy_tensors = []
+    clear_tensors = []
+    for name in names:
+        hazy_img = Image.open(Path(hazy_dir) / name).convert('RGB')
+        clear_img = Image.open(find_clear_image(clear_dir, name)).convert('RGB')
+        hazy_tensors.append(pil_to_tensor(center_crop(hazy_img, args.patch_size)))
+        clear_tensors.append(pil_to_tensor(center_crop(clear_img, args.patch_size)))
+    hazy_tensor = torch.stack(hazy_tensors, dim=0)
+    clear_tensor = torch.stack(clear_tensors, dim=0)
+    subset_size = hazy_tensor.shape[0]
+    dataset = TensorDataset(hazy_tensor, clear_tensor)
     loader = DataLoader(
         dataset,
         batch_size=args.micro_batch_size,
         shuffle=True,
-        num_workers=args.num_workers,
+        num_workers=0,
         pin_memory=True,
         drop_last=True,
     )
+    probe_hazy = hazy_tensor[:args.micro_batch_size].to(args.device)
+    probe_clear = clear_tensor[:args.micro_batch_size].to(args.device)
     baseline, _ = load_baseline(args)
     wrapper = build_wrapper(args, baseline)
     wrapper.train()
@@ -371,8 +391,19 @@ def run_micro_overfit(args):
     optimizer = torch.optim.Adam(wrapper.corrector.parameters(), lr=args.micro_lr, betas=(0.9, 0.999))
     loader_iter = iter(loader)
     rows = []
-    first_metrics = None
-    last_metrics = None
+    def probe_metrics():
+        was_training = wrapper.training
+        wrapper.eval()
+        with torch.no_grad():
+            probe_dict = wrapper(probe_hazy, target=probe_clear, return_aux=True)
+            _, metrics = brf_losses(probe_dict, probe_clear, args)
+        if was_training:
+            wrapper.train()
+            wrapper.baseline.eval()
+        return tensor_float_dict(metrics)
+
+    first_metrics = probe_metrics()
+    last_metrics = first_metrics
     for step in range(1, args.micro_steps + 1):
         try:
             hazy, clear = next(loader_iter)
@@ -386,12 +417,9 @@ def run_micro_overfit(args):
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-        metrics_float = tensor_float_dict(metrics)
-        last_metrics = metrics_float
-        if first_metrics is None:
-            first_metrics = metrics_float
         if step == 1 or step % args.micro_log_interval == 0 or step == args.micro_steps:
-            row = dict(metrics_float)
+            last_metrics = probe_metrics()
+            row = dict(last_metrics)
             row['step'] = step
             rows.append(row)
             print('micro step {} loss {:.6f} res_lf {:.6f} cosine {:.6f} gate_lf {:.6f}'.format(
