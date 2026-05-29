@@ -1,6 +1,29 @@
 # HAZE4K Official Warm-Start Fine-Tune Route
 
-Status: active route card, isolated from cold-start HAZE4K training claims.
+Status: completed isolated warm-start route card; do not mix its metrics into
+cold-start HAZE4K training claims.
+
+## Outcome 2026-05-29
+
+- Run:
+  `DEA-Net-OfficialWarmStart-LFv1-H4K-local-scout100k-20260528-152808`.
+- Training status:
+  completed locally in WSL; no tmux/train process remained at the final check.
+- Best/final:
+  best checkpoint step `90000` PSNR/SSIM `34.2662 / 0.9886`; final step
+  `100000` PSNR/SSIM `34.2631 / 0.9886`.
+- Matched step-0 comparison:
+  independent 1000-image per-image eval against `official_warmstart_step0.pk`
+  measured step0 `34.2548 / 0.9885`, best90k `34.2661 / 0.9886`, mean delta
+  `+0.0114 dB`, median delta `-0.0106 dB`, better/worse `484/516`, and
+  meaningful `0.30 dB` better/worse `193/172`.
+- Mechanism read:
+  staged freezing executed as planned; the best checkpoint LF gate is
+  `-0.01404`. The improvement is real but very small and distributed unevenly,
+  so read this as a marginal positive deployment fine-tune route, not as a
+  cold-start architecture win.
+- Artifact:
+  `experiment/HAZE4K/official_warmstart_diagnostics/DEA-Net-OfficialWarmStart-LFv1-H4K-local-scout100k-20260528-152808-best-vs-step0-20260529`.
 
 ## Most Valuable Attempt
 
