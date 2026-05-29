@@ -6,6 +6,11 @@ Status: implementation route card. Do not launch the fair 100k scout until the
 static checks, zero-gate identity check, bounded-oracle residual check, and
 1k/2k micro-overfit check pass.
 
+Update 2026-05-30: preflight passed only with preserve protection changed to
+`brf_preserve_warmup_steps=3000` and `brf_preserve_gate_weight=0.0`. Default
+direct gate preserve penalty caused gate collapse and must not be used for the
+first 100k scout.
+
 ## Most Valuable Attempt
 
 - Why this is the most valuable current attempt: LF-v1 remains the best
@@ -100,7 +105,7 @@ static checks, zero-gate identity check, bounded-oracle residual check, and
 - Loss weights: `w_loss_L1=1.0`, `w_loss_CR=0.1`,
   `w_loss_brf_res_lf=0.10`, `w_loss_brf_dir=0.02`,
   `w_loss_brf_preserve=0.05`, `w_loss_brf_bound=0.01`,
-  `w_loss_brf_color=0.02`, `brf_preserve_warmup_steps=1000`,
+  `w_loss_brf_color=0.02`, `brf_preserve_warmup_steps=3000`,
   `brf_preserve_gate_weight=0.0` if the fixed-patch micro-overfit confirms the
   direct preserve gate penalty collapses the gate.
 - Eval/checkpoint cadence: every `10000` steps, `save_epoch_checkpoints=false`.
@@ -156,7 +161,7 @@ mkdir -p ../experiment/HAZE4K/_run_logs
   --brf_lf_pool 8 \
   --brf_dir_norm_floor 0.01 \
   --brf_preserve_target_thr 0.015 \
-  --brf_preserve_warmup_steps 1000 \
+  --brf_preserve_warmup_steps 3000 \
   --brf_preserve_gate_weight 0.0 \
   --model_name "$RUN" \
   --dataset HAZE4K \
