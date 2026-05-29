@@ -384,7 +384,7 @@ class DEANet(nn.Module):
         else:
             self.lf_prior = None
 
-    def forward(self, x):
+    def _forward_impl(self, x, return_features=False):
         hazy = x
         x_down1 = self.down1(x)
         x_down1 = self.down_level1_block1(x_down1)
@@ -429,4 +429,19 @@ class DEANet(nn.Module):
         x_up2 = self.up_level1_block4(x_up2)
         out = self.up3(x_up2)
 
-        return out
+        if not return_features:
+            return out
+
+        features = {
+            'dec1': x_up2,
+            'dec2': x_up1,
+            'dec3': x_level3_mix,
+            'bottleneck': x8,
+        }
+        return out, features
+
+    def forward(self, x):
+        return self._forward_impl(x, return_features=False)
+
+    def forward_with_features(self, x):
+        return self._forward_impl(x, return_features=True)

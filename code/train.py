@@ -16,7 +16,7 @@ except ImportError:
 
 from logger import plot_loss_log, plot_psnr_log
 from metric import psnr, ssim
-from model import DEANet
+from model import BaselineRelativeFrequencyResidualCorrector, DEANet, DEANetCBRFRC
 from loss import CRPlusV2Loss, ContrastLoss
 from option_train import opt
 from data.data_loader import TrainDataset, TestDataset, resolve_pair_dirs
@@ -26,6 +26,15 @@ from warmstart_freeze import TrainableSchedule
 start_time = time.time()
 steps = opt.iters_per_epoch * opt.epochs
 T = steps
+
+BRF_LOG_KEYS = (
+    'BRF_res_lf', 'BRF_dir', 'BRF_preserve', 'BRF_bound', 'BRF_color',
+    'BRF_gate_lf_mean', 'BRF_gate_lf_std', 'BRF_gate_lf_min', 'BRF_gate_lf_max',
+    'BRF_gate_color_mean', 'BRF_gate_color_std', 'BRF_gate_color_min', 'BRF_gate_color_max',
+    'BRF_gate_hf_mean', 'BRF_gate_hf_std', 'BRF_gate_hf_min', 'BRF_gate_hf_max',
+    'BRF_c_lf_norm', 'BRF_c_color_norm', 'BRF_c_hf_norm',
+    'BRF_target_lf_norm', 'BRF_residual_norm_ratio', 'BRF_train_residual_cosine',
+)
 
 
 def lr_schedule_cosdecay(t, T, init_lr=opt.start_lr, end_lr=opt.end_lr):
@@ -382,6 +391,99 @@ def cr_ref_residual_field_loss(out, hazy, target, step, cr_ref_net):
     return loss
 
 
+def brf_lowpass(x):
+    if opt.brf_lf_pool <= 0:
+        raise ValueError('brf_lf_pool must be positive')
+    low = F.avg_pool2d(
+        x,
+        kernel_size=opt.brf_lf_pool,
+        stride=opt.brf_lf_pool,
+        ceil_mode=True
+    )
+    return F.interpolate(low, size=x.shape[-2:], mode='bilinear', align_corners=False)
+
+
+def mean_l2_norm(x):
+    return x.reshape(x.shape[0], -1).norm(dim=1).mean()
+
+
+def brf_loss_terms(out_dict, target):
+    if out_dict is None:
+        return None, {}
+    out = out_dict['out']
+    j0 = out_dict['j0'].detach()
+    pred_lf = brf_lowpass(out) - brf_lowpass(j0)
+    target_lf = out_dict.get('target_lf')
+    if target_lf is None:
+        target_lf = brf_lowpass(target) - brf_lowpass(j0)
+    target_lf = target_lf.detach()
+
+    loss_res_lf = F.l1_loss(pred_lf, target_lf)
+    pred_vec = pred_lf.reshape(pred_lf.shape[0], -1)
+    target_vec = target_lf.reshape(target_lf.shape[0], -1)
+    pred_norm = pred_vec.norm(dim=1)
+    target_norm = target_vec.norm(dim=1)
+    cosine = (pred_vec * target_vec).sum(dim=1) / (pred_norm * target_norm + 1e-8)
+    valid = target_norm > opt.brf_dir_norm_floor
+    if valid.any():
+        loss_dir = (1.0 - cosine[valid]).mean()
+        train_cosine = cosine[valid].mean()
+        residual_norm_ratio = (pred_norm[valid] / (target_norm[valid] + 1e-8)).mean()
+    else:
+        loss_dir = out.new_zeros(())
+        train_cosine = out.new_zeros(())
+        residual_norm_ratio = out.new_zeros(())
+
+    preserve_mask = (
+        target_lf.abs().mean(dim=(1, 2, 3), keepdim=True) < opt.brf_preserve_target_thr
+    ).to(out.dtype)
+    loss_preserve = torch.mean(
+        preserve_mask * (out_dict['c_lf'].abs() + out_dict['gate_lf'])
+    )
+    total_correction = out_dict['c_lf'] + out_dict['c_color'] + out_dict['c_hf']
+    loss_bound = total_correction.abs().mean()
+    loss_color = F.l1_loss(out.mean(dim=(2, 3)), target.mean(dim=(2, 3)))
+
+    losses = {
+        'res_lf': loss_res_lf,
+        'dir': loss_dir,
+        'preserve': loss_preserve,
+        'bound': loss_bound,
+        'color': loss_color,
+    }
+    metrics = {
+        'BRF_res_lf': loss_res_lf,
+        'BRF_dir': loss_dir,
+        'BRF_preserve': loss_preserve,
+        'BRF_bound': loss_bound,
+        'BRF_color': loss_color,
+        'BRF_target_lf_norm': mean_l2_norm(target_lf),
+        'BRF_residual_norm_ratio': residual_norm_ratio,
+        'BRF_train_residual_cosine': train_cosine,
+    }
+    return losses, metrics
+
+
+def brf_stats(out_dict, brf_metrics):
+    if out_dict is None:
+        return None
+    stats = {}
+    for name in ('lf', 'color', 'hf'):
+        gate = out_dict['gate_' + name].detach()
+        stats['BRF_gate_' + name + '_mean'] = gate.mean()
+        stats['BRF_gate_' + name + '_std'] = gate.std(unbiased=False)
+        stats['BRF_gate_' + name + '_min'] = gate.min()
+        stats['BRF_gate_' + name + '_max'] = gate.max()
+    stats['BRF_c_lf_norm'] = mean_l2_norm(out_dict['c_lf'].detach())
+    stats['BRF_c_color_norm'] = mean_l2_norm(out_dict['c_color'].detach())
+    stats['BRF_c_hf_norm'] = mean_l2_norm(out_dict['c_hf'].detach())
+    stats.update(brf_metrics)
+    return {
+        key: float(value.detach().cpu().item()) if torch.is_tensor(value) else float(value)
+        for key, value in stats.items()
+    }
+
+
 def per_sample_l1(a, b, pool_size=0):
     if pool_size < 0:
         raise ValueError('teacher_guard_patch_pool must be non-negative')
@@ -484,7 +586,7 @@ def train(net, loader_train, loader_test, optim, criterion, writer=None, trainin
         'LF_selector_mean', 'LF_selector_std', 'LF_selector_min', 'LF_selector_max',
         'LF_mbr_mean', 'LF_mbr_std', 'LF_mbr_min', 'LF_mbr_max',
         'TrainableParamCount', 'TrainableStage'
-    ):
+    ) + BRF_LOG_KEYS:
         loss_log.setdefault(key, [])
         loss_log_tmp.setdefault(key, [])
     psnr_log = list(training_state.get('psnr_log', training_state.get('psnrs', [])))
@@ -525,7 +627,12 @@ def train(net, loader_train, loader_test, optim, criterion, writer=None, trainin
             x = x.to(opt.device)
             y = y.to(opt.device)
 
-            out = net(x)
+            out_dict = None
+            if opt.use_brf_frequency_corrector:
+                out_dict = net(x, target=y, return_aux=True)
+                out = out_dict['out']
+            else:
+                out = net(x)
             if opt.w_loss_L1 > 0:
                 loss_L1 = criterion[0](out, y)
             if opt.w_loss_CR > 0:
@@ -537,6 +644,7 @@ def train(net, loader_train, loader_test, optim, criterion, writer=None, trainin
             loss_residual_dir = residual_direction_loss(out, x, y, step)
             loss_cr_ref_residual = cr_ref_residual_field_loss(out, x, y, step, cr_ref_net)
             loss_teacher_guard = teacher_guard_loss(out, x, y, step, teacher_net)
+            loss_brf, brf_metric_tensors = brf_loss_terms(out_dict, y)
             loss = opt.w_loss_L1 * loss_L1 + opt.w_loss_CR * loss_CR
             if loss_crplus_v2 is not None:
                 loss = loss + loss_crplus_v2_weight * loss_crplus_v2
@@ -550,6 +658,12 @@ def train(net, loader_train, loader_test, optim, criterion, writer=None, trainin
                 loss = loss + opt.w_loss_cr_ref_residual * loss_cr_ref_residual
             if loss_teacher_guard is not None:
                 loss = loss + opt.w_loss_teacher_guard * loss_teacher_guard
+            if loss_brf is not None:
+                loss = loss + opt.w_loss_brf_res_lf * loss_brf['res_lf']
+                loss = loss + opt.w_loss_brf_dir * loss_brf['dir']
+                loss = loss + opt.w_loss_brf_preserve * loss_brf['preserve']
+                loss = loss + opt.w_loss_brf_bound * loss_brf['bound']
+                loss = loss + opt.w_loss_brf_color * loss_brf['color']
             loss.backward()
             optim.step()
             optim.zero_grad()
@@ -557,6 +671,7 @@ def train(net, loader_train, loader_test, optim, criterion, writer=None, trainin
             lf_alpha_stats = lf_prior_alpha_stats(net)
             lf_selector_stats = lf_prior_selector_stats(net)
             lf_mbr_stats = lf_prior_multiscale_stats(net)
+            brf_metric_values = brf_stats(out_dict, brf_metric_tensors)
             losses.append(loss.item())
             loss_log_tmp['L1'].append(loss_L1.item())
             loss_log_tmp['CR'].append(loss_CR.item())
@@ -574,6 +689,9 @@ def train(net, loader_train, loader_test, optim, criterion, writer=None, trainin
                 loss_log_tmp['CRRefResidual'].append(loss_cr_ref_residual.item())
             if loss_teacher_guard is not None:
                 loss_log_tmp['TeacherGuard'].append(loss_teacher_guard.item())
+            if brf_metric_values is not None:
+                for key, value in brf_metric_values.items():
+                    loss_log_tmp[key].append(value)
             if lf_mask_stats is not None:
                 for key, value in lf_mask_stats.items():
                     loss_log_tmp['LF_mask_' + key].append(value)
@@ -614,6 +732,14 @@ def train(net, loader_train, loader_test, optim, criterion, writer=None, trainin
                 if loss_teacher_guard is not None:
                     writer.add_scalar('train/loss_teacher_guard', loss_teacher_guard.item(), step)
                     writer.add_scalar('train/loss_teacher_guard_weighted', opt.w_loss_teacher_guard * loss_teacher_guard.item(), step)
+                if brf_metric_values is not None:
+                    for key, value in brf_metric_values.items():
+                        writer.add_scalar('train/' + key, value, step)
+                    writer.add_scalar('train/loss_brf_res_lf_weighted', opt.w_loss_brf_res_lf * brf_metric_values['BRF_res_lf'], step)
+                    writer.add_scalar('train/loss_brf_dir_weighted', opt.w_loss_brf_dir * brf_metric_values['BRF_dir'], step)
+                    writer.add_scalar('train/loss_brf_preserve_weighted', opt.w_loss_brf_preserve * brf_metric_values['BRF_preserve'], step)
+                    writer.add_scalar('train/loss_brf_bound_weighted', opt.w_loss_brf_bound * brf_metric_values['BRF_bound'], step)
+                    writer.add_scalar('train/loss_brf_color_weighted', opt.w_loss_brf_color * brf_metric_values['BRF_color'], step)
                 if lf_mask_stats is not None:
                     for key, value in lf_mask_stats.items():
                         writer.add_scalar('train/lf_mask_' + key, value, step)
@@ -887,30 +1013,8 @@ def limit_dataset_for_smoke(dataset, max_batches, batch_size):
     return torch.utils.data.Subset(dataset, range(max_items))
 
 
-if __name__ == "__main__":
-
-    set_seed_torch(666)
-
-    dataset_root = resolve_dataset_root(opt.dataset)
-    train_dir = os.path.join(dataset_root, 'train')
-    test_dir = os.path.join(dataset_root, 'test')
-    print('train_dir:', train_dir)
-    print('test_dir:', test_dir)
-
-    train_hazy_dir, train_clear_dir = resolve_pair_dirs(train_dir)
-    test_hazy_dir, test_clear_dir = resolve_pair_dirs(test_dir)
-    print('train_hazy_dir:', train_hazy_dir)
-    print('train_clear_dir:', train_clear_dir)
-    print('test_hazy_dir:', test_hazy_dir)
-    print('test_clear_dir:', test_clear_dir)
-
-    train_set = TrainDataset(train_hazy_dir, train_clear_dir, patch_size=opt.patch_size)
-    test_set = TestDataset(test_hazy_dir, test_clear_dir)
-    train_set = limit_dataset_for_smoke(train_set, opt.max_train_batches, opt.bs)
-    loader_train = create_data_loader(train_set, opt.bs, True, opt.num_workers)
-    loader_test = create_data_loader(test_set, 1, False, opt.test_num_workers)
-
-    net = DEANet(
+def create_deanet_from_options():
+    return DEANet(
         base_dim=32,
         use_lf_prior=opt.use_lf_prior,
         lf_prior_channels=opt.lf_prior_channels,
@@ -935,6 +1039,88 @@ if __name__ == "__main__":
         lf_mbr_channels=opt.lf_mbr_channels,
         lf_mbr_pool_sizes=opt.lf_mbr_pool_sizes
     )
+
+
+def create_brf_model():
+    checkpoint_path = resolve_checkpoint_path(opt.brf_baseline_checkpoint)
+    if checkpoint_path is None and not opt.resume:
+        raise ValueError('--brf_baseline_checkpoint is required when --use_brf_frequency_corrector is set')
+    baseline = DEANet(base_dim=32)
+    if checkpoint_path is not None:
+        checkpoint = load_checkpoint_file(checkpoint_path)
+        baseline.load_state_dict(strip_module_prefix(checkpoint['model']))
+    else:
+        print('No CBRFRC baseline checkpoint provided; expecting resume checkpoint to restore wrapper state.')
+    corrector = BaselineRelativeFrequencyResidualCorrector(
+        hidden_channels=opt.brf_hidden_channels,
+        wavelet_levels=opt.brf_wavelet_levels,
+        gate_init=opt.brf_gate_init,
+        hf_gate_init=opt.brf_hf_gate_init,
+        max_residual=opt.brf_max_residual,
+        max_color_residual=opt.brf_max_color_residual,
+        max_hf_residual=opt.brf_max_hf_residual,
+        hf_scale=opt.brf_hf_scale,
+        use_haze_prior=opt.brf_use_haze_prior,
+        preserve_highfreq=opt.brf_preserve_highfreq,
+        pyramid_type=opt.brf_pyramid_type,
+        lf_pool=opt.brf_lf_pool,
+        mid_pool=opt.brf_mid_pool,
+    )
+    net = DEANetCBRFRC(
+        baseline=baseline,
+        corrector=corrector,
+        freeze_baseline=opt.brf_freeze_baseline,
+        use_baseline_detach=opt.brf_use_baseline_detach,
+    )
+    print(
+        'Using CBRFRC: baseline={} freeze_baseline={} detach={} hidden={} pyramid={} lf_pool={} mid_pool={} gate_init={} hf_gate_init={} max_residual={} max_color={} max_hf={} hf_scale={} haze_prior={} preserve_highfreq={}'.format(
+            checkpoint_path,
+            opt.brf_freeze_baseline,
+            opt.brf_use_baseline_detach,
+            opt.brf_hidden_channels,
+            opt.brf_pyramid_type,
+            opt.brf_lf_pool,
+            opt.brf_mid_pool,
+            opt.brf_gate_init,
+            opt.brf_hf_gate_init,
+            opt.brf_max_residual,
+            opt.brf_max_color_residual,
+            opt.brf_max_hf_residual,
+            opt.brf_hf_scale,
+            opt.brf_use_haze_prior,
+            opt.brf_preserve_highfreq,
+        )
+    )
+    return net
+
+
+if __name__ == "__main__":
+
+    set_seed_torch(666)
+
+    dataset_root = resolve_dataset_root(opt.dataset)
+    train_dir = os.path.join(dataset_root, 'train')
+    test_dir = os.path.join(dataset_root, 'test')
+    print('train_dir:', train_dir)
+    print('test_dir:', test_dir)
+
+    train_hazy_dir, train_clear_dir = resolve_pair_dirs(train_dir)
+    test_hazy_dir, test_clear_dir = resolve_pair_dirs(test_dir)
+    print('train_hazy_dir:', train_hazy_dir)
+    print('train_clear_dir:', train_clear_dir)
+    print('test_hazy_dir:', test_hazy_dir)
+    print('test_clear_dir:', test_clear_dir)
+
+    train_set = TrainDataset(train_hazy_dir, train_clear_dir, patch_size=opt.patch_size)
+    test_set = TestDataset(test_hazy_dir, test_clear_dir)
+    train_set = limit_dataset_for_smoke(train_set, opt.max_train_batches, opt.bs)
+    loader_train = create_data_loader(train_set, opt.bs, True, opt.num_workers)
+    loader_test = create_data_loader(test_set, 1, False, opt.test_num_workers)
+
+    if opt.use_brf_frequency_corrector:
+        net = create_brf_model()
+    else:
+        net = create_deanet_from_options()
     net = net.to(opt.device)
     if opt.use_lf_prior:
         print(

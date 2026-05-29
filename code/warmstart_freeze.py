@@ -91,6 +91,8 @@ class TrainableSchedule:
 def known_tokens():
     return (
         "all",
+        "brfrc",
+        "baseline",
         "lf_prior",
         "bottleneck",
         "fusion",
@@ -121,6 +123,12 @@ def is_trainable_name(name, tokens):
 
 
 def matches_token(name, token):
+    if token == "brfrc":
+        return name.startswith("corrector.")
+    if token == "baseline":
+        return name.startswith("baseline.")
+    if name.startswith("baseline."):
+        name = name[len("baseline."):]
     if token == "lf_prior":
         return name.startswith("lf_prior.")
     if token == "bottleneck":

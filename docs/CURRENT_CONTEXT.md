@@ -177,6 +177,11 @@ route reasoning in the dated analysis docs.
   most-valuable-attempt standard: highest route-decision value per training
   cost, with cheap preflight evidence, an earliest decisive gate, speed metrics,
   and mechanism metrics.
+- New CBRFRC-v1 implementation route is being prepared on branch
+  `codex/haze4k-cbrfrc-v1`; route card:
+  `docs/HAZE4K_CBRFRC_V1_PLAN_20260530.md`. Do not launch the fair 100k scout
+  until static checks, zero-gate identity, bounded-oracle residual headroom,
+  and 1k/2k micro-overfit checks pass.
 
 ## Storage And Server Roles
 
