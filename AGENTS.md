@@ -6,6 +6,11 @@ This repository is a private research fork of DEA-Net.
 - Keep the official training and evaluation entrypoints in `code/`.
 - Avoid rewriting the upstream README unless a change affects onboarding.
 - Do not commit datasets, checkpoints, experiment outputs, or temporary logs.
+- Exception: curated text-only AI project packages under
+  `docs/ai_text_packages/` must be committed and pushed to GitHub when created
+  or updated, so external AI review can use GitHub links. These packages may
+  include copied compact logs/CSV/JSON/MD text, but never images, datasets,
+  checkpoints, arrays, or model weights.
 
 ## Working conventions
 - For continuity across new conversations, read `docs/CURRENT_CONTEXT.md` before changing server, GitHub, dataset, or training workflow assumptions.
@@ -19,6 +24,7 @@ This repository is a private research fork of DEA-Net.
 - Use `apply_patch` for file edits.
 - Keep new docs and scripts ASCII unless there is a strong reason not to.
 - Put generated artifacts under `experiment/`, `trained_models/`, or external storage.
+- Put GitHub-readable AI text package copies under `docs/ai_text_packages/`.
 
 ## Common commands
 From the repository root:

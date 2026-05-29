@@ -183,10 +183,15 @@ route reasoning in the dated analysis docs.
 - Local WSL workspace: `/home/ubuntu/workspace/Dehaze-Net`.
 - Local Windows workspace reference: `D:\Dehaze\Dehaze-Net`.
 - GitHub repo: `https://github.com/onenoober/Dehaze-Net` (private). GitHub
-  should carry code, docs, scripts, compact metrics, and conclusions only.
+  should carry code, docs, scripts, compact metrics, conclusions, and curated
+  text-only AI project packages under `docs/ai_text_packages/`. When a text
+  package is created or updated for AI analysis, commit and push that package
+  to GitHub so future AI reviewers can read it by link.
 - Local WSL is the durable artifact home. Keep datasets, checkpoints, logs,
   plots, previews, and synced evidence under ignored paths such as
-  `dataset/`, `trained_models/`, and `experiment/`.
+  `dataset/`, `trained_models/`, and `experiment/`. The only Git exception is
+  a curated text-only copy under `docs/ai_text_packages/`; do not add raw
+  experiment directories.
 - Cloud servers are temporary compute nodes. Sync compact evidence back to
   local WSL when it affects route decisions, but do not let log sync delay or
   disturb active training. If syncing would contend for bandwidth, I/O, or
@@ -290,7 +295,9 @@ gate policy. Use `docs/WORKFLOW.md` for exact launch/check/stop templates.
   fair candidate evidence.
 - Do not edit source directly on cloud servers for experiment variants. Make
   source changes locally, then commit/push/sync intentionally.
-- Do not add files under `experiment/`, `dataset/`, or `trained_models/` to Git.
+- Do not add files under `experiment/`, `dataset/`, or `trained_models/` to Git,
+  except by copying curated text-only AI package evidence into
+  `docs/ai_text_packages/` and committing that tracked copy.
 
 ## Load-On-Demand Map
 
@@ -305,12 +312,14 @@ Most common next reads:
    links, and recovery notes.
 5. `docs/EXPERIMENT_LOG.md`: chronological run metrics and decisions.
 6. `docs/HAZE4K_RUN_MANIFEST.md`: artifact keep/delete policy and path index.
-7. `docs/DEA_NET_LFCR_HAZE4K_PLAN.md`: thesis route, stage plan, promotion
+7. `docs/ai_text_packages/`: GitHub-readable text-only project packages for
+   external AI review.
+8. `docs/DEA_NET_LFCR_HAZE4K_PLAN.md`: thesis route, stage plan, promotion
    rules, and reporting evidence chain.
-8. `docs/HAZE4K_ROUTE_EVIDENCE_REVIEW_20260528.md`: current route evidence
+9. `docs/HAZE4K_ROUTE_EVIDENCE_REVIEW_20260528.md`: current route evidence
    matrix, oracle headroom, failure modes, Pareto view, and next decision tree.
-9. `docs/HAZE4K_LF_V2_MULTISCALE_BOTTLENECK_REFINER_PLAN_20260528.md`:
+10. `docs/HAZE4K_LF_V2_MULTISCALE_BOTTLENECK_REFINER_PLAN_20260528.md`:
    proposed next cold-start architecture route card and preflight gates.
-10. `docs/HAZE4K_OFFICIAL_WARMSTART_FINETUNE_PLAN_20260528.md`: isolated
+11. `docs/HAZE4K_OFFICIAL_WARMSTART_FINETUNE_PLAN_20260528.md`: isolated
    official-weight warm-start fine-tuning route, conversion script, gates, and
    DEA-Net reproduction pitfalls.

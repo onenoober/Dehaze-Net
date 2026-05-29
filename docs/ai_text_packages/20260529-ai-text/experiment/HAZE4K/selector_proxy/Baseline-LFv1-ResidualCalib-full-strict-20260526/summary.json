@@ -1,0 +1,54 @@
+{
+  "input_csv": "experiment/HAZE4K/three_way_eval/Baseline-LFv1-ResidualCalib-full-20260525/per_image_three_way_metrics.csv",
+  "sample_list": "",
+  "num_images": 1000,
+  "seed": 20260526,
+  "splits": 5,
+  "valid_fraction": 0.3,
+  "min_gain": 0.12,
+  "min_oracle_recovery": 0.2,
+  "min_precision": 0.65,
+  "feature_counts": {
+    "output_proxy": 63,
+    "metadata_proxy": 4,
+    "output_plus_metadata_proxy": 67,
+    "gt_diagnostic_leakage_check": 19
+  },
+  "decision": {
+    "recommendation": "do_not_train_selector_v2_yet",
+    "reason": "Safe proxies did not recover enough oracle headroom. Improve proxy features or add an explicit supervised/distilled selector target before training.",
+    "best_safe_row": {
+      "feature_set": "metadata_proxy",
+      "model_type": "logistic",
+      "name": "ridge_logistic",
+      "splits": 5,
+      "mean_psnr_mean": 32.444059220980236,
+      "mean_psnr_std": 0.1502368508509675,
+      "mean_ssim_mean": 0.9841670096317927,
+      "mean_ssim_std": 0.000567200225842956,
+      "gain_vs_lfv1_psnr_mean": 0.050798380833693826,
+      "gain_vs_lfv1_psnr_std": 0.0315136287912932,
+      "gain_vs_baseline_psnr_mean": 0.26967440812694937,
+      "gain_vs_baseline_psnr_std": 0.05229637795790981,
+      "residual_precision_mean": 0.5240522199434515,
+      "residual_precision_std": 0.02833860581922166,
+      "residual_recall_mean": 0.5372549019607843,
+      "residual_recall_std": 0.13517882113249688,
+      "two_way_accuracy_mean": 0.5186666666666666,
+      "two_way_accuracy_std": 0.034163007934183885,
+      "residual_selection_count_mean": 155.8,
+      "residual_selection_count_std": 33.138497250177174,
+      "lost_lfv1_gain_selected_count_mean": 30.4,
+      "lost_lfv1_gain_selected_count_std": 4.758150901348127,
+      "residual_worst_selected_count_mean": 23.8,
+      "residual_worst_selected_count_std": 6.523802572120037,
+      "oracle_recovery_mean": 0.08764690587665971,
+      "oracle_recovery_std": 0.057744572473433786
+    },
+    "passes": {
+      "gain": false,
+      "oracle_recovery": false,
+      "precision": false
+    }
+  }
+}

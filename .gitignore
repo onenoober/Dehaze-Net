@@ -34,6 +34,11 @@ wandb/
 tensorboard/
 *.log
 
+# Curated GitHub-readable AI text packages are the documented exception to
+# ignored logs/artifacts. They must stay text-only.
+!docs/ai_text_packages/
+!docs/ai_text_packages/**
+
 # Model and dataset storage
 trained_models/*
 !trained_models/README.md

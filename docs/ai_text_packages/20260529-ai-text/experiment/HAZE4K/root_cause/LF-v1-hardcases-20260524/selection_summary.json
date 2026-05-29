@@ -1,0 +1,13 @@
+{
+  "source": "experiment/HAZE4K/per_image_eval/CR-vs-LF-v1-full-20260523/per_image_metrics.csv",
+  "q1_baseline_cutoff": 28.822301329011182,
+  "q3_baseline_cutoff": 35.793551546872266,
+  "group_counts_before_dedupe": {
+    "strong_baseline_hurts": 30,
+    "weak_baseline_helps": 30,
+    "weak_baseline_hurts": 30,
+    "strong_baseline_helps": 30,
+    "neutral": 30
+  },
+  "num_unique_samples": 150
+}

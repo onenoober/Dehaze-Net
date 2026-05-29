@@ -12,8 +12,8 @@ Last reviewed: 2026-05-29
 ## 2026-05-26 WSL Sync Snapshot
 
 Local WSL is the durable experiment artifact home. GitHub should keep only code,
-docs, commands, compact metrics, and conclusions. Cloud servers such as
-`runyun-ts` are temporary compute nodes.
+docs, commands, compact metrics, conclusions, and curated text-only AI project
+packages. Cloud servers such as `runyun-ts` are temporary compute nodes.
 
 The 2026-05-26 small-evidence sync from `runyun-ts` is stored locally under
 ignored path `experiment/sync/runyun-ts-20260526/`:
@@ -29,8 +29,28 @@ ignored path `experiment/sync/runyun-ts-20260526/`:
 - `large-artifacts.txt`: 5017 larger candidates intentionally not synced.
 
 The compact evidence was extracted into local ignored `experiment/HAZE4K/`.
-Do not add these files to Git. Sync selected large artifacts only when
-explicitly requested.
+Do not add raw `experiment/HAZE4K` files to Git. Sync selected large artifacts
+only when explicitly requested.
+
+## GitHub AI Text Package Policy
+
+Curated text-only project packages for AI review are a documented exception to
+the raw-artifact rule. When such a package is created or updated, copy it under
+`docs/ai_text_packages/<date-or-id>/`, commit it, and push it to GitHub. This
+lets future AI reviewers use GitHub links while preserving the raw artifact
+layout under ignored `experiment/`.
+
+Each package must stay text-only. It may include compact `.md`, `.txt`, `.log`,
+`.json`, `.jsonl`, `.csv`, scripts, and source code needed to understand the
+model and evidence chain. It must not include datasets, images, checkpoints,
+model weights, tensor/array dumps, inference image outputs, or large feature
+matrices that are not practical for AI reading.
+
+Current package index:
+
+| Package | Source artifact | Contents | Git policy |
+| --- | --- | --- | --- |
+| `docs/ai_text_packages/20260529-ai-text` | `experiment/dehaze-net-ai-text-pack-20260529-ai-text` | 569 text files, about 25.31 MB uncompressed; code, docs, scripts, compact HAZE4K logs/args/metrics/diagnostics; excludes images, weights, arrays, and large feature CSVs | `COMMIT_AND_PUSH` |
 
 ## Keep Policy
 

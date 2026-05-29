@@ -1,0 +1,584 @@
+{
+  "checkpoint": {
+    "created_at_utc": "2026-05-28T07:29:04.289587+00:00",
+    "official_checkpoint": "/home/ubuntu/workspace/Dehaze-Net/trained_models/HAZE4K/PSNR3426_SSIM9885.pth",
+    "output_checkpoint": "../experiment/HAZE4K/DEA-Net-OfficialWarmStart-LFv1-H4K-local-scout100k-20260528-152808/saved_model/official_warmstart_step0.pk",
+    "model_name": "DEA-Net-OfficialWarmStart-LFv1-H4K-local-scout100k-20260528-152808",
+    "dataset": "HAZE4K",
+    "start_lr": 2e-05,
+    "seed": 0,
+    "used_data_parallel_model_keys": false,
+    "architecture": {
+      "use_lf_prior": true,
+      "lf_prior_gate_init": 0.0,
+      "lf_prior_injection": "pre_mix",
+      "lf_residual_calibration": false,
+      "lf_residual_selector": false,
+      "lf_conditional_mask": false,
+      "lf_haze_aware_mask": false
+    },
+    "transfer_stats": {
+      "exact_loaded_count": 148,
+      "deconv_mapped_count": 48,
+      "zeroed_deconv_side_branch_count": 192,
+      "shape_mismatch_count": 0,
+      "unused_official_count": 0,
+      "target_keys_not_from_official_count": 5
+    },
+    "forward_equivalence_check": {
+      "status": "passed",
+      "max_abs_diff": 0.0,
+      "tolerance": 1e-05,
+      "check_size": 64
+    }
+  },
+  "transfer_stats": {
+    "exact_loaded_keys": [
+      "down1.0.weight",
+      "down1.0.bias",
+      "down2.0.weight",
+      "down2.0.bias",
+      "down3.0.weight",
+      "down3.0.bias",
+      "down_level1_block1.conv2.weight",
+      "down_level1_block1.conv2.bias",
+      "down_level1_block2.conv2.weight",
+      "down_level1_block2.conv2.bias",
+      "down_level1_block3.conv2.weight",
+      "down_level1_block3.conv2.bias",
+      "down_level1_block4.conv2.weight",
+      "down_level1_block4.conv2.bias",
+      "up_level1_block1.conv2.weight",
+      "up_level1_block1.conv2.bias",
+      "up_level1_block2.conv2.weight",
+      "up_level1_block2.conv2.bias",
+      "up_level1_block3.conv2.weight",
+      "up_level1_block3.conv2.bias",
+      "up_level1_block4.conv2.weight",
+      "up_level1_block4.conv2.bias",
+      "fe_level_2.weight",
+      "fe_level_2.bias",
+      "down_level2_block1.conv2.weight",
+      "down_level2_block1.conv2.bias",
+      "down_level2_block2.conv2.weight",
+      "down_level2_block2.conv2.bias",
+      "down_level2_block3.conv2.weight",
+      "down_level2_block3.conv2.bias",
+      "down_level2_block4.conv2.weight",
+      "down_level2_block4.conv2.bias",
+      "up_level2_block1.conv2.weight",
+      "up_level2_block1.conv2.bias",
+      "up_level2_block2.conv2.weight",
+      "up_level2_block2.conv2.bias",
+      "up_level2_block3.conv2.weight",
+      "up_level2_block3.conv2.bias",
+      "up_level2_block4.conv2.weight",
+      "up_level2_block4.conv2.bias",
+      "fe_level_3.weight",
+      "fe_level_3.bias",
+      "level3_block1.conv2.weight",
+      "level3_block1.conv2.bias",
+      "level3_block1.sa.sa.weight",
+      "level3_block1.sa.sa.bias",
+      "level3_block1.ca.ca.0.weight",
+      "level3_block1.ca.ca.0.bias",
+      "level3_block1.ca.ca.2.weight",
+      "level3_block1.ca.ca.2.bias",
+      "level3_block1.pa.pa2.weight",
+      "level3_block1.pa.pa2.bias",
+      "level3_block2.conv2.weight",
+      "level3_block2.conv2.bias",
+      "level3_block2.sa.sa.weight",
+      "level3_block2.sa.sa.bias",
+      "level3_block2.ca.ca.0.weight",
+      "level3_block2.ca.ca.0.bias",
+      "level3_block2.ca.ca.2.weight",
+      "level3_block2.ca.ca.2.bias",
+      "level3_block2.pa.pa2.weight",
+      "level3_block2.pa.pa2.bias",
+      "level3_block3.conv2.weight",
+      "level3_block3.conv2.bias",
+      "level3_block3.sa.sa.weight",
+      "level3_block3.sa.sa.bias",
+      "level3_block3.ca.ca.0.weight",
+      "level3_block3.ca.ca.0.bias",
+      "level3_block3.ca.ca.2.weight",
+      "level3_block3.ca.ca.2.bias",
+      "level3_block3.pa.pa2.weight",
+      "level3_block3.pa.pa2.bias",
+      "level3_block4.conv2.weight",
+      "level3_block4.conv2.bias",
+      "level3_block4.sa.sa.weight",
+      "level3_block4.sa.sa.bias",
+      "level3_block4.ca.ca.0.weight",
+      "level3_block4.ca.ca.0.bias",
+      "level3_block4.ca.ca.2.weight",
+      "level3_block4.ca.ca.2.bias",
+      "level3_block4.pa.pa2.weight",
+      "level3_block4.pa.pa2.bias",
+      "level3_block5.conv2.weight",
+      "level3_block5.conv2.bias",
+      "level3_block5.sa.sa.weight",
+      "level3_block5.sa.sa.bias",
+      "level3_block5.ca.ca.0.weight",
+      "level3_block5.ca.ca.0.bias",
+      "level3_block5.ca.ca.2.weight",
+      "level3_block5.ca.ca.2.bias",
+      "level3_block5.pa.pa2.weight",
+      "level3_block5.pa.pa2.bias",
+      "level3_block6.conv2.weight",
+      "level3_block6.conv2.bias",
+      "level3_block6.sa.sa.weight",
+      "level3_block6.sa.sa.bias",
+      "level3_block6.ca.ca.0.weight",
+      "level3_block6.ca.ca.0.bias",
+      "level3_block6.ca.ca.2.weight",
+      "level3_block6.ca.ca.2.bias",
+      "level3_block6.pa.pa2.weight",
+      "level3_block6.pa.pa2.bias",
+      "level3_block7.conv2.weight",
+      "level3_block7.conv2.bias",
+      "level3_block7.sa.sa.weight",
+      "level3_block7.sa.sa.bias",
+      "level3_block7.ca.ca.0.weight",
+      "level3_block7.ca.ca.0.bias",
+      "level3_block7.ca.ca.2.weight",
+      "level3_block7.ca.ca.2.bias",
+      "level3_block7.pa.pa2.weight",
+      "level3_block7.pa.pa2.bias",
+      "level3_block8.conv2.weight",
+      "level3_block8.conv2.bias",
+      "level3_block8.sa.sa.weight",
+      "level3_block8.sa.sa.bias",
+      "level3_block8.ca.ca.0.weight",
+      "level3_block8.ca.ca.0.bias",
+      "level3_block8.ca.ca.2.weight",
+      "level3_block8.ca.ca.2.bias",
+      "level3_block8.pa.pa2.weight",
+      "level3_block8.pa.pa2.bias",
+      "up1.0.weight",
+      "up1.0.bias",
+      "up2.0.weight",
+      "up2.0.bias",
+      "up3.0.weight",
+      "up3.0.bias",
+      "mix1.sa.sa.weight",
+      "mix1.sa.sa.bias",
+      "mix1.ca.ca.0.weight",
+      "mix1.ca.ca.0.bias",
+      "mix1.ca.ca.2.weight",
+      "mix1.ca.ca.2.bias",
+      "mix1.pa.pa2.weight",
+      "mix1.pa.pa2.bias",
+      "mix1.conv.weight",
+      "mix1.conv.bias",
+      "mix2.sa.sa.weight",
+      "mix2.sa.sa.bias",
+      "mix2.ca.ca.0.weight",
+      "mix2.ca.ca.0.bias",
+      "mix2.ca.ca.2.weight",
+      "mix2.ca.ca.2.bias",
+      "mix2.pa.pa2.weight",
+      "mix2.pa.pa2.bias",
+      "mix2.conv.weight",
+      "mix2.conv.bias"
+    ],
+    "deconv_mapped_keys": [
+      {
+        "official": "down_level1_block1.conv1.weight",
+        "target": "down_level1_block1.conv1.conv1_5.weight"
+      },
+      {
+        "official": "down_level1_block1.conv1.bias",
+        "target": "down_level1_block1.conv1.conv1_5.bias"
+      },
+      {
+        "official": "down_level1_block2.conv1.weight",
+        "target": "down_level1_block2.conv1.conv1_5.weight"
+      },
+      {
+        "official": "down_level1_block2.conv1.bias",
+        "target": "down_level1_block2.conv1.conv1_5.bias"
+      },
+      {
+        "official": "down_level1_block3.conv1.weight",
+        "target": "down_level1_block3.conv1.conv1_5.weight"
+      },
+      {
+        "official": "down_level1_block3.conv1.bias",
+        "target": "down_level1_block3.conv1.conv1_5.bias"
+      },
+      {
+        "official": "down_level1_block4.conv1.weight",
+        "target": "down_level1_block4.conv1.conv1_5.weight"
+      },
+      {
+        "official": "down_level1_block4.conv1.bias",
+        "target": "down_level1_block4.conv1.conv1_5.bias"
+      },
+      {
+        "official": "up_level1_block1.conv1.weight",
+        "target": "up_level1_block1.conv1.conv1_5.weight"
+      },
+      {
+        "official": "up_level1_block1.conv1.bias",
+        "target": "up_level1_block1.conv1.conv1_5.bias"
+      },
+      {
+        "official": "up_level1_block2.conv1.weight",
+        "target": "up_level1_block2.conv1.conv1_5.weight"
+      },
+      {
+        "official": "up_level1_block2.conv1.bias",
+        "target": "up_level1_block2.conv1.conv1_5.bias"
+      },
+      {
+        "official": "up_level1_block3.conv1.weight",
+        "target": "up_level1_block3.conv1.conv1_5.weight"
+      },
+      {
+        "official": "up_level1_block3.conv1.bias",
+        "target": "up_level1_block3.conv1.conv1_5.bias"
+      },
+      {
+        "official": "up_level1_block4.conv1.weight",
+        "target": "up_level1_block4.conv1.conv1_5.weight"
+      },
+      {
+        "official": "up_level1_block4.conv1.bias",
+        "target": "up_level1_block4.conv1.conv1_5.bias"
+      },
+      {
+        "official": "down_level2_block1.conv1.weight",
+        "target": "down_level2_block1.conv1.conv1_5.weight"
+      },
+      {
+        "official": "down_level2_block1.conv1.bias",
+        "target": "down_level2_block1.conv1.conv1_5.bias"
+      },
+      {
+        "official": "down_level2_block2.conv1.weight",
+        "target": "down_level2_block2.conv1.conv1_5.weight"
+      },
+      {
+        "official": "down_level2_block2.conv1.bias",
+        "target": "down_level2_block2.conv1.conv1_5.bias"
+      },
+      {
+        "official": "down_level2_block3.conv1.weight",
+        "target": "down_level2_block3.conv1.conv1_5.weight"
+      },
+      {
+        "official": "down_level2_block3.conv1.bias",
+        "target": "down_level2_block3.conv1.conv1_5.bias"
+      },
+      {
+        "official": "down_level2_block4.conv1.weight",
+        "target": "down_level2_block4.conv1.conv1_5.weight"
+      },
+      {
+        "official": "down_level2_block4.conv1.bias",
+        "target": "down_level2_block4.conv1.conv1_5.bias"
+      },
+      {
+        "official": "up_level2_block1.conv1.weight",
+        "target": "up_level2_block1.conv1.conv1_5.weight"
+      },
+      {
+        "official": "up_level2_block1.conv1.bias",
+        "target": "up_level2_block1.conv1.conv1_5.bias"
+      },
+      {
+        "official": "up_level2_block2.conv1.weight",
+        "target": "up_level2_block2.conv1.conv1_5.weight"
+      },
+      {
+        "official": "up_level2_block2.conv1.bias",
+        "target": "up_level2_block2.conv1.conv1_5.bias"
+      },
+      {
+        "official": "up_level2_block3.conv1.weight",
+        "target": "up_level2_block3.conv1.conv1_5.weight"
+      },
+      {
+        "official": "up_level2_block3.conv1.bias",
+        "target": "up_level2_block3.conv1.conv1_5.bias"
+      },
+      {
+        "official": "up_level2_block4.conv1.weight",
+        "target": "up_level2_block4.conv1.conv1_5.weight"
+      },
+      {
+        "official": "up_level2_block4.conv1.bias",
+        "target": "up_level2_block4.conv1.conv1_5.bias"
+      },
+      {
+        "official": "level3_block1.conv1.weight",
+        "target": "level3_block1.conv1.conv1_5.weight"
+      },
+      {
+        "official": "level3_block1.conv1.bias",
+        "target": "level3_block1.conv1.conv1_5.bias"
+      },
+      {
+        "official": "level3_block2.conv1.weight",
+        "target": "level3_block2.conv1.conv1_5.weight"
+      },
+      {
+        "official": "level3_block2.conv1.bias",
+        "target": "level3_block2.conv1.conv1_5.bias"
+      },
+      {
+        "official": "level3_block3.conv1.weight",
+        "target": "level3_block3.conv1.conv1_5.weight"
+      },
+      {
+        "official": "level3_block3.conv1.bias",
+        "target": "level3_block3.conv1.conv1_5.bias"
+      },
+      {
+        "official": "level3_block4.conv1.weight",
+        "target": "level3_block4.conv1.conv1_5.weight"
+      },
+      {
+        "official": "level3_block4.conv1.bias",
+        "target": "level3_block4.conv1.conv1_5.bias"
+      },
+      {
+        "official": "level3_block5.conv1.weight",
+        "target": "level3_block5.conv1.conv1_5.weight"
+      },
+      {
+        "official": "level3_block5.conv1.bias",
+        "target": "level3_block5.conv1.conv1_5.bias"
+      },
+      {
+        "official": "level3_block6.conv1.weight",
+        "target": "level3_block6.conv1.conv1_5.weight"
+      },
+      {
+        "official": "level3_block6.conv1.bias",
+        "target": "level3_block6.conv1.conv1_5.bias"
+      },
+      {
+        "official": "level3_block7.conv1.weight",
+        "target": "level3_block7.conv1.conv1_5.weight"
+      },
+      {
+        "official": "level3_block7.conv1.bias",
+        "target": "level3_block7.conv1.conv1_5.bias"
+      },
+      {
+        "official": "level3_block8.conv1.weight",
+        "target": "level3_block8.conv1.conv1_5.weight"
+      },
+      {
+        "official": "level3_block8.conv1.bias",
+        "target": "level3_block8.conv1.conv1_5.bias"
+      }
+    ],
+    "zeroed_deconv_side_branch_keys": [
+      "down_level1_block1.conv1.conv1_1.conv.weight",
+      "down_level1_block1.conv1.conv1_1.conv.bias",
+      "down_level1_block1.conv1.conv1_2.conv.weight",
+      "down_level1_block1.conv1.conv1_2.conv.bias",
+      "down_level1_block1.conv1.conv1_3.conv.weight",
+      "down_level1_block1.conv1.conv1_3.conv.bias",
+      "down_level1_block1.conv1.conv1_4.conv.weight",
+      "down_level1_block1.conv1.conv1_4.conv.bias",
+      "down_level1_block2.conv1.conv1_1.conv.weight",
+      "down_level1_block2.conv1.conv1_1.conv.bias",
+      "down_level1_block2.conv1.conv1_2.conv.weight",
+      "down_level1_block2.conv1.conv1_2.conv.bias",
+      "down_level1_block2.conv1.conv1_3.conv.weight",
+      "down_level1_block2.conv1.conv1_3.conv.bias",
+      "down_level1_block2.conv1.conv1_4.conv.weight",
+      "down_level1_block2.conv1.conv1_4.conv.bias",
+      "down_level1_block3.conv1.conv1_1.conv.weight",
+      "down_level1_block3.conv1.conv1_1.conv.bias",
+      "down_level1_block3.conv1.conv1_2.conv.weight",
+      "down_level1_block3.conv1.conv1_2.conv.bias",
+      "down_level1_block3.conv1.conv1_3.conv.weight",
+      "down_level1_block3.conv1.conv1_3.conv.bias",
+      "down_level1_block3.conv1.conv1_4.conv.weight",
+      "down_level1_block3.conv1.conv1_4.conv.bias",
+      "down_level1_block4.conv1.conv1_1.conv.weight",
+      "down_level1_block4.conv1.conv1_1.conv.bias",
+      "down_level1_block4.conv1.conv1_2.conv.weight",
+      "down_level1_block4.conv1.conv1_2.conv.bias",
+      "down_level1_block4.conv1.conv1_3.conv.weight",
+      "down_level1_block4.conv1.conv1_3.conv.bias",
+      "down_level1_block4.conv1.conv1_4.conv.weight",
+      "down_level1_block4.conv1.conv1_4.conv.bias",
+      "up_level1_block1.conv1.conv1_1.conv.weight",
+      "up_level1_block1.conv1.conv1_1.conv.bias",
+      "up_level1_block1.conv1.conv1_2.conv.weight",
+      "up_level1_block1.conv1.conv1_2.conv.bias",
+      "up_level1_block1.conv1.conv1_3.conv.weight",
+      "up_level1_block1.conv1.conv1_3.conv.bias",
+      "up_level1_block1.conv1.conv1_4.conv.weight",
+      "up_level1_block1.conv1.conv1_4.conv.bias",
+      "up_level1_block2.conv1.conv1_1.conv.weight",
+      "up_level1_block2.conv1.conv1_1.conv.bias",
+      "up_level1_block2.conv1.conv1_2.conv.weight",
+      "up_level1_block2.conv1.conv1_2.conv.bias",
+      "up_level1_block2.conv1.conv1_3.conv.weight",
+      "up_level1_block2.conv1.conv1_3.conv.bias",
+      "up_level1_block2.conv1.conv1_4.conv.weight",
+      "up_level1_block2.conv1.conv1_4.conv.bias",
+      "up_level1_block3.conv1.conv1_1.conv.weight",
+      "up_level1_block3.conv1.conv1_1.conv.bias",
+      "up_level1_block3.conv1.conv1_2.conv.weight",
+      "up_level1_block3.conv1.conv1_2.conv.bias",
+      "up_level1_block3.conv1.conv1_3.conv.weight",
+      "up_level1_block3.conv1.conv1_3.conv.bias",
+      "up_level1_block3.conv1.conv1_4.conv.weight",
+      "up_level1_block3.conv1.conv1_4.conv.bias",
+      "up_level1_block4.conv1.conv1_1.conv.weight",
+      "up_level1_block4.conv1.conv1_1.conv.bias",
+      "up_level1_block4.conv1.conv1_2.conv.weight",
+      "up_level1_block4.conv1.conv1_2.conv.bias",
+      "up_level1_block4.conv1.conv1_3.conv.weight",
+      "up_level1_block4.conv1.conv1_3.conv.bias",
+      "up_level1_block4.conv1.conv1_4.conv.weight",
+      "up_level1_block4.conv1.conv1_4.conv.bias",
+      "down_level2_block1.conv1.conv1_1.conv.weight",
+      "down_level2_block1.conv1.conv1_1.conv.bias",
+      "down_level2_block1.conv1.conv1_2.conv.weight",
+      "down_level2_block1.conv1.conv1_2.conv.bias",
+      "down_level2_block1.conv1.conv1_3.conv.weight",
+      "down_level2_block1.conv1.conv1_3.conv.bias",
+      "down_level2_block1.conv1.conv1_4.conv.weight",
+      "down_level2_block1.conv1.conv1_4.conv.bias",
+      "down_level2_block2.conv1.conv1_1.conv.weight",
+      "down_level2_block2.conv1.conv1_1.conv.bias",
+      "down_level2_block2.conv1.conv1_2.conv.weight",
+      "down_level2_block2.conv1.conv1_2.conv.bias",
+      "down_level2_block2.conv1.conv1_3.conv.weight",
+      "down_level2_block2.conv1.conv1_3.conv.bias",
+      "down_level2_block2.conv1.conv1_4.conv.weight",
+      "down_level2_block2.conv1.conv1_4.conv.bias",
+      "down_level2_block3.conv1.conv1_1.conv.weight",
+      "down_level2_block3.conv1.conv1_1.conv.bias",
+      "down_level2_block3.conv1.conv1_2.conv.weight",
+      "down_level2_block3.conv1.conv1_2.conv.bias",
+      "down_level2_block3.conv1.conv1_3.conv.weight",
+      "down_level2_block3.conv1.conv1_3.conv.bias",
+      "down_level2_block3.conv1.conv1_4.conv.weight",
+      "down_level2_block3.conv1.conv1_4.conv.bias",
+      "down_level2_block4.conv1.conv1_1.conv.weight",
+      "down_level2_block4.conv1.conv1_1.conv.bias",
+      "down_level2_block4.conv1.conv1_2.conv.weight",
+      "down_level2_block4.conv1.conv1_2.conv.bias",
+      "down_level2_block4.conv1.conv1_3.conv.weight",
+      "down_level2_block4.conv1.conv1_3.conv.bias",
+      "down_level2_block4.conv1.conv1_4.conv.weight",
+      "down_level2_block4.conv1.conv1_4.conv.bias",
+      "up_level2_block1.conv1.conv1_1.conv.weight",
+      "up_level2_block1.conv1.conv1_1.conv.bias",
+      "up_level2_block1.conv1.conv1_2.conv.weight",
+      "up_level2_block1.conv1.conv1_2.conv.bias",
+      "up_level2_block1.conv1.conv1_3.conv.weight",
+      "up_level2_block1.conv1.conv1_3.conv.bias",
+      "up_level2_block1.conv1.conv1_4.conv.weight",
+      "up_level2_block1.conv1.conv1_4.conv.bias",
+      "up_level2_block2.conv1.conv1_1.conv.weight",
+      "up_level2_block2.conv1.conv1_1.conv.bias",
+      "up_level2_block2.conv1.conv1_2.conv.weight",
+      "up_level2_block2.conv1.conv1_2.conv.bias",
+      "up_level2_block2.conv1.conv1_3.conv.weight",
+      "up_level2_block2.conv1.conv1_3.conv.bias",
+      "up_level2_block2.conv1.conv1_4.conv.weight",
+      "up_level2_block2.conv1.conv1_4.conv.bias",
+      "up_level2_block3.conv1.conv1_1.conv.weight",
+      "up_level2_block3.conv1.conv1_1.conv.bias",
+      "up_level2_block3.conv1.conv1_2.conv.weight",
+      "up_level2_block3.conv1.conv1_2.conv.bias",
+      "up_level2_block3.conv1.conv1_3.conv.weight",
+      "up_level2_block3.conv1.conv1_3.conv.bias",
+      "up_level2_block3.conv1.conv1_4.conv.weight",
+      "up_level2_block3.conv1.conv1_4.conv.bias",
+      "up_level2_block4.conv1.conv1_1.conv.weight",
+      "up_level2_block4.conv1.conv1_1.conv.bias",
+      "up_level2_block4.conv1.conv1_2.conv.weight",
+      "up_level2_block4.conv1.conv1_2.conv.bias",
+      "up_level2_block4.conv1.conv1_3.conv.weight",
+      "up_level2_block4.conv1.conv1_3.conv.bias",
+      "up_level2_block4.conv1.conv1_4.conv.weight",
+      "up_level2_block4.conv1.conv1_4.conv.bias",
+      "level3_block1.conv1.conv1_1.conv.weight",
+      "level3_block1.conv1.conv1_1.conv.bias",
+      "level3_block1.conv1.conv1_2.conv.weight",
+      "level3_block1.conv1.conv1_2.conv.bias",
+      "level3_block1.conv1.conv1_3.conv.weight",
+      "level3_block1.conv1.conv1_3.conv.bias",
+      "level3_block1.conv1.conv1_4.conv.weight",
+      "level3_block1.conv1.conv1_4.conv.bias",
+      "level3_block2.conv1.conv1_1.conv.weight",
+      "level3_block2.conv1.conv1_1.conv.bias",
+      "level3_block2.conv1.conv1_2.conv.weight",
+      "level3_block2.conv1.conv1_2.conv.bias",
+      "level3_block2.conv1.conv1_3.conv.weight",
+      "level3_block2.conv1.conv1_3.conv.bias",
+      "level3_block2.conv1.conv1_4.conv.weight",
+      "level3_block2.conv1.conv1_4.conv.bias",
+      "level3_block3.conv1.conv1_1.conv.weight",
+      "level3_block3.conv1.conv1_1.conv.bias",
+      "level3_block3.conv1.conv1_2.conv.weight",
+      "level3_block3.conv1.conv1_2.conv.bias",
+      "level3_block3.conv1.conv1_3.conv.weight",
+      "level3_block3.conv1.conv1_3.conv.bias",
+      "level3_block3.conv1.conv1_4.conv.weight",
+      "level3_block3.conv1.conv1_4.conv.bias",
+      "level3_block4.conv1.conv1_1.conv.weight",
+      "level3_block4.conv1.conv1_1.conv.bias",
+      "level3_block4.conv1.conv1_2.conv.weight",
+      "level3_block4.conv1.conv1_2.conv.bias",
+      "level3_block4.conv1.conv1_3.conv.weight",
+      "level3_block4.conv1.conv1_3.conv.bias",
+      "level3_block4.conv1.conv1_4.conv.weight",
+      "level3_block4.conv1.conv1_4.conv.bias",
+      "level3_block5.conv1.conv1_1.conv.weight",
+      "level3_block5.conv1.conv1_1.conv.bias",
+      "level3_block5.conv1.conv1_2.conv.weight",
+      "level3_block5.conv1.conv1_2.conv.bias",
+      "level3_block5.conv1.conv1_3.conv.weight",
+      "level3_block5.conv1.conv1_3.conv.bias",
+      "level3_block5.conv1.conv1_4.conv.weight",
+      "level3_block5.conv1.conv1_4.conv.bias",
+      "level3_block6.conv1.conv1_1.conv.weight",
+      "level3_block6.conv1.conv1_1.conv.bias",
+      "level3_block6.conv1.conv1_2.conv.weight",
+      "level3_block6.conv1.conv1_2.conv.bias",
+      "level3_block6.conv1.conv1_3.conv.weight",
+      "level3_block6.conv1.conv1_3.conv.bias",
+      "level3_block6.conv1.conv1_4.conv.weight",
+      "level3_block6.conv1.conv1_4.conv.bias",
+      "level3_block7.conv1.conv1_1.conv.weight",
+      "level3_block7.conv1.conv1_1.conv.bias",
+      "level3_block7.conv1.conv1_2.conv.weight",
+      "level3_block7.conv1.conv1_2.conv.bias",
+      "level3_block7.conv1.conv1_3.conv.weight",
+      "level3_block7.conv1.conv1_3.conv.bias",
+      "level3_block7.conv1.conv1_4.conv.weight",
+      "level3_block7.conv1.conv1_4.conv.bias",
+      "level3_block8.conv1.conv1_1.conv.weight",
+      "level3_block8.conv1.conv1_1.conv.bias",
+      "level3_block8.conv1.conv1_2.conv.weight",
+      "level3_block8.conv1.conv1_2.conv.bias",
+      "level3_block8.conv1.conv1_3.conv.weight",
+      "level3_block8.conv1.conv1_3.conv.bias",
+      "level3_block8.conv1.conv1_4.conv.weight",
+      "level3_block8.conv1.conv1_4.conv.bias"
+    ],
+    "shape_mismatch_keys": [],
+    "unused_official_keys": [],
+    "target_keys_not_from_official": [
+      "lf_prior.gate",
+      "lf_prior.adapter.0.weight",
+      "lf_prior.adapter.0.bias",
+      "lf_prior.adapter.2.weight",
+      "lf_prior.adapter.2.bias"
+    ]
+  }
+}

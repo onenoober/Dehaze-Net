@@ -1,0 +1,20 @@
+
+step :10000 | epoch: 2 | ssim:0.9885| psnr:34.2581
+
+step :20000 | epoch: 4 | ssim:0.9885| psnr:34.1902
+
+step :30000 | epoch: 6 | ssim:0.9885| psnr:34.2315
+
+step :40000 | epoch: 8 | ssim:0.9886| psnr:34.2207
+
+step :50000 | epoch: 10 | ssim:0.9885| psnr:34.2291
+
+step :60000 | epoch: 12 | ssim:0.9886| psnr:34.2578
+
+step :70000 | epoch: 14 | ssim:0.9886| psnr:34.1918
+
+step :80000 | epoch: 16 | ssim:0.9885| psnr:34.2416
+
+step :90000 | epoch: 18 | ssim:0.9886| psnr:34.2662
+
+step :100000 | epoch: 20 | ssim:0.9886| psnr:34.2631

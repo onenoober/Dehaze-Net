@@ -1,0 +1,40 @@
+/home/ubuntu/workspace/Dehaze-Net/code/model/modules/deconv.py:19: UserWarning: The torch.cuda.*DtypeTensor constructors are no longer recommended. It's best to use methods such as torch.tensor(data, dtype=*, device='cuda') to create tensors. (Triggered internally at /pytorch/torch/csrc/tensor/python_tensor.cpp:78.)
+  conv_weight_cd = torch.cuda.FloatTensor(conv_shape[0], conv_shape[1], 3 * 3).fill_(0)
+Official checkpoint: /home/ubuntu/workspace/Dehaze-Net/trained_models/HAZE4K/PSNR3426_SSIM9885.pth
+Warm-start checkpoint: ../experiment/HAZE4K/smoke-local-OfficialWarmStart-staged-train-20260528/saved_model/official_warmstart_step0.pk
+Report: ../experiment/HAZE4K/smoke-local-OfficialWarmStart-staged-train-20260528/saved_data/official_warmstart_report.json
+Exact keys loaded: 148
+DEConv keys mapped: 48
+DEConv side-branch keys zeroed: 192
+Shape mismatches: 0
+Target keys not from official: 5
+Forward equivalence: {'status': 'passed', 'max_abs_diff': 0.0, 'tolerance': 1e-05, 'check_size': 64}
+/home/ubuntu/miniconda3/envs/py310/lib/python3.10/site-packages/torchvision/models/_utils.py:208: UserWarning: The parameter 'pretrained' is deprecated since 0.13 and may be removed in the future, please use 'weights' instead.
+  warnings.warn(
+/home/ubuntu/miniconda3/envs/py310/lib/python3.10/site-packages/torchvision/models/_utils.py:223: UserWarning: Arguments other than a weight enum or `None` for 'weights' are deprecated since 0.13 and may be removed in the future. The current behavior is equivalent to passing `weights=VGG19_Weights.IMAGENET1K_V1`. You can also use `weights=VGG19_Weights.DEFAULT` to get the most up-to-date weights.
+  warnings.warn(msg)
+/home/ubuntu/workspace/Dehaze-Net/code/model/modules/deconv.py:19: UserWarning: The torch.cuda.*DtypeTensor constructors are no longer recommended. It's best to use methods such as torch.tensor(data, dtype=*, device='cuda') to create tensors. (Triggered internally at /pytorch/torch/csrc/tensor/python_tensor.cpp:78.)
+  conv_weight_cd = torch.cuda.FloatTensor(conv_shape[0], conv_shape[1], 3 * 3).fill_(0)
+Namespace(device='cuda', epochs=1, iters_per_epoch=2, finer_eval_step=400000, bs=2, patch_size=64, num_workers=0, test_num_workers=0, pin_memory=True, persistent_workers=True, prefetch_factor=2, max_train_batches=1, max_test_batches=1, start_lr=2e-05, end_lr=1e-06, no_lr_sche=False, use_warm_up=False, w_loss_L1=1.0, w_loss_CR=0.1, cr_negative_mode='hazy', cr_lowpass_pool=8, cr_lowpass_weight=1.0, w_loss_crplus_v2=0.0, crplus_v2_weight_schedule='constant', crplus_v2_weight_decay_start_step=0, crplus_v2_weight_decay_end_step=0, crplus_v2_min_weight=0.0, crplus_v2_negative_modes='hazy,output_lowpass,under_dehazed_mix', crplus_v2_start_negative_modes='hazy,under_dehazed_mix', crplus_v2_curriculum_steps=20000, crplus_v2_lowpass_pool=8, crplus_v2_frequency_weight=0.1, crplus_v2_lowfreq_weight=0.1, crplus_v2_under_dehazed_mix=0.5, crplus_v2_ratio_cap=2.0, w_loss_lowfreq=0.0, lowfreq_pool=8, w_loss_residual_dir=0.0, residual_dir_pool=8, residual_dir_warmup_steps=0, residual_dir_target_norm_floor=0.0, use_lf_prior=True, lf_prior_channels=8, lf_prior_pool=8, lf_prior_gate_init=0.0, lf_prior_residual_center=False, lf_prior_train_dropout=0.0, lf_prior_gate_max=0.0, lf_prior_injection='pre_mix', lf_conditional_mask=False, lf_mask_hidden_channels=8, lf_mask_init_bias=2.0, lf_haze_aware_mask=False, lf_haze_mask_strength=1.0, lf_residual_calibration=False, lf_calib_hidden_channels=8, lf_calib_alpha_max=1.0, lf_residual_selector=False, lf_selector_hidden_channels=8, lf_selector_init_bias=2.0, w_loss_lf_gate=0.0, w_loss_teacher_guard=0.0, teacher_checkpoint='null', teacher_use_lf_prior=False, teacher_guard_margin=0.0, teacher_guard_warmup_steps=0, teacher_guard_max_weight=1.0, teacher_guard_patch_pool=0, exp_dir='../experiment/', model_name='smoke-local-OfficialWarmStart-staged-train-20260528', saved_model_dir='../experiment/HAZE4K/smoke-local-OfficialWarmStart-staged-train-20260528/saved_model', saved_data_dir='../experiment/HAZE4K/smoke-local-OfficialWarmStart-staged-train-20260528/saved_data', saved_plot_dir='../experiment/HAZE4K/smoke-local-OfficialWarmStart-staged-train-20260528/saved_plot', saved_infer_dir='../experiment/HAZE4K/smoke-local-OfficialWarmStart-staged-train-20260528/saved_infer', dataset='HAZE4K', no_tqdm=True, no_tensorboard=True, tensorboard_log_dir='../experiment/HAZE4K/smoke-local-OfficialWarmStart-staged-train-20260528/tensorboard', tb_log_interval=20, dry_run=False, no_pdf_plots=True, eval_interval_steps=10000, checkpoint_interval_steps=10000, save_epoch_checkpoints=False, early_stop_patience_evals=0, early_stop_min_delta=0.0, early_stop_after_step=0, early_stop_metric='psnr', trainable_schedule='0:lf_prior;10001:lf_prior,bottleneck,fusion;30001:all', resume=True, pre_trained_model='official_warmstart_step0.pk', model_dir='../experiment/HAZE4K/smoke-local-OfficialWarmStart-staged-train-20260528')
+model_dir: ../experiment/HAZE4K/smoke-local-OfficialWarmStart-staged-train-20260528
+tensorboard_log_dir: ../experiment/HAZE4K/smoke-local-OfficialWarmStart-staged-train-20260528/tensorboard
+train_dir: ../dataset/HAZE4K/train
+test_dir: ../dataset/HAZE4K/test
+train_hazy_dir: ../dataset/HAZE4K/train/hazy
+train_clear_dir: ../dataset/HAZE4K/train/clear
+test_hazy_dir: ../dataset/HAZE4K/test/hazy
+test_clear_dir: ../dataset/HAZE4K/test/clear
+Limiting dataset to 2 samples for smoke test.
+Using LF prior: channels=8 pool=8 gate_init=0.0 residual_center=False train_dropout=0.0 gate_max=0.0 injection=pre_mix conditional_mask=False mask_hidden=8 mask_init_bias=2.0 haze_aware_mask=False haze_mask_strength=1.0 residual_calibration=False calib_hidden=8 calib_alpha_max=1.0 residual_selector=False selector_hidden=8 selector_init_bias=2.0 gate_l2=0.0
+epoch_size:  1
+Using single CUDA device: NVIDIA GeForce RTX 4080 SUPER
+Using trainable schedule: 0:lf_prior;10001:lf_prior,bottleneck,fusion;30001:all
+Resuming training from: ../experiment/HAZE4K/smoke-local-OfficialWarmStart-staged-train-20260528/saved_model/official_warmstart_step0.pk
+Resume step: 0 / 2
+Trainable stage at step 0: 0:lf_prior | params 1377/7790690 | tensors 5/393
+Total_params: ==> 7790690
+Trainable_params: ==> 1377
+loss:0.10538 | L1:0.05296 | CR:0.05242 | step :1/2 | lr :0.0000105 | time_used :0.3loss:0.11628 | L1:0.08100 | CR:0.03528 | step :2/2 | lr :0.0000010 | time_used :0.3
+step :2 | epoch: 1 | ssim:0.9922| psnr:30.1831
+
+ model saved at step :2| epoch: 1 | max_psnr:30.1831| max_ssim:0.9922

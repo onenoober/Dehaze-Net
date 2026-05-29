@@ -1,0 +1,4 @@
+
+step :1 | epoch: 1 | ssim:0.0682| psnr:6.8919
+
+step :2 | epoch: 1 | ssim:0.0682| psnr:6.9031

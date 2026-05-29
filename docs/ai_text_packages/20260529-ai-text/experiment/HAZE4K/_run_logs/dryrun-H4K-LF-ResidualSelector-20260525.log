@@ -1,0 +1,21 @@
+/opt/anaconda/envs/py310/lib/python3.10/site-packages/torchvision/models/_utils.py:208: UserWarning: The parameter 'pretrained' is deprecated since 0.13 and may be removed in the future, please use 'weights' instead.
+  warnings.warn(
+/opt/anaconda/envs/py310/lib/python3.10/site-packages/torchvision/models/_utils.py:223: UserWarning: Arguments other than a weight enum or `None` for 'weights' are deprecated since 0.13 and may be removed in the future. The current behavior is equivalent to passing `weights=VGG19_Weights.IMAGENET1K_V1`. You can also use `weights=VGG19_Weights.DEFAULT` to get the most up-to-date weights.
+  warnings.warn(msg)
+Namespace(device='cuda', epochs=20, iters_per_epoch=5000, finer_eval_step=400000, bs=16, patch_size=256, num_workers=12, test_num_workers=4, pin_memory=True, persistent_workers=True, prefetch_factor=2, max_train_batches=1, max_test_batches=2, start_lr=0.0001, end_lr=1e-06, no_lr_sche=False, use_warm_up=False, w_loss_L1=1.0, w_loss_CR=0.1, cr_negative_mode='hazy', cr_lowpass_pool=8, cr_lowpass_weight=1.0, w_loss_lowfreq=0.0, lowfreq_pool=8, use_lf_prior=True, lf_prior_channels=8, lf_prior_pool=8, lf_prior_gate_init=0.0, lf_prior_residual_center=False, lf_prior_train_dropout=0.0, lf_prior_gate_max=0.0, lf_prior_injection='pre_mix', lf_conditional_mask=False, lf_mask_hidden_channels=8, lf_mask_init_bias=2.0, lf_haze_aware_mask=False, lf_haze_mask_strength=1.0, lf_residual_calibration=True, lf_calib_hidden_channels=8, lf_calib_alpha_max=1.0, lf_residual_selector=True, lf_selector_hidden_channels=8, lf_selector_init_bias=2.0, w_loss_lf_gate=0.0, w_loss_teacher_guard=0.0, teacher_checkpoint='null', teacher_use_lf_prior=False, teacher_guard_margin=0.0, teacher_guard_warmup_steps=0, teacher_guard_max_weight=1.0, teacher_guard_patch_pool=0, exp_dir='../experiment/', model_name='dryrun-H4K-LF-ResidualSelector-20260525', saved_model_dir='../experiment/HAZE4K/dryrun-H4K-LF-ResidualSelector-20260525/saved_model', saved_data_dir='../experiment/HAZE4K/dryrun-H4K-LF-ResidualSelector-20260525/saved_data', saved_plot_dir='../experiment/HAZE4K/dryrun-H4K-LF-ResidualSelector-20260525/saved_plot', saved_infer_dir='../experiment/HAZE4K/dryrun-H4K-LF-ResidualSelector-20260525/saved_infer', dataset='HAZE4K', no_tqdm=True, no_tensorboard=True, tensorboard_log_dir='../experiment/HAZE4K/dryrun-H4K-LF-ResidualSelector-20260525/tensorboard', tb_log_interval=20, dry_run=True, no_pdf_plots=True, eval_interval_steps=10000, checkpoint_interval_steps=10000, save_epoch_checkpoints=False, early_stop_patience_evals=0, early_stop_min_delta=0.0, early_stop_after_step=0, early_stop_metric='psnr', resume=False, pre_trained_model='null', model_dir='../experiment/HAZE4K/dryrun-H4K-LF-ResidualSelector-20260525')
+model_dir: ../experiment/HAZE4K/dryrun-H4K-LF-ResidualSelector-20260525
+tensorboard_log_dir: ../experiment/HAZE4K/dryrun-H4K-LF-ResidualSelector-20260525/tensorboard
+train_dir: ../dataset/HAZE4K/train
+test_dir: ../dataset/HAZE4K/test
+train_hazy_dir: ../dataset/HAZE4K/train/hazy
+train_clear_dir: ../dataset/HAZE4K/train/clear
+test_hazy_dir: ../dataset/HAZE4K/test/hazy
+test_clear_dir: ../dataset/HAZE4K/test/clear
+Limiting dataset to 16 samples for smoke test.
+Using LF prior: channels=8 pool=8 gate_init=0.0 residual_center=False train_dropout=0.0 gate_max=0.0 injection=pre_mix conditional_mask=False mask_hidden=8 mask_init_bias=2.0 haze_aware_mask=False haze_mask_strength=1.0 residual_calibration=True calib_hidden=8 calib_alpha_max=1.0 residual_selector=True selector_hidden=8 selector_init_bias=2.0 gate_l2=0.0
+epoch_size:  1
+Using single CUDA device: NVIDIA GeForce RTX 5090
+Total_params: ==> 7796692
+Dry run complete.
+Training target steps: 100000
+Training will start from step: 1

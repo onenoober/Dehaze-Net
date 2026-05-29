@@ -1,0 +1,22 @@
+{
+  "num_samples": 20,
+  "mean_input_psnr": 16.95781856813549,
+  "mean_baseline_psnr": 31.520395574693413,
+  "mean_current_psnr": 31.25193298553254,
+  "mean_delta_psnr": -0.2684625891608768,
+  "mean_input_ssim": 0.8486668020486832,
+  "mean_baseline_ssim": 0.9826698929071427,
+  "mean_current_ssim": 0.9820605099201203,
+  "mean_delta_ssim": -0.0006093829870223721,
+  "mean_delta_mae_improvement": -0.00021716216579079629,
+  "mean_delta_e_improvement": -0.04055922627449036,
+  "mean_luma_abs_bias_improvement": -8.604452013969422e-05,
+  "mean_saturation_abs_bias_improvement": -0.0009829228743910789,
+  "mean_dark_channel_abs_bias_improvement": -0.0012434020638465882,
+  "mean_edge_error_improvement": 0.0001661593094468117,
+  "tag_counts": {
+    "current_better_objective": 6,
+    "current_worse_objective": 9,
+    "mixed_or_neutral": 5
+  }
+}

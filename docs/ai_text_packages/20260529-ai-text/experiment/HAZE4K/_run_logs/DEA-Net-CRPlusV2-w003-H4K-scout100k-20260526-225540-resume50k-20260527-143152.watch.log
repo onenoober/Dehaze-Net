@@ -1,0 +1,5 @@
+watch_start=2026-05-27 14:31:52 CST
+found_50k_log=2026-05-27 15:26:24 CST
+checkpoint_step=50000 time=2026-05-27 15:26:26 CST
+terminating_pgid=6556
+terminating_pgid=6563

@@ -24,6 +24,7 @@ artifact 和方法分析混在一起。
 | 服务器硬件、Python 环境、数据集 symlink、恢复说明 | `docs/CORE_SERVER_RUNBOOK.md` | 方法结论、论文路线判断、单次 run 流水账 |
 | 训练结果、checkpoint、停止原因、时间线 | `docs/EXPERIMENT_LOG.md` | 方法论推理、清理策略、命令模板 |
 | artifact 保留/删除/瘦身判断 | `docs/HAZE4K_RUN_MANIFEST.md` | 新路线设计、训练命令模板、完整实验解释 |
+| GitHub 可读的文本版 AI 项目包 | `docs/ai_text_packages/`, policy in `docs/HAZE4K_RUN_MANIFEST.md` | 原始 `experiment/` 目录、图片、权重、数据集、数组 dump |
 | 新模型/损失/selector/mask/guard 修改协议和实验卡模板 | `docs/HAZE4K_MODEL_CHANGE_PROTOCOL.md` | 单个 run 的详细日志、artifact 清理 |
 | 主路线、论文实验设计、阶段计划 | `docs/DEA_NET_LFCR_HAZE4K_PLAN.md` | 每次运行的完整流水账、单次故障排查 |
 | 下载来源和复现基础说明 | `docs/DOWNLOADS.md`, `docs/REPRODUCTION.md` | 当前 HAZE4K 路线决策 |
@@ -68,6 +69,7 @@ artifact 和方法分析混在一起。
 | 评估、可视化、诊断脚本命令 | `ANALYSIS_COMMANDS.md` | route card 可说明需要做哪类分析，但不内嵌长命令。 |
 | 每个 run 的指标、commit、停止/恢复状态 | `EXPERIMENT_LOG.md` | 主计划只保留关键结论；route card 只保留与该路线有关的结果。 |
 | artifact 保留/删除策略和路径索引 | `HAZE4K_RUN_MANIFEST.md` | 日志只记录产物路径，不重复清理规则。 |
+| AI 文本项目包同步策略和索引 | `HAZE4K_RUN_MANIFEST.md` + `docs/ai_text_packages/README.md` | `CURRENT_CONTEXT.md` 只保留当前同步口径。 |
 | 方法假设、阶段路线、论文证据链 | `DEA_NET_LFCR_HAZE4K_PLAN.md` | 专题审查可保存更细论证，不能变成总入口。 |
 | 新路线证据链和 gates | `HAZE4K_MODEL_CHANGE_PROTOCOL.md` 加对应 route card | `CURRENT_CONTEXT.md` 只保留是否可继续和下一步入口。 |
 
@@ -108,6 +110,9 @@ artifact 和方法分析混在一起。
 - 新增当前状态只改 `CURRENT_CONTEXT.md`；新增历史 run 事实只改
   `EXPERIMENT_LOG.md`；新增 artifact 路径/保留判断只改
   `HAZE4K_RUN_MANIFEST.md`。
+- 新建或更新给 AI 读取的文本版项目包时，必须把 text-only 副本放到
+  `docs/ai_text_packages/` 并同步到 GitHub；不要把原始 `experiment/`
+  目录直接加入 Git。
 - `CURRENT_CONTEXT.md` 只保留当前可执行上下文，不放完整历史。
 - `WORKFLOW.md` 只放可复用命令和操作边界，不解释大段方法论。
 - `ANALYSIS_COMMANDS.md` 只放评估、可视化、诊断脚本命令；不放训练启动、

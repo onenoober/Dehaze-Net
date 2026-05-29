@@ -1,0 +1,2 @@
+
+step :2 | epoch: 1 | ssim:0.9922| psnr:30.1831

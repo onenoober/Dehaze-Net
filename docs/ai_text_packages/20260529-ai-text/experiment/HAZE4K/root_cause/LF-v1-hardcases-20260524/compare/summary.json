@@ -1,0 +1,23 @@
+{
+  "dataset": "HAZE4K",
+  "split": "test",
+  "num_samples": 150,
+  "baseline_checkpoint": "../experiment/HAZE4K/DEA-Net-CR-H4K-Baseline-scout-20260520-101334/saved_model/best.pk",
+  "lf_checkpoint": "../experiment/HAZE4K/DEA-Net-LF-H4K-scout-20260521-003100/saved_model/best.pk",
+  "baseline_checkpoint_step": 90000,
+  "lf_checkpoint_step": 90000,
+  "lf_gate_scale": 1.0,
+  "lf_original_gate": 0.03389017656445503,
+  "lf_effective_gate": 0.03389017656445503,
+  "lf_prior_residual_center": false,
+  "lf_prior_gate_max": 0.0,
+  "lf_prior_injection": "pre_mix",
+  "mean_baseline_psnr": 31.874100756790053,
+  "mean_baseline_ssim": 0.9821461009979248,
+  "mean_lf_psnr": 32.08111771587125,
+  "mean_lf_ssim": 0.9818423771858216,
+  "mean_delta_psnr": 0.20701695908120538,
+  "mean_delta_ssim": -0.0003037238121032715,
+  "min_delta_psnr": -6.223839475520954,
+  "max_delta_psnr": 6.450002175513884
+}

@@ -1,0 +1,10 @@
+{
+  "exp_dir": "../experiment",
+  "dataset": "HAZE4K",
+  "val_dataset_dir": "../dataset/HAZE4K/test",
+  "model_name": "py310-official-haze4k-eval",
+  "saved_infer_dir": "../experiment/HAZE4K/py310-official-haze4k-eval/PSNR3426_SSIM9885",
+  "pre_trained_model": "PSNR3426_SSIM9885.pth",
+  "save_infer_results": false,
+  "max_eval_batches": 0
+}

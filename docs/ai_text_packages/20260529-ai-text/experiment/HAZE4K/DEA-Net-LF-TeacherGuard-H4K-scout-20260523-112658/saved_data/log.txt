@@ -1,0 +1,4 @@
+
+step :10000 | epoch: 2 | ssim:0.9425| psnr:24.8283
+
+step :20000 | epoch: 4 | ssim:0.9704| psnr:27.7075
