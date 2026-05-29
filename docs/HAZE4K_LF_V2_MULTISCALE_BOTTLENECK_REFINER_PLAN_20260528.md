@@ -2,11 +2,11 @@
 
 Date: 2026-05-28
 
-Status: implementation preflight passed; replacement fair 100k scout active on
-`autodl-dehaze` after `runyun-ts` became unreachable. This card authorizes only
-the launched LF-v2 MBR scout(s) and their declared gates. Current run state
-belongs in `docs/CURRENT_CONTEXT.md`; run facts belong in
-`docs/EXPERIMENT_LOG.md`.
+Status: stopped at the 30k hard gate on `autodl-dehaze` after
+`runyun-ts` became unreachable. The replacement scout did not approach LF-v1
+30k quality and did not show enough mechanism evidence to justify the remaining
+100k compute. Current run state belongs in `docs/CURRENT_CONTEXT.md`; run facts
+belong in `docs/EXPERIMENT_LOG.md`.
 
 ## Most Valuable Attempt
 
@@ -188,7 +188,7 @@ Replacement preflight result on `autodl-dehaze`:
 
 Current scout:
 
-- Active fair run:
+- Stopped fair run:
   `DEA-Net-LF-v2-MBR-c8-H4K-scout100k-autodl-20260529-144500`.
 - Cloud path:
   `/root/autodl-tmp/workspace/Dehaze-Net/experiment/HAZE4K/DEA-Net-LF-v2-MBR-c8-H4K-scout100k-autodl-20260529-144500`.
@@ -200,6 +200,14 @@ Current scout:
   checkpoint and is diagnostic only. Later runyun run
   `DEA-Net-LF-v2-MBR-c8-H4K-scout100k-20260528-223014` became unreachable
   before a result could be checked, so it is unknown and not evidence.
+- Stop note:
+  AutoDL scout was stopped on 2026-05-29 after the 30k checkpoint. Validation
+  curve was 10k `26.4345 / 0.9616`, 20k `28.2414 / 0.9730`, and 30k
+  `29.8938 / 0.9776`. The 30k PSNR was below CR baseline 30k `30.1143` and
+  LF-v1 30k `30.6253`. Checkpoint stats showed the branch was alive
+  (`LF_mbr_std` tail about `0.203`) but the LF scalar gate was negative
+  (`-0.02085`), so the route failed the hard gate without a clear mechanism
+  reason to continue to 100k.
 
 ## Gates
 
@@ -212,6 +220,10 @@ Current scout:
 | 50000 | Must be close to LF-v1 or show strong mechanism evidence. | Preservation and strong-CR regression cannot be worse than LFCR-v2/RFC patterns. | Stop if it repeats rescue-without-preservation. |
 | 90000 | Compare against LF-v1 best-step behavior. | Full or compact diagnostics should justify final evaluation. | Continue to final only if promotable or diagnostically decisive. |
 | 100000 | Final/best comparison against CR, LF-v1, ResidualCalib, CRPlus-v2, and LFCR-v2. | Full per-image, residual, and cost diagnostics required. | Promote only if mean quality or preservation/residual mechanism is clearly better. |
+
+Gate result on 2026-05-29: the AutoDL replacement scout failed the 30k hard
+gate and was stopped. This deprioritizes another small neutral LF bottleneck
+refiner with the same insertion point and no stronger preservation objective.
 
 ## Analysis Plan
 

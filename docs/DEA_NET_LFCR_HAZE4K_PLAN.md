@@ -117,7 +117,7 @@ dataset/HAZE4K/
 | LFCR-v1 constant | 失败，但有机制价值 | `DEA-Net-LFCR-v1-w005-H4K-scout100k-20260527-231728` final/best 100k `32.2098 / 0.9844`；救回部分 LF-v1 regression，但损坏太多 LF-v1 gain cases | 不重复 constant high-weight；仅保留为 CRPlus-on-LF 会救回但也会压制的证据 |
 | LFCR-v2 decay | 失败/中性 | `DEA-Net-LFCR-v2-decay-H4K-scout100k-20260528-091455` final/best `32.1516 / 0.9844`，independent verify `32.1518 / 0.9844`；schedule-off 机制部分成立但质量低于所有主要参照 | 不继续盲目 CRPlus-on-LF weight/decay search |
 | WaveletPreserve / supervised preserve / RFC preflights | 诊断失败 | wavelet、activation、teacher-output 和 continuous confidence 目标均有信号但未过 preservation / intervention precision gates | 不从这些预检直接启动 head/selector/guard 100k；下一步转向改变 residual representation |
-| LF-v2 multiscale bottleneck refiner | preflight 已通过，fair 100k scout 因 runyun 不可达已在 AutoDL 从零重启 | `docs/HAZE4K_LF_V2_MULTISCALE_BOTTLENECK_REFINER_PLAN_20260528.md`; run `DEA-Net-LF-v2-MBR-c8-H4K-scout100k-autodl-20260529-144500` | 先看 10k sanity gate；30k 是第一硬门。不要把 runyun 失败/未知 run 当作证据 |
+| LF-v2 multiscale bottleneck refiner | 失败，不晋级 | `DEA-Net-LF-v2-MBR-c8-H4K-scout100k-autodl-20260529-144500` stopped at 30k `29.8938 / 0.9776`; branch alive but LF gate negative | 低于 CR baseline 30k 和 LF-v1 30k，且没有明确机制收益；不继续同插入点的小型 neutral LF bottleneck refiner |
 | Conservative LF | 失败 | 100k `32.1083 / 0.9843`，低于 baseline/LF-v1 | 不继续此强约束组合 |
 | CRPlus-P1 lowpass negative | 失败 | 10k `24.9623 / 0.9504` | 不继续同一 negative 设计 |
 | LowFreqLoss / LF+LowFreqLoss | 失败 | 20k/50k 均低于对应参照 | 不继续简单低频 L1 路线 |
@@ -340,7 +340,7 @@ TTA / 真实域适配只作为扩展，不阻塞 HAZE4K 主结果。
 | A5 | DEA-Net-CRPlus-v2 | No | Yes | No | TBD | TBD | `32.3633` | `0.9847` | TBD | 正向 CR-only loss 消融；未超过 LF-v1/ResidualCalib PSNR |
 | A6 | DEA-Net-LFCR-v1 | Yes | Yes | No | TBD | TBD | `32.2098` | `0.9844` | TBD | constant high-weight 组合失败；有 rescue 但损坏 LF-v1 gains |
 | A7 | DEA-Net-LFCR-v2-decay | Yes | Yes | No | TBD | TBD | `32.1516` | `0.9844` | TBD | decay 组合失败/中性；不继续同类 schedule search |
-| A8 | DEA-Net-LF-v2-MBR | Yes | No | No | TBD | TBD | TBD | TBD | TBD | AutoDL fair 100k scout active，等待 10k/30k gates |
+| A8 | DEA-Net-LF-v2-MBR | Yes | No | No | TBD | TBD | TBD | TBD | TBD | 30k gate 失败，branch alive 但质量低于 CR/LF-v1 参照 |
 | A9 | DEA-Net-LFCR-TTA | Yes | Yes | Yes | TBD | TBD | TBD | TBD | TBD | 可选扩展 |
 
 如果某条路线没有通过公平 scout，不进入主结果表；可以进入失败消融表或讨论章节。
@@ -393,7 +393,7 @@ TTA / 真实域适配只作为扩展，不阻塞 HAZE4K 主结果。
 1. 保留 LF-v1 作为正向轻量消融。
 2. ResidualCalib 保留为正向但不足的机制证据；若再试，必须直接减少 wrong-direction、LF MSE regression 或强 baseline 回退。
 3. CRPlus-v2 保留为 CR-only 正向消融；不再把简单 CRPlus-on-LF schedule 作为下一次长训。
-4. 当前冷启动架构优先路线是 LF-v2 multiscale bottleneck refiner；preflight 已过并已启动 fair 100k，若 30k/50k gate 失败，记录其失败机制并停止 scoped LF bottleneck tweaks。
+4. LF-v2 multiscale bottleneck refiner 已在 30k hard gate 停止；同插入点的小型 neutral LF bottleneck tweaks 暂不继续，下一步需要更强的 preservation objective、warm-start 路线或更大表示能力，而不是重复小补丁。
 5. Conditional LF、HazeAwareMask、selector/proxy、WaveletPreserve、supervised preserve 和 RFC 当前设置均不排队长训；若重启必须先有新 target 或新 representation。
 6. 若最终没有稳定超过 baseline 的候选，论文主线转为“强 baseline + 正向 LF-v1 小收益 + 系统失败分析 + 可复现证据链”。
 
@@ -410,7 +410,7 @@ TTA / 真实域适配只作为扩展，不阻塞 HAZE4K 主结果。
 | 7 | CRPlus-v2 公平 scout + final diagnostics | 已完成；正向 CR-only 组件候选，但不替代 LF-v1 |
 | 8 | LFCR-v1 / LFCR-v2 组合 scout | 均已完成且不晋级；证明简单 CRPlus-on-LF 组合不足 |
 | 9 | WaveletPreserve / supervised preserve / RFC 预检 | 均未过 preservation / precision gates；不启动对应 100k |
-| 10 | LF-v2 multiscale bottleneck refiner route card + preflight + fair scout | preflight 已通过，AutoDL fair 100k scout `DEA-Net-LF-v2-MBR-c8-H4K-scout100k-autodl-20260529-144500` active；下一步是 10k/30k gates |
+| 10 | LF-v2 multiscale bottleneck refiner route card + preflight + fair scout | 已在 30k gate 停止：`29.8938 / 0.9776`，低于 CR baseline/LF-v1 30k；不晋级 |
 | 11 | 最终候选 full eval、复杂度、可视化 | 论文主表和图 |
 | 12 | 可选 TTA / 真实域测试 | 扩展章节证据 |
 | 13 | 汇总方法、消融、失败讨论和局限 | 毕业论文初稿 |

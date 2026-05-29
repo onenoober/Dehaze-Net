@@ -109,23 +109,28 @@ route reasoning in the dated analysis docs.
   2026-05-26 before the first 10k checkpoint. Do not resume it.
 - Current best standalone model evidence remains LF-v1. ResidualCalib and
   CRPlus-v2 are positive ablations/components, not replacements for LF-v1.
-- Active LF-v2 multiscale bottleneck refiner cold-start route now runs on
+- LF-v2 multiscale bottleneck refiner cold-start route ran on
   `autodl-dehaze` because `runyun-ts` became unreachable before its result
   could be checked. Branch `codex/haze4k-lf-v2-mbr` is at commit `966d041`.
   AutoDL preflight passed on 2026-05-29 CST in
   `/root/autodl-tmp/workspace/Dehaze-Net`: static preflight reported parameter
   overhead `0.04395%`, latency overhead `1.3762%`, neutral-init max diff
   `0.0`, finite branch/backward stats; HAZE4K smoke wrote step `2` and
-  recommended `preflight_passed_launch_allowed`. Current fair 100k scout is
+  recommended `preflight_passed_launch_allowed`. Replacement fair 100k scout
+  was
   `DEA-Net-LF-v2-MBR-c8-H4K-scout100k-autodl-20260529-144500`, log
   `experiment/HAZE4K/_run_logs/DEA-Net-LF-v2-MBR-c8-H4K-scout100k-autodl-20260529-144500.log`,
   run dir
   `experiment/HAZE4K/DEA-Net-LF-v2-MBR-c8-H4K-scout100k-autodl-20260529-144500`.
   It is a from-scratch run using the formal 100k HAZE4K protocol with
   `--use_lf_prior --lf_multiscale_refiner --lf_mbr_channels 8
-  --lf_mbr_pool_sizes 4,8,16`; startup was verified with GPU about `13.7 GiB`
-  used and the log advancing. First sanity gate is 10k; first hard route gate
-  is 30k. Earlier runyun launch
+  --lf_mbr_pool_sizes 4,8,16`; it was stopped at the 30k hard gate on
+  2026-05-29 after 10k `26.4345/0.9616`, 20k `28.2414/0.9730`, and 30k
+  `29.8938/0.9776`. The 30k result is below CR baseline 30k `30.1143/0.9776`
+  and LF-v1 30k `30.6253/0.9783`; checkpoint stats showed the MBR branch alive
+  (`LF_mbr_std` tail about `0.203`) but the LF scalar gate was negative
+  (`-0.02085`), so there was no clear mechanism reason to spend the rest of
+  100k. Earlier runyun launch
   `DEA-Net-LF-v2-MBR-c8-H4K-scout100k-20260528-222223` failed before
   checkpoint, and runyun run `...20260528-223014` is currently
   unreachable/unknown; do not use either as evidence.
