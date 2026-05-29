@@ -100,7 +100,8 @@ static checks, zero-gate identity check, bounded-oracle residual check, and
 - Loss weights: `w_loss_L1=1.0`, `w_loss_CR=0.1`,
   `w_loss_brf_res_lf=0.10`, `w_loss_brf_dir=0.02`,
   `w_loss_brf_preserve=0.05`, `w_loss_brf_bound=0.01`,
-  `w_loss_brf_color=0.02`.
+  `w_loss_brf_color=0.02`, `brf_preserve_warmup_steps=1000` if the fixed-patch
+  micro-overfit confirms default preserve loss collapses the gate.
 - Eval/checkpoint cadence: every `10000` steps, `save_epoch_checkpoints=false`.
 
 ## Gates
@@ -154,6 +155,7 @@ mkdir -p ../experiment/HAZE4K/_run_logs
   --brf_lf_pool 8 \
   --brf_dir_norm_floor 0.01 \
   --brf_preserve_target_thr 0.015 \
+  --brf_preserve_warmup_steps 1000 \
   --model_name "$RUN" \
   --dataset HAZE4K \
   --epochs 20 \

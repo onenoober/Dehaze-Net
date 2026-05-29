@@ -407,7 +407,7 @@ def mean_l2_norm(x):
     return x.reshape(x.shape[0], -1).norm(dim=1).mean()
 
 
-def brf_loss_terms(out_dict, target):
+def brf_loss_terms(out_dict, target, step):
     if out_dict is None:
         return None, {}
     out = out_dict['out']
@@ -437,9 +437,12 @@ def brf_loss_terms(out_dict, target):
     preserve_mask = (
         target_lf.abs().mean(dim=(1, 2, 3), keepdim=True) < opt.brf_preserve_target_thr
     ).to(out.dtype)
-    loss_preserve = torch.mean(
-        preserve_mask * (out_dict['c_lf'].abs() + out_dict['gate_lf'])
-    )
+    if opt.brf_preserve_warmup_steps > 0 and step < opt.brf_preserve_warmup_steps:
+        loss_preserve = out.new_zeros(())
+    else:
+        loss_preserve = torch.mean(
+            preserve_mask * (out_dict['c_lf'].abs() + out_dict['gate_lf'])
+        )
     total_correction = out_dict['c_lf'] + out_dict['c_color'] + out_dict['c_hf']
     loss_bound = total_correction.abs().mean()
     loss_color = F.l1_loss(out.mean(dim=(2, 3)), target.mean(dim=(2, 3)))
@@ -644,7 +647,7 @@ def train(net, loader_train, loader_test, optim, criterion, writer=None, trainin
             loss_residual_dir = residual_direction_loss(out, x, y, step)
             loss_cr_ref_residual = cr_ref_residual_field_loss(out, x, y, step, cr_ref_net)
             loss_teacher_guard = teacher_guard_loss(out, x, y, step, teacher_net)
-            loss_brf, brf_metric_tensors = brf_loss_terms(out_dict, y)
+            loss_brf, brf_metric_tensors = brf_loss_terms(out_dict, y, step)
             loss = opt.w_loss_L1 * loss_L1 + opt.w_loss_CR * loss_CR
             if loss_crplus_v2 is not None:
                 loss = loss + loss_crplus_v2_weight * loss_crplus_v2

@@ -61,6 +61,7 @@ def parse_args():
     parser.add_argument('--brf_mid_pool', type=int, default=4)
     parser.add_argument('--brf_dir_norm_floor', type=float, default=0.01)
     parser.add_argument('--brf_preserve_target_thr', type=float, default=0.015)
+    parser.add_argument('--brf_preserve_warmup_steps', type=int, default=0)
     parser.add_argument('--w_loss_L1', type=float, default=1.0)
     parser.add_argument('--w_loss_brf_res_lf', type=float, default=0.10)
     parser.add_argument('--w_loss_brf_dir', type=float, default=0.02)
@@ -211,7 +212,7 @@ def cosine(pred, target, floor):
     return value.mean()
 
 
-def brf_losses(out_dict, target, args):
+def brf_losses(out_dict, target, args, step=0):
     out = out_dict['out']
     j0 = out_dict['j0'].detach()
     pred_lf = lowpass(out, args.brf_lf_pool) - lowpass(j0, args.brf_lf_pool)
@@ -222,7 +223,10 @@ def brf_losses(out_dict, target, args):
     preserve_mask = (
         target_lf.abs().mean(dim=(1, 2, 3), keepdim=True) < args.brf_preserve_target_thr
     ).to(out.dtype)
-    loss_preserve = torch.mean(preserve_mask * (out_dict['c_lf'].abs() + out_dict['gate_lf']))
+    if args.brf_preserve_warmup_steps > 0 and step < args.brf_preserve_warmup_steps:
+        loss_preserve = out.new_zeros(())
+    else:
+        loss_preserve = torch.mean(preserve_mask * (out_dict['c_lf'].abs() + out_dict['gate_lf']))
     loss_bound = (out_dict['c_lf'] + out_dict['c_color'] + out_dict['c_hf']).abs().mean()
     loss_color = F.l1_loss(out.mean(dim=(2, 3)), target.mean(dim=(2, 3)))
     loss_l1 = F.l1_loss(out, target)
@@ -391,18 +395,18 @@ def run_micro_overfit(args):
     optimizer = torch.optim.Adam(wrapper.corrector.parameters(), lr=args.micro_lr, betas=(0.9, 0.999))
     loader_iter = iter(loader)
     rows = []
-    def probe_metrics():
+    def probe_metrics(step):
         was_training = wrapper.training
         wrapper.eval()
         with torch.no_grad():
             probe_dict = wrapper(probe_hazy, target=probe_clear, return_aux=True)
-            _, metrics = brf_losses(probe_dict, probe_clear, args)
+            _, metrics = brf_losses(probe_dict, probe_clear, args, step=step)
         if was_training:
             wrapper.train()
             wrapper.baseline.eval()
         return tensor_float_dict(metrics)
 
-    first_metrics = probe_metrics()
+    first_metrics = probe_metrics(0)
     last_metrics = first_metrics
     for step in range(1, args.micro_steps + 1):
         try:
@@ -413,12 +417,12 @@ def run_micro_overfit(args):
         hazy = hazy.to(args.device, non_blocking=True)
         clear = clear.to(args.device, non_blocking=True)
         out_dict = wrapper(hazy, target=clear, return_aux=True)
-        loss, metrics = brf_losses(out_dict, clear, args)
+        loss, metrics = brf_losses(out_dict, clear, args, step=step)
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
         if step == 1 or step % args.micro_log_interval == 0 or step == args.micro_steps:
-            last_metrics = probe_metrics()
+            last_metrics = probe_metrics(step)
             row = dict(last_metrics)
             row['step'] = step
             rows.append(row)
