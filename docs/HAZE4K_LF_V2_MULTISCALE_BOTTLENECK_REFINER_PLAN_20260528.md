@@ -2,10 +2,11 @@
 
 Date: 2026-05-28
 
-Status: implementation preflight passed; fair 100k scout active on `runyun-ts`.
-This card now authorizes only the launched first LF-v2 MBR scout and its
-declared gates. Current run state belongs in `docs/CURRENT_CONTEXT.md`; run
-facts belong in `docs/EXPERIMENT_LOG.md`.
+Status: implementation preflight passed; replacement fair 100k scout active on
+`autodl-dehaze` after `runyun-ts` became unreachable. This card authorizes only
+the launched LF-v2 MBR scout(s) and their declared gates. Current run state
+belongs in `docs/CURRENT_CONTEXT.md`; run facts belong in
+`docs/EXPERIMENT_LOG.md`.
 
 ## Most Valuable Attempt
 
@@ -137,6 +138,27 @@ Preflight result on `runyun-ts`:
 - Recommendation:
   `preflight_passed_launch_allowed`.
 
+Replacement preflight result on `autodl-dehaze`:
+
+- Context:
+  `runyun-ts` became unreachable before the active runyun scout result could be
+  checked, so the route was restarted from scratch on AutoDL.
+- Checkout:
+  `/root/autodl-tmp/workspace/Dehaze-Net`, branch `codex/haze4k-lf-v2-mbr`,
+  commit `966d041`.
+- Static cost and neutrality:
+  LF-v1 params `7790690`; LF-v2 MBR params `7794114`; overhead `0.04395%`.
+  LF-v1 latency `18.6813 ms`; MBR latency `18.9383 ms`; overhead `1.3762%`.
+  Neutral-init max abs diff `0.0`.
+- Branch/backward health:
+  branch mean/std/min/max `0.002309 / 0.202572 / -0.383039 / 0.378891`;
+  random backward finite; gate grad abs `0.00039898`.
+- HAZE4K smoke:
+  `smoke-H4K-LF-v2-MBR-autodl-` wrote step `2`, with
+  `lf_mbr_std_tail 0.1993409`.
+- Recommendation:
+  `preflight_passed_launch_allowed`.
+
 ## Mechanism Metrics
 
 | Metric | Why it matches this route | Gate subset | Full-test artifact |
@@ -167,15 +189,17 @@ Preflight result on `runyun-ts`:
 Current scout:
 
 - Active fair run:
-  `DEA-Net-LF-v2-MBR-c8-H4K-scout100k-20260528-223014`.
+  `DEA-Net-LF-v2-MBR-c8-H4K-scout100k-autodl-20260529-144500`.
 - Cloud path:
-  `/root/workspace/Dehaze-Net-audit-sync/experiment/HAZE4K/DEA-Net-LF-v2-MBR-c8-H4K-scout100k-20260528-223014`.
+  `/root/autodl-tmp/workspace/Dehaze-Net/experiment/HAZE4K/DEA-Net-LF-v2-MBR-c8-H4K-scout100k-autodl-20260529-144500`.
 - Log:
-  `/root/workspace/Dehaze-Net-audit-sync/experiment/HAZE4K/_run_logs/DEA-Net-LF-v2-MBR-c8-H4K-scout100k-20260528-223014.log`.
+  `/root/autodl-tmp/workspace/Dehaze-Net/experiment/HAZE4K/_run_logs/DEA-Net-LF-v2-MBR-c8-H4K-scout100k-autodl-20260529-144500.log`.
 - Launch note:
   earlier run `DEA-Net-LF-v2-MBR-c8-H4K-scout100k-20260528-222223`
   stopped around step `487` because the launch was not detached; it produced no
-  checkpoint and is diagnostic only.
+  checkpoint and is diagnostic only. Later runyun run
+  `DEA-Net-LF-v2-MBR-c8-H4K-scout100k-20260528-223014` became unreachable
+  before a result could be checked, so it is unknown and not evidence.
 
 ## Gates
 

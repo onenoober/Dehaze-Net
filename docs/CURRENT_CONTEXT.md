@@ -106,23 +106,26 @@ route reasoning in the dated analysis docs.
   2026-05-26 before the first 10k checkpoint. Do not resume it.
 - Current best standalone model evidence remains LF-v1. ResidualCalib and
   CRPlus-v2 are positive ablations/components, not replacements for LF-v1.
-- Active LF-v2 multiscale bottleneck refiner cold-start route on `runyun-ts`:
-  branch `codex/haze4k-lf-v2-mbr`, commit `cc6b3c4`. Preflight passed on
-  2026-05-28 CST in `/root/workspace/Dehaze-Net-audit-sync`: static preflight
-  reported parameter overhead `0.044%`, latency overhead `1.78%`,
-  neutral-init max diff `0.0`, finite branch/backward stats; HAZE4K smoke
-  wrote step `2` and recommended `preflight_passed_launch_allowed`. Current
-  fair 100k scout is
-  `DEA-Net-LF-v2-MBR-c8-H4K-scout100k-20260528-223014`, log
-  `experiment/HAZE4K/_run_logs/DEA-Net-LF-v2-MBR-c8-H4K-scout100k-20260528-223014.log`,
+- Active LF-v2 multiscale bottleneck refiner cold-start route now runs on
+  `autodl-dehaze` because `runyun-ts` became unreachable before its result
+  could be checked. Branch `codex/haze4k-lf-v2-mbr` is at commit `966d041`.
+  AutoDL preflight passed on 2026-05-29 CST in
+  `/root/autodl-tmp/workspace/Dehaze-Net`: static preflight reported parameter
+  overhead `0.04395%`, latency overhead `1.3762%`, neutral-init max diff
+  `0.0`, finite branch/backward stats; HAZE4K smoke wrote step `2` and
+  recommended `preflight_passed_launch_allowed`. Current fair 100k scout is
+  `DEA-Net-LF-v2-MBR-c8-H4K-scout100k-autodl-20260529-144500`, log
+  `experiment/HAZE4K/_run_logs/DEA-Net-LF-v2-MBR-c8-H4K-scout100k-autodl-20260529-144500.log`,
   run dir
-  `experiment/HAZE4K/DEA-Net-LF-v2-MBR-c8-H4K-scout100k-20260528-223014`.
-  It uses the formal 100k HAZE4K protocol with `--use_lf_prior
-  --lf_multiscale_refiner --lf_mbr_channels 8 --lf_mbr_pool_sizes 4,8,16`.
-  First sanity gate is 10k; first hard route gate is 30k. Earlier launch
-  `DEA-Net-LF-v2-MBR-c8-H4K-scout100k-20260528-222223` was a failed
-  non-detached launch that stopped around step `487` with no checkpoint; do not
-  resume or use it as evidence.
+  `experiment/HAZE4K/DEA-Net-LF-v2-MBR-c8-H4K-scout100k-autodl-20260529-144500`.
+  It is a from-scratch run using the formal 100k HAZE4K protocol with
+  `--use_lf_prior --lf_multiscale_refiner --lf_mbr_channels 8
+  --lf_mbr_pool_sizes 4,8,16`; startup was verified with GPU about `13.7 GiB`
+  used and the log advancing. First sanity gate is 10k; first hard route gate
+  is 30k. Earlier runyun launch
+  `DEA-Net-LF-v2-MBR-c8-H4K-scout100k-20260528-222223` failed before
+  checkpoint, and runyun run `...20260528-223014` is currently
+  unreachable/unknown; do not use either as evidence.
 - New isolated warm-start fine-tuning route:
   `docs/HAZE4K_OFFICIAL_WARMSTART_FINETUNE_PLAN_20260528.md` on branch
   `codex/haze4k-official-warmstart-finetune`. This route starts from the
@@ -130,17 +133,17 @@ route reasoning in the dated analysis docs.
   not be mixed into cold-start fair-candidate tables. Its default staged
   fine-tune schedule is LF-only through the 10k gate, then LF plus
   bottleneck/fusion through the 30k gate, then full-model tiny-LR unfreeze.
-- Active local warm-start LF-v1 scout:
+- Completed local warm-start LF-v1 scout:
   `DEA-Net-OfficialWarmStart-LFv1-H4K-local-scout100k-20260528-152808` in
-  local WSL `/home/ubuntu/workspace/Dehaze-Net`, tmux
-  `ow-lfv1-local-20260528-152808`, log
-  `experiment/HAZE4K/_run_logs/DEA-Net-OfficialWarmStart-LFv1-H4K-local-scout100k-20260528-152808.log`.
-  Launched on 2026-05-28 15:28 CST from branch
-  `codex/haze4k-official-warmstart-finetune` commit `b4194b1` after the user
-  explicitly requested local execution. Official checkpoint conversion and
-  forward equivalence passed (`max_abs_diff=0.0`); startup showed LF-only
-  stage 0 with `1377/7790690` trainable params and GPU about `8396 MiB / 82%`.
-  First route gate is 10k and belongs only to the isolated warm-start route.
+  local WSL `/home/ubuntu/workspace/Dehaze-Net`; no tmux/train process remains
+  as of 2026-05-29 CST. Best checkpoint is step `90000`, PSNR/SSIM
+  `34.2662 / 0.9886`; final step `100000` is `34.2631 / 0.9886`. Independent
+  full-test per-image comparison against matched step-0 official-equivalent
+  checkpoint gave step0 `34.2548 / 0.9885`, best90k `34.2661 / 0.9886`, mean
+  delta `+0.0114 dB`, better/worse by PSNR `484/516`, and LF gate
+  `-0.01404`. This is a tiny positive isolated warm-start result, not evidence
+  for the cold-start fair-candidate table. Diagnostics live under
+  `experiment/HAZE4K/official_warmstart_diagnostics/DEA-Net-OfficialWarmStart-LFv1-H4K-local-scout100k-20260528-152808-best-vs-step0-20260529`.
 - Selector evidence is closed for now: strict CSV, rich CSV, and
   activation-forward deployable proxies all failed the pass line. Do not launch
   another LFResidualSelector 100k scout from oracle evidence alone.
