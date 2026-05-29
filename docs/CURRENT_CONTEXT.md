@@ -177,11 +177,21 @@ route reasoning in the dated analysis docs.
   most-valuable-attempt standard: highest route-decision value per training
   cost, with cheap preflight evidence, an earliest decisive gate, speed metrics,
   and mechanism metrics.
-- New CBRFRC-v1 implementation route is being prepared on branch
-  `codex/haze4k-cbrfrc-v1`; route card:
-  `docs/HAZE4K_CBRFRC_V1_PLAN_20260530.md`. Do not launch the fair 100k scout
-  until static checks, zero-gate identity, bounded-oracle residual headroom,
-  and 1k/2k micro-overfit checks pass.
+- Active CBRFRC-v1 scout on `autodl-dehaze`:
+  `DEA-Net-CBRFRC-v1-H4K-scout100k-20260530-012811` in
+  `/root/autodl-tmp/workspace/Dehaze-Net`, branch
+  `codex/haze4k-cbrfrc-v1` commit `4634b13`, tmux `cbrfrc_v1_100k`, log
+  `experiment/HAZE4K/_run_logs/DEA-Net-CBRFRC-v1-H4K-scout100k-20260530-012811.log`.
+  The route card is `docs/HAZE4K_CBRFRC_V1_PLAN_20260530.md`. Preflight passed
+  only with `brf_preserve_warmup_steps=3000` and
+  `brf_preserve_gate_weight=0.0`: full 1000-image zero-gate identity had
+  PSNR/SSIM exactly matching CR J0 (`32.22545 / 0.984417`, delta `0.0`),
+  bounded LF oracle headroom was `+10.6562 dB` with `0/250` strong-regression
+  cases, and the fixed-patch 2k micro-overfit loss fell `0.032217 -> 0.023870`
+  with residual cosine `0.0 -> 0.410177` and final `gate_lf_mean=0.007157`.
+  The fair 100k scout was launched because this safety line passed. Do not
+  launch another CBRFRC run, Stage C, or joint fine-tune until the in-run gates
+  pass; the next required decision is the 10k mechanism sanity gate.
 
 ## Storage And Server Roles
 

@@ -2,14 +2,19 @@
 
 Date: 2026-05-30
 
-Status: implementation route card. Do not launch the fair 100k scout until the
-static checks, zero-gate identity check, bounded-oracle residual check, and
-1k/2k micro-overfit check pass.
+Status: active Stage B fair 100k scout. The preflight safety line passed and
+the first approved CBRFRC-v1 scout was launched on AutoDL. Do not launch
+another CBRFRC run, Stage C, or any joint fine-tune until the in-run mechanism
+gates pass.
 
 Update 2026-05-30: preflight passed only with preserve protection changed to
 `brf_preserve_warmup_steps=3000` and `brf_preserve_gate_weight=0.0`. Default
 direct gate preserve penalty caused gate collapse and must not be used for the
 first 100k scout.
+
+Run 1 launched 2026-05-30: `DEA-Net-CBRFRC-v1-H4K-scout100k-20260530-012811`
+on `autodl-dehaze`, branch `codex/haze4k-cbrfrc-v1`, commit `4634b13`, tmux
+`cbrfrc_v1_100k`. Next required decision: 10k mechanism sanity gate.
 
 ## Most Valuable Attempt
 
@@ -109,6 +114,38 @@ first 100k scout.
   `brf_preserve_gate_weight=0.0` if the fixed-patch micro-overfit confirms the
   direct preserve gate penalty collapses the gate.
 - Eval/checkpoint cadence: every `10000` steps, `save_epoch_checkpoints=false`.
+
+## Preflight Results
+
+- Static and shape smoke passed. Initial shapes were `out/j0/c_lf = [2,3,256,256]`
+  and `gate_lf = [2,1,256,256]`; `out` stayed in `[0,1]`.
+- Preserve-by-construction passed at initialization: `gate_lf_mean=0.017986`,
+  `gate_hf_mean=0.006693`, `c_lf_norm=0.0`, and max absolute `out-J0=0.0`.
+- Full 1000-image zero-gate identity passed exactly against the frozen CR
+  checkpoint: J0 PSNR/SSIM `32.2254506 / 0.9844174`, mean PSNR delta `0.0`,
+  max PSNR delta `0.0`, max pixel delta `0.0`.
+- Bounded LF oracle showed enough headroom: `oracle_lf_bound_vs_j0_delta =
+  +10.6562 dB`, with `0/250` strong-baseline oracle regressions.
+- Default direct preserve gate penalty failed the micro-overfit safety line:
+  final `gate_lf_mean` collapsed to about `1.54e-11`, residual cosine stayed
+  near zero, and `c_lf_norm` stayed effectively zero.
+- Approved safety config: `brf_preserve_warmup_steps=3000`,
+  `brf_preserve_gate_weight=0.0`.
+- Approved fixed-patch 2k micro-overfit under that config passed: loss
+  `0.032217 -> 0.023870`, residual cosine `0.0 -> 0.410177`,
+  `gate_lf_mean 0.017986 -> 0.007157`, and `c_lf_norm 0.0 -> 0.225575`.
+
+## Active Run
+
+- Run ID: `DEA-Net-CBRFRC-v1-H4K-scout100k-20260530-012811`.
+- Server/path: `autodl-dehaze`,
+  `/root/autodl-tmp/workspace/Dehaze-Net`.
+- Log:
+  `experiment/HAZE4K/_run_logs/DEA-Net-CBRFRC-v1-H4K-scout100k-20260530-012811.log`.
+- Run dir:
+  `experiment/HAZE4K/DEA-Net-CBRFRC-v1-H4K-scout100k-20260530-012811`.
+- Launch health: tmux and train process active, RTX 5090 busy, log advancing
+  before step `1000`.
 
 ## Gates
 
