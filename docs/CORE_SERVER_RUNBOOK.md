@@ -1,6 +1,6 @@
 # Core Training Server Runbook
 
-Last updated: 2026-05-28
+Last updated: 2026-05-29
 
 Purpose: record the current server facts needed before changing environment,
 dataset links, or training assumptions. Exact SSH, sync, smoke, evaluation, and
@@ -42,6 +42,17 @@ torchvision 0.26.0+cu128
 cv2 4.6.0
 numpy 1.26.4
 ```
+
+Additional AutoDL system tools installed on 2026-05-29:
+
+```text
+tmux 3.2a
+```
+
+Dependency policy from 2026-05-29: when a cloud server is missing a required
+dependency for the requested task, install it directly without asking for
+confirmation. Record durable server facts here when they matter for future
+runs.
 
 The system `/usr/local/cuda` symlink may point to CUDA 11.8. For this project,
 prefer the PyTorch wheel runtime inside `py310`; do not use system CUDA as the

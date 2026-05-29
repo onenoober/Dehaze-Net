@@ -21,6 +21,9 @@ route reasoning in the dated analysis docs.
   runyun work, first connect to public `runyun` and run
   `bash /root/workspace/tailscale-ssh/start.sh`, then use the Tailscale SSH
   alias `runyun-ts` for all repo, training, and evaluation commands.
+- Current user instruction for missing cloud dependencies: install required
+  dependencies directly without asking for confirmation, then record durable
+  server facts in `docs/CORE_SERVER_RUNBOOK.md` when useful for future runs.
 - Completed LFCR-v2 decay scout on `runyun-ts`:
   `DEA-Net-LFCR-v2-decay-H4K-scout100k-20260528-091455` in
   `/root/workspace/Dehaze-Net-audit-sync`, branch

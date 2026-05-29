@@ -63,6 +63,12 @@ training. The primary cloud server is the AutoDL/SeetaCloud instance reached
 from WSL as `autodl-dehaze`. Use `runyun-ts` when the user asks for runyun,
 when AutoDL is unavailable, or when checking runyun artifacts.
 
+Command validation note from 2026-05-29: when a cloud server is missing a
+required dependency for the requested task, install it directly without asking
+for confirmation. Prefer the active Python environment for Python packages and
+the server package manager for system tools such as `tmux`; record durable
+server facts in `docs/CORE_SERVER_RUNBOOK.md`.
+
 ## Server loop
 1. Treat the server as disposable compute, not the artifact source of truth.
 2. Pull or receive the intended code branch on the rented server.

@@ -11,6 +11,7 @@ This repository is a private research fork of DEA-Net.
 - For continuity across new conversations, read `docs/CURRENT_CONTEXT.md` before changing server, GitHub, dataset, or training workflow assumptions.
 - Before modifying documentation, read `docs/README.md` and choose the target document by its authority table.
 - Put each new fact in one authoritative document only: current state in `docs/CURRENT_CONTEXT.md`, run facts in `docs/EXPERIMENT_LOG.md`, artifact retention/path decisions in `docs/HAZE4K_RUN_MANIFEST.md`, server facts in `docs/CORE_SERVER_RUNBOOK.md`, operational templates in `docs/WORKFLOW.md`, analysis/evaluation commands in `docs/ANALYSIS_COMMANDS.md`, and route hypotheses/gates in a dated route card plus `docs/HAZE4K_MODEL_CHANGE_PROTOCOL.md`.
+- When a cloud server is missing a required dependency for the requested task, install it directly without asking for confirmation, then record durable server facts in `docs/CORE_SERVER_RUNBOOK.md` when they matter for future runs.
 - Do not put full run history in current context, server environment facts in workflow, long command templates in route cards, or route conclusions in the artifact manifest.
 - Use one feature branch per task.
 - Prefer small, reviewable commits.
