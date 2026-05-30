@@ -476,7 +476,7 @@ def add_labels(rows, args):
         if preserve and intervene:
             intervene = False
         if not preserve and not intervene:
-            ignore = close or small_residual or sign_unstable
+            ignore = True
         if small_residual and sign_unstable and not strong and not intervene:
             ignore = True
 
@@ -784,14 +784,16 @@ def std(values):
 def summarize(results, args):
     grouped = {}
     for row in results:
-        key = (row["feature_set"], row["head"], row["split_family"])
+        split_group = row["split"] if row["split_family"] == "cr_strength_bin" else row["split_family"]
+        key = (row["feature_set"], row["head"], split_group)
         grouped.setdefault(key, []).append(row)
     summaries = []
-    for (feature_set, head, split_family), items in sorted(grouped.items()):
+    for (feature_set, head, split_group), items in sorted(grouped.items()):
         summary = {
             "feature_set": feature_set,
             "head": head,
-            "split_family": split_family,
+            "split_family": items[0]["split_family"],
+            "split_group": split_group,
             "splits": len(items),
             "eligible_for_pass": items[0]["eligible_for_pass"],
         }
@@ -816,9 +818,9 @@ def summarize(results, args):
             summary[metric + "_std"] = std(vals)
         summaries.append(summary)
 
-    by_key = {(row["feature_set"], row["head"], row["split_family"]): row for row in summaries}
+    by_key = {(row["feature_set"], row["head"], row["split_group"]): row for row in summaries}
     for row in summaries:
-        control = by_key.get(("E_abstention_risk_shuffled", row["head"], row["split_family"]), {})
+        control = by_key.get(("E_abstention_risk_shuffled", row["head"], row["split_group"]), {})
         row["precision_gap_vs_shuffled"] = (
             row["intervention_precision_mean"] - control.get("intervention_precision_mean", row["intervention_precision_mean"])
         )
@@ -861,7 +863,7 @@ def final_recommendation(summaries):
             item for item in summaries
             if item["feature_set"] == row["feature_set"]
             and item["head"] == row["head"]
-            and item["split_family"] != "random"
+            and item["split_group"] != "random"
         ]
         if heldout and all(item["passes_heldout_line"] for item in heldout):
             return "stage0_passed_write_abstention_first_brf_v3_card"
@@ -982,7 +984,7 @@ def write_report(path, summaries, recommendation, meta, snr_summary, args):
             "| {feature_set} | {head} | {split} | {spr:.4f} | {sfi:.4f} | {prec:.4f} | {gain:.4f} | {rescue:.4f} | {corr:.4f} | {simcr:.4f} | {simlf:.4f} | {gap:.4f} | {rp} | {hp} |".format(
                 feature_set=row["feature_set"],
                 head=row["head"],
-                split=row["split_family"],
+                split=row["split_group"],
                 spr=row["strong_q4_preserve_recall_mean"],
                 sfi=row["strong_q4_false_intervention_rate_mean"],
                 prec=row["intervention_precision_mean"],
