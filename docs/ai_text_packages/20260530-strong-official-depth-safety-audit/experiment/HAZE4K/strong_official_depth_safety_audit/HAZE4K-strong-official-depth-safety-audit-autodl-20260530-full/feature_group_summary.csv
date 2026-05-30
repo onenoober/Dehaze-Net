@@ -1,0 +1,15 @@
+feature_set,feature_group,estimator_group,feature_count,uses_shuffled_depth
+C0_deployable,C0,C0_deployable,11308,0
+C1_basic,C1,C1_basic,11337,0
+C2_both,C2,both,11373,0
+C2_both_shuffled_depth,C2,both,11373,1
+C2_depthanything,C2,depthanything,11355,0
+C2_depthanything_shuffled_depth,C2,depthanything,11355,1
+C2_midas,C2,midas,11355,0
+C2_midas_shuffled_depth,C2,midas,11355,1
+C3_both,C3,both,11493,0
+C3_both_shuffled_depth,C3,both,11493,1
+C3_depthanything,C3,depthanything,11415,0
+C3_depthanything_shuffled_depth,C3,depthanything,11415,1
+C3_midas,C3,midas,11415,0
+C3_midas_shuffled_depth,C3,midas,11415,1
