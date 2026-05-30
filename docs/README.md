@@ -52,8 +52,10 @@ artifact 和方法分析混在一起。
 | WaveletPreserve proxy | `docs/HAZE4K_WAVELET_PRESERVE_PROXY_AUDIT_20260528.md` | hazy wavelet / frozen activation preserve-intervene 预检；未过 precision / generalization pass line。 |
 | Supervised preserve proxy | `docs/HAZE4K_SUPERVISED_PRESERVE_PROXY_AUDIT_20260528.md` | CR/LF-v1 teacher label patch 预检；监督 preserve head 仍未过 preserve recall 和 strong-CR recall。 |
 | ResidualFieldConfidence | `docs/HAZE4K_LF_RESIDUAL_FIELD_CONFIDENCE_PLAN_20260528.md` | 连续 residual-field confidence 预检；有模拟收益但 preservation 和 intervention precision 不够，不能长训。 |
-| LF-v2 multiscale bottleneck refiner | `docs/HAZE4K_LF_V2_MULTISCALE_BOTTLENECK_REFINER_PLAN_20260528.md` | 当前建议的下一张路线卡：小型多尺度/频域 bottleneck refiner，先过 cost、neutral-init、branch activity 和 preservation gates。 |
+| LF-v2 multiscale bottleneck refiner | `docs/HAZE4K_LF_V2_MULTISCALE_BOTTLENECK_REFINER_PLAN_20260528.md` | 历史路线卡；preflight 通过但正式 30k gate 失败，当前结论以 `CURRENT_CONTEXT.md` 为准。 |
 | Depth-Guided LF preflight | `docs/HAZE4K_DEPTH_GUIDED_LF_PREFLIGHT_PLAN_20260529.md` | Frozen relative-depth proxy audit for LF-v1 residual confidence; diagnostic only unless it passes preservation, precision, and held-out stability gates. |
+| CBRFRC-v1 | `docs/HAZE4K_CBRFRC_V1_PLAN_20260530.md` | 输出级 baseline-relative residual corrector；identity/headroom/micro-overfit 通过，但 100k full-test 方向机制失败。 |
+| BRFRC-v2 representation audit | `docs/HAZE4K_BRFRC_V2_REPRESENTATION_AUDIT_PLAN_20260530.md` | 当前下一步 Stage 0：在 AutoDL 上审计 frozen CR/LF-v1 bottleneck/decoder features 是否通过 output-only、shuffled、preservation、confidence 和 held-out gates；通过前不训练 100k。 |
 | 系统路线证据审查 | `docs/HAZE4K_ROUTE_EVIDENCE_REVIEW_20260528.md` | 汇总 CR、LF-v1、ResidualCalib、CRPlus-v2、LFCR-v1、LFCR-v2 和 preserve/RFC 预检证据，给出下一步 scoped architecture 决策。 |
 | 历史清理记录 | `docs/archive/HAZE4K_CLEANUP_PLAN_20260523.md` | 仅用于追溯 2026-05-23 清理过程；日常 artifact 判断看 manifest。 |
 

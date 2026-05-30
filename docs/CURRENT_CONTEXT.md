@@ -200,6 +200,17 @@ route reasoning in the dated analysis docs.
   `gate_lf_mean=0.0327`. Conclusion: mechanism failed; do not run Stage C,
   joint fine-tune, or another CBRFRC-v1 variant without a changed target or
   loss design.
+- Current next route card:
+  `docs/HAZE4K_BRFRC_V2_REPRESENTATION_AUDIT_PLAN_20260530.md` on branch
+  `codex/haze4k-brfrc-v2-representation-audit`. This is Stage 0 only:
+  run an AutoDL representation audit before any BRFRC-v2-Rep implementation or
+  100k scout. The audit asks whether frozen CR/LF-v1 bottleneck and decoder
+  features beat output-only and shuffled-feature controls for residual
+  direction, LF MSE improvement, LF-v1 gain preservation, strong-CR
+  preservation, confidence correlation, and held-out stability. All audit
+  extraction, probe training, smoke, evaluation, and any later formal scout
+  should run on `autodl-dehaze`; local WSL remains for documentation, code,
+  Git, and lightweight static checks.
 
 ## Storage And Server Roles
 
@@ -315,6 +326,10 @@ gate policy. Use `docs/WORKFLOW.md` for exact launch/check/stop templates.
   held-out stability gates, and shuffled-depth control was too close.
 - Do not spend another 100k on LFCR weight/decay scheduling unless a new
   selectivity or representation mechanism is written and preflighted.
+- Do not implement or launch BRFRC-v2-Rep training until the Stage 0
+  representation audit in
+  `docs/HAZE4K_BRFRC_V2_REPRESENTATION_AUDIT_PLAN_20260530.md` passes its
+  output-only, shuffled-control, preservation, confidence, and held-out gates.
 - Do not treat short-horizon smoke, dry-run, or changed-LR-horizon resumes as
   fair candidate evidence.
 - Do not edit source directly on cloud servers for experiment variants. Make
@@ -342,8 +357,9 @@ Most common next reads:
    rules, and reporting evidence chain.
 9. `docs/HAZE4K_ROUTE_EVIDENCE_REVIEW_20260528.md`: current route evidence
    matrix, oracle headroom, failure modes, Pareto view, and next decision tree.
-10. `docs/HAZE4K_LF_V2_MULTISCALE_BOTTLENECK_REFINER_PLAN_20260528.md`:
-   proposed next cold-start architecture route card and preflight gates.
+10. `docs/HAZE4K_BRFRC_V2_REPRESENTATION_AUDIT_PLAN_20260530.md`:
+   current next Stage 0 representation audit card; run on AutoDL before any
+   BRFRC-v2-Rep implementation or 100k scout.
 11. `docs/HAZE4K_OFFICIAL_WARMSTART_FINETUNE_PLAN_20260528.md`: isolated
    official-weight warm-start fine-tuning route, conversion script, gates, and
    DEA-Net reproduction pitfalls.
