@@ -1,17 +1,17 @@
-# Clean Start Checklist
+# Model Experiment Start Checklist
 
 Date: 2026-05-31
 
-Status: generic checklist for starting a fully independent experiment.
+Status: checklist for starting and governing a model experiment.
 
-## 1. Reset Assumptions
+## 1. Define Objective And Assumptions
 
 - Name the new project objective in one sentence.
-- List what is known from the new project only.
+- List what is known.
 - List what is unknown.
-- Mark all external or older evidence as hypothesis only.
-- Do not inherit any old route ranking, model preference, metric threshold, or
-  stop rule without re-justifying it.
+- Mark assumptions that still need evidence.
+- Identify the baseline, target metric, and constraints that matter for the
+  first decision.
 
 ## 2. Create A Documentation Map
 
@@ -124,22 +124,3 @@ During launch:
 - If evidence must be shared, create a compact text-only review package.
 - Audit source/local/remote parity for any published evidence package.
 - Create the next card only after the decision is clear.
-
-## 11. Cleanliness Audit
-
-Before sharing or copying the protocol into another project, check that it does
-not contain:
-
-- old model names;
-- old dataset names;
-- old metric numbers;
-- old run IDs;
-- old checkpoint paths;
-- old artifact paths;
-- old server names;
-- old branch names;
-- old route verdicts;
-- old paper claims.
-
-The protocol is clean only if a reader can apply it to an unrelated model
-without needing any old project context.

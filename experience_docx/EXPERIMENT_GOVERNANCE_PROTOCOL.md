@@ -2,8 +2,7 @@
 
 Date: 2026-05-31
 
-Status: generic protocol for any model experiment. This document is deliberately
-independent of model family, dataset, benchmark, codebase, and prior results.
+Status: generic protocol for model experiments.
 
 ## Core Rule
 
@@ -67,7 +66,7 @@ Preserve trusted entrypoints until the experiment explicitly changes them:
 An experiment that changes the entrypoint or checkpoint contract must be judged
 against a newly written fair contract.
 
-## Clean Baseline Rule
+## Verified Baseline Rule
 
 Before changing the model, establish the baseline:
 
@@ -88,7 +87,7 @@ always the largest model change or the safest small tweak.
 A candidate is worth a serious run only if it has:
 
 - a known target;
-- a cheap preflight or clear prior diagnostic inside the new project;
+- a cheap preflight or earlier diagnostic inside the project;
 - one primary variable whenever possible;
 - an earliest decisive gate;
 - matched-budget comparison;

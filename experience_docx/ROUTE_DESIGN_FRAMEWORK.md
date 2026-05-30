@@ -2,7 +2,7 @@
 
 Date: 2026-05-31
 
-Status: generic map for designing candidate experiments in any model project.
+Status: framework for designing candidate model experiments.
 
 ## Route Selection
 
@@ -132,8 +132,8 @@ Closed or deprioritized routes can reopen only when something material changes:
 - a new deployable feature exists;
 - a stronger preflight passes;
 - a constraint changes;
-- a previous failure is traced to an invalid setup;
-- a new project objective makes the old stop reason irrelevant.
+- an earlier failure is traced to an invalid setup;
+- a changed project objective makes the original stop reason irrelevant.
 
 Document the reopen reason before running.
 
