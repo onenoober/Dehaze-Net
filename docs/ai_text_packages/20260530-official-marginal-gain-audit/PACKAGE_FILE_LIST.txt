@@ -1,0 +1,17 @@
+docs/ai_text_packages/20260530-official-marginal-gain-audit/AGENTS.md
+docs/ai_text_packages/20260530-official-marginal-gain-audit/PACKAGE_FILE_LIST.txt
+docs/ai_text_packages/20260530-official-marginal-gain-audit/PACKAGE_README.md
+docs/ai_text_packages/20260530-official-marginal-gain-audit/code/analyze_official_marginal_gain_audit.py
+docs/ai_text_packages/20260530-official-marginal-gain-audit/docs/CURRENT_CONTEXT.md
+docs/ai_text_packages/20260530-official-marginal-gain-audit/docs/EXPERIMENT_LOG.md
+docs/ai_text_packages/20260530-official-marginal-gain-audit/docs/HAZE4K_OFFICIAL_MARGINAL_GAIN_AUDIT_20260530.md
+docs/ai_text_packages/20260530-official-marginal-gain-audit/docs/HAZE4K_RUN_MANIFEST.md
+docs/ai_text_packages/20260530-official-marginal-gain-audit/docs/README.md
+docs/ai_text_packages/20260530-official-marginal-gain-audit/experiment/HAZE4K/_run_logs/HAZE4K-official-marginal-gain-audit-autodl-20260530-hgb-full.log
+docs/ai_text_packages/20260530-official-marginal-gain-audit/experiment/HAZE4K/official_marginal_gain_audit/HAZE4K-official-marginal-gain-audit-autodl-20260530-hgb-full/analysis_report.md
+docs/ai_text_packages/20260530-official-marginal-gain-audit/experiment/HAZE4K/official_marginal_gain_audit/HAZE4K-official-marginal-gain-audit-autodl-20260530-hgb-full/official_candidate_matrix.csv
+docs/ai_text_packages/20260530-official-marginal-gain-audit/experiment/HAZE4K/official_marginal_gain_audit/HAZE4K-official-marginal-gain-audit-autodl-20260530-hgb-full/oracle_summary.json
+docs/ai_text_packages/20260530-official-marginal-gain-audit/experiment/HAZE4K/official_marginal_gain_audit/HAZE4K-official-marginal-gain-audit-autodl-20260530-hgb-full/split_results.csv
+docs/ai_text_packages/20260530-official-marginal-gain-audit/experiment/HAZE4K/official_marginal_gain_audit/HAZE4K-official-marginal-gain-audit-autodl-20260530-hgb-full/summary.csv
+docs/ai_text_packages/20260530-official-marginal-gain-audit/experiment/HAZE4K/official_marginal_gain_audit/HAZE4K-official-marginal-gain-audit-autodl-20260530-hgb-full/summary.json
+docs/ai_text_packages/20260530-official-marginal-gain-audit/scripts/autodl-haze4k-official-marginal-gain-audit.sh
