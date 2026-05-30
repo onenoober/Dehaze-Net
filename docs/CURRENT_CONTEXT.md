@@ -215,6 +215,14 @@ route reasoning in the dated analysis docs.
   launch a 100k scout from this evidence. Compact local artifacts are under
   `experiment/HAZE4K/brfrc_v2_representation_audit/HAZE4K-brfrc-v2-representation-audit-autodl-20260530-111028`;
   large feature matrices remain on AutoDL only.
+- Current next route card:
+  `docs/HAZE4K_STRONG_CR_ABSTENTION_RESIDUAL_SNR_AUDIT_20260530.md` on branch
+  `codex/haze4k-strong-cr-abstention-snr-audit`. This is a diagnostic-only
+  AutoDL audit: verify whether no-change/no-regression risk is readable before
+  any new residual model. It uses existing CR, LF-v1, ResidualCalib,
+  CRPlus-v2, CBRFRC-v1, and BRFRC-v2 audit evidence; it must not implement
+  BRFRC-v3 or launch a 100k training run unless the written abstention gates
+  pass and a separate model card is created.
 
 ## Storage And Server Roles
 
@@ -334,6 +342,9 @@ gate policy. Use `docs/WORKFLOW.md` for exact launch/check/stop templates.
 - Do not implement or launch BRFRC-v2-Rep training from the 2026-05-30 Stage 0
   representation audit; it found real internal feature signal, but failed the
   strong-CR preservation and CR-strength held-out gates.
+- Do not implement or launch Abstention-First BRFRC-v3 before the
+  Strong-CR Abstention / Residual-SNR audit passes its no-change, held-out, and
+  simulated-PSNR gates and a separate model route card is written.
 - Do not treat short-horizon smoke, dry-run, or changed-LR-horizon resumes as
   fair candidate evidence.
 - Do not edit source directly on cloud servers for experiment variants. Make
@@ -364,6 +375,9 @@ Most common next reads:
 10. `docs/HAZE4K_BRFRC_V2_REPRESENTATION_AUDIT_PLAN_20260530.md`:
    completed Stage 0 representation audit; failed preservation/held-out gates,
    so no BRFRC-v2-Rep implementation or 100k scout is authorized from it.
-11. `docs/HAZE4K_OFFICIAL_WARMSTART_FINETUNE_PLAN_20260528.md`: isolated
+11. `docs/HAZE4K_STRONG_CR_ABSTENTION_RESIDUAL_SNR_AUDIT_20260530.md`:
+   current diagnostic-only abstention/SNR route; run on AutoDL before any
+   Abstention-First BRFRC-v3 implementation or 100k scout.
+12. `docs/HAZE4K_OFFICIAL_WARMSTART_FINETUNE_PLAN_20260528.md`: isolated
    official-weight warm-start fine-tuning route, conversion script, gates, and
    DEA-Net reproduction pitfalls.

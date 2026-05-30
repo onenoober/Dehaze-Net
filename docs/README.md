@@ -56,6 +56,7 @@ artifact 和方法分析混在一起。
 | Depth-Guided LF preflight | `docs/HAZE4K_DEPTH_GUIDED_LF_PREFLIGHT_PLAN_20260529.md` | Frozen relative-depth proxy audit for LF-v1 residual confidence; diagnostic only unless it passes preservation, precision, and held-out stability gates. |
 | CBRFRC-v1 | `docs/HAZE4K_CBRFRC_V1_PLAN_20260530.md` | 输出级 baseline-relative residual corrector；identity/headroom/micro-overfit 通过，但 100k full-test 方向机制失败。 |
 | BRFRC-v2 representation audit | `docs/HAZE4K_BRFRC_V2_REPRESENTATION_AUDIT_PLAN_20260530.md` | 已完成 Stage 0：AutoDL frozen CR/LF-v1 feature probes 有信号，但 strong-CR preservation 和 CR-strength held-out gates 失败；不训练 BRFRC-v2-Rep。 |
+| Strong-CR Abstention / Residual-SNR audit | `docs/HAZE4K_STRONG_CR_ABSTENTION_RESIDUAL_SNR_AUDIT_20260530.md` | 当前下一步诊断：先验证 no-change / no-regression risk 是否可读，并做 strong-CR residual-SNR 分析；通过前不实现 BRFRC-v3 或训练 100k。 |
 | 系统路线证据审查 | `docs/HAZE4K_ROUTE_EVIDENCE_REVIEW_20260528.md` | 汇总 CR、LF-v1、ResidualCalib、CRPlus-v2、LFCR-v1、LFCR-v2 和 preserve/RFC 预检证据，给出下一步 scoped architecture 决策。 |
 | 历史清理记录 | `docs/archive/HAZE4K_CLEANUP_PLAN_20260523.md` | 仅用于追溯 2026-05-23 清理过程；日常 artifact 判断看 manifest。 |
 
