@@ -24,6 +24,11 @@ route reasoning in the dated analysis docs.
 - Current user instruction for missing cloud dependencies: install required
   dependencies directly without asking for confirmation, then record durable
   server facts in `docs/CORE_SERVER_RUNBOOK.md` when useful for future runs.
+- Current user instruction for in-flight runs: after a training, evaluation,
+  or audit run has started, do not privately change its configuration, reduce
+  its scope, swap probe/model heads, change feature sets/splits, stop it, or
+  launch a reduced replacement unless the user explicitly approves the change
+  first.
 - Completed LFCR-v2 decay scout on `runyun-ts`:
   `DEA-Net-LFCR-v2-decay-H4K-scout100k-20260528-091455` in
   `/root/workspace/Dehaze-Net-audit-sync`, branch
