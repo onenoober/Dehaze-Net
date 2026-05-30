@@ -1,0 +1,6 @@
+opencv-python==4.6.0.66
+numpy==1.26.4
+tqdm
+einops
+tensorboard
+matplotlib
