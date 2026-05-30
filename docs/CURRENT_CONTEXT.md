@@ -8,6 +8,11 @@ route reasoning in the dated analysis docs.
 
 ## Quick Handoff
 
+- Current HAZE4K official-checkpoint experiment state: no new official-PSNR
+  training is authorized. The `HAZE4K official PSNR marginal improvement`
+  route is paused/closed unless a fresh audit first finds a deployable
+  no-change discriminative variable that passes strong-official/no-change,
+  CR-strength, A/beta, content-cluster, and residual-low-energy held-out gates.
 - Active LFCR-v1 implementation source: `codex/haze4k-lfcr-v1` commit
   `1a32a2a` (`Add LFCR v1 route and launch scripts`). The active runyun
   checkout was verified at `dbd1320`, which adds run-launch documentation on
@@ -352,7 +357,7 @@ gate policy. Use `docs/WORKFLOW.md` for exact launch/check/stop templates.
 | LF-v1 | Current positive model evidence: best 90k `32.4281 / 0.9845`, full-test mean delta about `+0.2030 dB` over CR. | `docs/HAZE4K_LF_RESIDUAL_DIRECTION_DIAGNOSIS_20260524.md` |
 | ResidualCalib | Positive ablation but below LF-v1: best 90k `32.3936 / 0.9845`; useful for residual-direction evidence. | `docs/HAZE4K_LF_RESIDUAL_CALIBRATION_PLAN_20260525.md`, `docs/HAZE4K_THREE_WAY_OUTPUT_ANALYSIS_20260525.md` |
 | Selector route | Closed for now. Oracle headroom is real, but deployable proxies failed; only reopen with a changed target and fresh full-sample proxy audit. | `docs/HAZE4K_SELECTOR_EVIDENCE_CLOSURE_20260526.md` |
-| Official-centric marginal gain audit | Completed full HGB audit on the 1000-image official join: oracle-with-no-change headroom is `+0.6459 dB`, but `0/448` deployable rows passed random plus official/CR-strength, airlight, beta, content-cluster, and residual-low-energy held-outs. Do not train an official adapter yet. | `docs/HAZE4K_OFFICIAL_MARGINAL_GAIN_AUDIT_20260530.md` |
+| Official-centric marginal gain route | Paused/closed. Completed full HGB audit on the 1000-image official join: oracle-with-no-change headroom is `+0.6459 dB`, but `0/448` deployable rows passed random plus official/CR-strength, airlight, beta, content-cluster, and residual-low-energy held-outs. Do not train an official adapter or continue ordinary official PSNR marginal tweaks unless a new deployable no-change variable is found first. | `docs/HAZE4K_OFFICIAL_MARGINAL_GAIN_AUDIT_20260530.md` |
 | ResidualDirLoss | First `w_loss_residual_dir=0.005` fair scout failed the 30k hard gate and should not be resumed. | `docs/HAZE4K_RESIDUAL_DIRECTION_LOSS_SCALE_PLAN_20260526.md` |
 | CRPlus-v2 | Completed first fair scout at 100k: `32.3633 / 0.9847`. It is positive versus CR baseline (`+0.1396 dB` full-test mean delta), but below LF-v1 (`-0.0633 dB`) and ResidualCalib (`-0.0286 dB`) in PSNR while slightly higher in SSIM. Treat as a positive CR-only component candidate, not an LF-v1 replacement. | `docs/HAZE4K_CRPLUS_V2_FREQ_CURRICULUM_PLAN_20260526.md` |
 | LFCR-v1 w0.005 | Completed first high-upside combination scout at 100k: `32.2098 / 0.9844`, LF gate `0.0201`. Full diagnostics show LFCR vs LF-v1 mean `-0.2178 dB`, better/worse `461/539`; it improves `182/351` LF-v1 regression cases by at least `0.30 dB`, but loses at least `0.30 dB` on `264/453` LF-v1 gain cases. Treat as proof that CRPlus helps early/rescue behavior but is harmful as a full-run constant high weight. | `docs/HAZE4K_LFCR_V1_COMBINATION_PLAN_20260527.md` |
@@ -388,6 +393,9 @@ gate policy. Use `docs/WORKFLOW.md` for exact launch/check/stop templates.
   official-PSNR training from the completed 2026-05-30 Official-Centric
   Marginal Gain Audit; headroom exists, but no deployable row passed the
   no-change and held-out gates.
+- Do not reopen the HAZE4K official PSNR marginal improvement route with
+  ordinary residual/selector/adapter/structure tweaks. Reopen only after a
+  fresh deployable no-change variable passes the official-failure safety gates.
 - Do not treat short-horizon smoke, dry-run, or changed-LR-horizon resumes as
   fair candidate evidence.
 - Do not edit source directly on cloud servers for experiment variants. Make

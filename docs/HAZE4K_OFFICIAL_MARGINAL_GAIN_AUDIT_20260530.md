@@ -2,8 +2,10 @@
 
 Date: 2026-05-30
 
-Status: Completed Stage 0 audit. Recommendation
-`do_not_train_official_adapter_yet`. This card authorized only the
+Status: Completed Stage 0 audit and route closure. Recommendation
+`do_not_train_official_adapter_yet`. The HAZE4K official PSNR marginal
+improvement route is paused/closed unless a new deployable no-change
+discriminative variable is found first. This card authorized only the
 official-centric join, oracle, and tiny probe audit on `autodl-dehaze`; the
 completed audit did not authorize a 100k HAZE4K model scout or a tiny
 official-default adapter card.
@@ -175,3 +177,31 @@ Do not launch a 100k large model from this audit alone.
   CR-strength, airlight, beta, content-cluster, and residual-low-energy
   held-outs. Do not write the tiny official-default adapter route card; do not
   launch new HAZE4K official-PSNR training from this audit alone.
+
+## Route Closure Summary
+
+This result does not prove that DEA-Net PSNR can never be improved. It says
+that the current official-checkpoint-centered, deployable marginal-PSNR route
+has become a low-return and low-success-probability direction.
+
+The decisive split is:
+
+- Headroom exists: the 5-way official oracle shows a real official-failure
+  subset and a meaningful theoretical gain.
+- Deployability is missing: no tested official/candidate output feature row
+  maintained high precision, low no-change false intervention, positive
+  bootstrap gain, and held-out stability at the same time.
+- Leakage can solve the label only when it uses non-deployable information, so
+  it should not be treated as a route to implementation.
+
+Operational decision:
+
+- Mark `HAZE4K official PSNR marginal improvement` as paused/closed.
+- Do not continue ordinary official-adapter, residual-correction, selector,
+  or structure tweaks for this target.
+- Reopen only after a fresh audit identifies a deployable no-change variable
+  that passes CR-strength, A/beta, content-cluster, residual-low-energy, and
+  strong-official/no-change false-intervention gates.
+- If such a variable is found, the first route should still be tiny and
+  official-default: bounded low-frequency/color correction, strict no-op when
+  not selected, and 0-train or <=10k per-image safety before any larger run.
