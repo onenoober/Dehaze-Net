@@ -112,9 +112,10 @@ artifact 和方法分析混在一起。
 - 新增当前状态只改 `CURRENT_CONTEXT.md`；新增历史 run 事实只改
   `EXPERIMENT_LOG.md`；新增 artifact 路径/保留判断只改
   `HAZE4K_RUN_MANIFEST.md`。
-- 新建或更新给 AI 读取的文本版项目包时，必须把 text-only 副本放到
-  `docs/ai_text_packages/` 并同步到 GitHub；不要把原始 `experiment/`
-  目录直接加入 Git。
+- 新建或更新给 AI 读取的实验文本小文件/项目包时，必须把 text-only 副本放到
+  `docs/ai_text_packages/`，同步到 GitHub，并按
+  `docs/HAZE4K_RUN_MANIFEST.md` 审计 source/local/remote 文件集；不要把原始
+  `experiment/` 目录直接加入 Git。
 - `CURRENT_CONTEXT.md` 只保留当前可执行上下文，不放完整历史。
 - `WORKFLOW.md` 只放可复用命令和操作边界，不解释大段方法论。
 - `ANALYSIS_COMMANDS.md` 只放评估、可视化、诊断脚本命令；不放训练启动、

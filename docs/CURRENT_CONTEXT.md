@@ -223,9 +223,10 @@ route reasoning in the dated analysis docs.
 - GitHub repo: `https://github.com/onenoober/Dehaze-Net` (public as of
   2026-05-30). GitHub
   should carry code, docs, scripts, compact metrics, conclusions, and curated
-  text-only AI project packages under `docs/ai_text_packages/`. When a text
-  package is created or updated for AI analysis, commit and push that package
-  to GitHub so future AI reviewers can read it by link.
+  text-only AI project packages under `docs/ai_text_packages/`. When
+  experiment-derived small text evidence is packaged for AI analysis, commit
+  and push it to GitHub, audit source/local/remote parity, and record the audit
+  in `docs/HAZE4K_RUN_MANIFEST.md` before calling the sync complete.
 - Local WSL is the durable artifact home. Keep datasets, checkpoints, logs,
   plots, previews, and synced evidence under ignored paths such as
   `dataset/`, `trained_models/`, and `experiment/`. The only Git exception is

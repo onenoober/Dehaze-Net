@@ -35,16 +35,22 @@ only when explicitly requested.
 ## GitHub AI Text Package Policy
 
 Curated text-only project packages for AI review are a documented exception to
-the raw-artifact rule. When such a package is created or updated, copy it under
-`docs/ai_text_packages/<date-or-id>/`, commit it, and push it to GitHub. This
-lets future AI reviewers use GitHub links while preserving the raw artifact
-layout under ignored `experiment/`.
+the raw-artifact rule. Any experiment-derived small text evidence that needs to
+be reachable through GitHub for AI review, cross-conversation handoff, or
+external review must use this package path. When such a package is created or
+updated, copy it under `docs/ai_text_packages/<date-or-id>/`, commit it, and
+push it to GitHub. This lets future AI reviewers use GitHub links while
+preserving the raw artifact layout under ignored `experiment/`.
 
 Each package must stay text-only. It may include compact `.md`, `.txt`, `.log`,
 `.json`, `.jsonl`, `.csv`, scripts, and source code needed to understand the
 model and evidence chain. It must not include datasets, images, checkpoints,
 model weights, tensor/array dumps, inference image outputs, or large feature
 matrices that are not practical for AI reading.
+
+Do not add raw `experiment/` directories to Git to "sync small files". The
+approved GitHub sync form is the curated package copy plus the manifest index
+row below.
 
 Post-sync audit is mandatory for every created or updated AI text package:
 
@@ -59,6 +65,9 @@ Post-sync audit is mandatory for every created or updated AI text package:
   binary dumps.
 - If byte hashes differ only because of line endings or intentional package
   metadata edits, document the allowed differences in this manifest.
+- Record the package index row in this manifest after the GitHub push and
+  parity audit. Do not claim the GitHub sync is complete before the manifest
+  includes the audited source/local/remote file counts.
 
 Current package index:
 

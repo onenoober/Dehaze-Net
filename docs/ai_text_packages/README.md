@@ -1,7 +1,8 @@
 # AI Text Packages
 
 This directory stores GitHub-readable, text-only project packages prepared for
-external AI analysis.
+external AI analysis. It is the only approved path for committing
+experiment-derived small text evidence to GitHub.
 
 Policy:
 
@@ -15,6 +16,9 @@ Policy:
   text-only package copy belongs here.
 - After pushing, audit local package parity, remote GitHub parity, and forbidden
   extensions; record the result in `docs/HAZE4K_RUN_MANIFEST.md`.
+- Do not call a package synchronized until the source package, committed copy,
+  and remote branch have the same intended file set and the manifest records
+  that audit.
 
 Current packages:
 

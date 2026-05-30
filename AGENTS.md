@@ -5,12 +5,14 @@ This repository is a private research fork of DEA-Net.
 ## What to keep stable
 - Keep the official training and evaluation entrypoints in `code/`.
 - Avoid rewriting the upstream README unless a change affects onboarding.
-- Do not commit datasets, checkpoints, experiment outputs, or temporary logs.
-- Exception: curated text-only AI project packages under
-  `docs/ai_text_packages/` must be committed and pushed to GitHub when created
-  or updated, so external AI review can use GitHub links. These packages may
-  include copied compact logs/CSV/JSON/MD text, but never images, datasets,
-  checkpoints, arrays, or model weights.
+- Do not commit datasets, checkpoints, raw experiment outputs, or temporary
+  logs directly from `experiment/`, `dataset/`, or `trained_models/`.
+- Exception: experiment-derived small text evidence needed for AI review or
+  cross-conversation handoff must be curated as a text-only package under
+  `docs/ai_text_packages/`, then committed and pushed to GitHub when created or
+  updated. These packages may include copied compact logs/CSV/JSON/MD text,
+  scripts, and source code, but never images, datasets, checkpoints, arrays,
+  large feature tables, or model weights.
 - After pushing an AI text package, audit that the local source package,
   committed `docs/ai_text_packages/` copy, and GitHub remote branch have the
   same intended file set, with no forbidden binary/model extensions. Record the
@@ -27,8 +29,10 @@ This repository is a private research fork of DEA-Net.
 - Check `git status` before and after edits.
 - Use `apply_patch` for file edits.
 - Keep new docs and scripts ASCII unless there is a strong reason not to.
-- Put generated artifacts under `experiment/`, `trained_models/`, or external storage.
-- Put GitHub-readable AI text package copies under `docs/ai_text_packages/`.
+- Put generated artifacts under `experiment/`, `trained_models/`, or external
+  storage.
+- Put every GitHub-readable experiment text package copy under
+  `docs/ai_text_packages/`, push it, and audit source/local/remote parity.
 
 ## Common commands
 From the repository root:

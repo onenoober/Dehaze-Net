@@ -8,9 +8,10 @@ templates.
 
 ## Storage Roles
 
-- GitHub is the lightweight code and documentation repository. Do not store
-  datasets, checkpoints, large generated images, large inference folders, or
-  bulky experiment artifacts in GitHub.
+- GitHub is the lightweight code, documentation, and curated text-evidence
+  repository. Do not store datasets, checkpoints, large generated images, large
+  inference folders, raw experiment directories, or bulky experiment artifacts
+  in GitHub.
 - Local WSL is the experiment artifact home. Keep datasets, checkpoints, full
   logs, plots, previews, and other research byproducts under the local WSL
   workspace, usually in ignored paths such as `dataset/`, `trained_models/`,
@@ -26,7 +27,11 @@ templates.
   inference folders, large image grids, large tensor arrays, datasets, and
   archives.
 - After small cloud outputs are reviewed locally, put only the distilled code,
-  documentation, commands, metrics, and conclusions into GitHub.
+  documentation, commands, metrics, conclusions, and curated text-only AI
+  packages into GitHub. Any experiment-derived small text files that need
+  GitHub links must be copied into `docs/ai_text_packages/<date-or-id>/`,
+  committed, pushed, audited against the source package and remote branch, and
+  recorded in `docs/HAZE4K_RUN_MANIFEST.md`.
 
 ## Local loop
 1. Create a topic branch.
