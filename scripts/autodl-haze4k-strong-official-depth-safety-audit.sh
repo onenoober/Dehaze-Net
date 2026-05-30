@@ -88,6 +88,7 @@ cd "$ROOT/code"
   --max_images "${MAX_IMAGES:-0}" \
   --random_splits "${RANDOM_SPLITS:-3}" \
   --valid_fraction "${VALID_FRACTION:-0.25}" \
+  --content_clusters "${CONTENT_CLUSTERS:-5}" \
   --target_margins "${TARGET_MARGINS:-0.20}" \
   --nochange_margin "${NOCHANGE_MARGIN:-0.05}" \
   --heads "${HEADS:-logistic,decision_tree,hgb}" \

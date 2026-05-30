@@ -501,7 +501,11 @@ def collect_rows(args):
         "residual_midhigh_q3",
         "residual_high_q4",
     ))
-    add_content_clusters(rows, args)
+    if len(rows) < max(2, args.content_clusters):
+        for row in rows:
+            row["content_cluster"] = "content_all"
+    else:
+        add_content_clusters(rows, args)
     add_oracle_labels(rows, args)
 
     meta = {
