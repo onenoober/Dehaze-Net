@@ -98,3 +98,25 @@ Important columns:
 
 Use this output to decide whether the next LF route should calibrate residual
 direction/magnitude rather than add another spatial mask.
+
+## Strong-Official Depth Safety Audit
+
+Run this only as a diagnostic audit for the official-centric no-change
+bottleneck; it does not authorize training by itself.
+
+```bash
+cd /root/autodl-tmp/workspace/Dehaze-Net
+bash scripts/autodl-haze4k-strong-official-depth-safety-audit.sh
+```
+
+The script writes compact text outputs under
+`experiment/HAZE4K/strong_official_depth_safety_audit/<run-id>/`, including:
+
+- `decision_summary.json`
+- `analysis_report.md`
+- `strong_nochange_safety_summary.csv`
+- `heldout_safety_summary.csv`
+- `shuffle_depth_control.csv`
+- `label_permutation_control.csv`
+- `depth_estimator_consistency.csv`
+- `candidate_free_vs_candidate_aware.csv`
