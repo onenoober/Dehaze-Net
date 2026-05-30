@@ -556,6 +556,7 @@ def numeric_feature_keys(rows, include_labels=False):
     }
     metric_suffixes = ("_psnr", "_ssim", "_delta_official_psnr", "_delta_official_ssim")
     keys = []
+    min_numeric = min(len(rows), max(5, len(rows) // 10))
     for key in sorted(rows[0].keys()):
         if key in excluded:
             continue
@@ -570,7 +571,7 @@ def numeric_feature_keys(rows, include_labels=False):
         ):
             continue
         values = [row.get(key, "") for row in rows]
-        if sum(1 for value in values if is_number(value)) >= max(5, len(rows) // 10):
+        if sum(1 for value in values if is_number(value)) >= min_numeric:
             keys.append(key)
     return keys
 
