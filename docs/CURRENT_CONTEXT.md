@@ -200,17 +200,21 @@ route reasoning in the dated analysis docs.
   `gate_lf_mean=0.0327`. Conclusion: mechanism failed; do not run Stage C,
   joint fine-tune, or another CBRFRC-v1 variant without a changed target or
   loss design.
-- Current next route card:
-  `docs/HAZE4K_BRFRC_V2_REPRESENTATION_AUDIT_PLAN_20260530.md` on branch
-  `codex/haze4k-brfrc-v2-representation-audit`. This is Stage 0 only:
-  run an AutoDL representation audit before any BRFRC-v2-Rep implementation or
-  100k scout. The audit asks whether frozen CR/LF-v1 bottleneck and decoder
-  features beat output-only and shuffled-feature controls for residual
-  direction, LF MSE improvement, LF-v1 gain preservation, strong-CR
-  preservation, confidence correlation, and held-out stability. All audit
-  extraction, probe training, smoke, evaluation, and any later formal scout
-  should run on `autodl-dehaze`; local WSL remains for documentation, code,
-  Git, and lightweight static checks.
+- Completed BRFRC-v2 representation Stage 0 audit on `autodl-dehaze`:
+  `HAZE4K-brfrc-v2-representation-audit-autodl-20260530-111028` in
+  `/root/autodl-tmp/workspace/Dehaze-Net`, branch
+  `codex/haze4k-brfrc-v2-representation-audit` commit `a441148`. The audit
+  used HAZE4K train split, CR and LF-v1 best checkpoints at step `90000`,
+  `3000` images, and frozen CR/LF-v1 bottleneck/decoder features. Internal
+  ridge probes beat output-only and shuffled controls on random residual
+  direction and LF-v1 preservation, but every main feature row failed the
+  written Stage 0 pass line because strong-CR preservation stayed far below
+  `0.70` (`0.4081` for CR features, `0.4136` for LF-v1 features, `0.4473`
+  for feature contrast) and CR-strength held-out rows collapsed. Recommendation:
+  `do_not_train_brf_v2_representation_yet`. Do not implement BRFRC-v2-Rep or
+  launch a 100k scout from this evidence. Compact local artifacts are under
+  `experiment/HAZE4K/brfrc_v2_representation_audit/HAZE4K-brfrc-v2-representation-audit-autodl-20260530-111028`;
+  large feature matrices remain on AutoDL only.
 
 ## Storage And Server Roles
 
@@ -326,10 +330,9 @@ gate policy. Use `docs/WORKFLOW.md` for exact launch/check/stop templates.
   held-out stability gates, and shuffled-depth control was too close.
 - Do not spend another 100k on LFCR weight/decay scheduling unless a new
   selectivity or representation mechanism is written and preflighted.
-- Do not implement or launch BRFRC-v2-Rep training until the Stage 0
-  representation audit in
-  `docs/HAZE4K_BRFRC_V2_REPRESENTATION_AUDIT_PLAN_20260530.md` passes its
-  output-only, shuffled-control, preservation, confidence, and held-out gates.
+- Do not implement or launch BRFRC-v2-Rep training from the 2026-05-30 Stage 0
+  representation audit; it found real internal feature signal, but failed the
+  strong-CR preservation and CR-strength held-out gates.
 - Do not treat short-horizon smoke, dry-run, or changed-LR-horizon resumes as
   fair candidate evidence.
 - Do not edit source directly on cloud servers for experiment variants. Make
@@ -358,8 +361,8 @@ Most common next reads:
 9. `docs/HAZE4K_ROUTE_EVIDENCE_REVIEW_20260528.md`: current route evidence
    matrix, oracle headroom, failure modes, Pareto view, and next decision tree.
 10. `docs/HAZE4K_BRFRC_V2_REPRESENTATION_AUDIT_PLAN_20260530.md`:
-   current next Stage 0 representation audit card; run on AutoDL before any
-   BRFRC-v2-Rep implementation or 100k scout.
+   completed Stage 0 representation audit; failed preservation/held-out gates,
+   so no BRFRC-v2-Rep implementation or 100k scout is authorized from it.
 11. `docs/HAZE4K_OFFICIAL_WARMSTART_FINETUNE_PLAN_20260528.md`: isolated
    official-weight warm-start fine-tuning route, conversion script, gates, and
    DEA-Net reproduction pitfalls.

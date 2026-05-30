@@ -2,15 +2,39 @@
 
 Date: 2026-05-30
 
-Status: proposed Stage 0 diagnostic audit. This card authorizes an AutoDL
-representation audit only. It does not authorize BRFRC-v2-Rep implementation
-or a 100k HAZE4K scout until the audit passes every written gate.
+Status: completed Stage 0 diagnostic audit. The audit failed the written
+strong-CR preservation and CR-strength held-out gates, so this card does not
+authorize BRFRC-v2-Rep implementation or a 100k HAZE4K scout.
 
 Execution boundary: run audit extraction, probe training, smoke tests,
 evaluation, and any later formal scout on `autodl-dehaze` in
 `/root/autodl-tmp/workspace/Dehaze-Net`. Local WSL work is limited to
 documentation, code edits, Git, and lightweight static checks unless explicitly
 requested otherwise.
+
+## Stage 0 Result
+
+- Run:
+  `HAZE4K-brfrc-v2-representation-audit-autodl-20260530-111028` on
+  `autodl-dehaze`, branch/commit
+  `codex/haze4k-brfrc-v2-representation-audit` / `a441148`.
+- Artifact:
+  `experiment/HAZE4K/brfrc_v2_representation_audit/HAZE4K-brfrc-v2-representation-audit-autodl-20260530-111028`.
+- Recommendation:
+  `do_not_train_brf_v2_representation_yet`.
+- Main read:
+  frozen CR/LF-v1 internal features contain real residual-direction signal
+  beyond output-only and shuffled controls, but they do not preserve strong CR
+  cases reliably enough to justify a trainable BRFRC-v2-Rep head.
+- Best random ridge rows:
+  CR features cosine/wrong/LF-improve/LF-v1-preserve/strong-CR/corr
+  `0.6176/0.0302/0.6933/0.7739/0.4081/0.5371`; LF-v1 features
+  `0.6411/0.0262/0.7267/0.8310/0.4136/0.5859`; feature contrast
+  `0.6488/0.0222/0.7284/0.8321/0.4473/0.5604`.
+- Failure gate:
+  strong-CR preservation required `>= 0.70`, but all main feature rows stayed
+  below `0.45`; CR-strength held-out rows also collapsed. No Stage 1 model
+  card, implementation, or formal scout is authorized from this evidence.
 
 ## Most Valuable Attempt
 
