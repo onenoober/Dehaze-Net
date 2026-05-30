@@ -579,6 +579,8 @@ def numeric_feature_keys(rows, include_labels=False):
 def depth_prefixes(rows):
     aliases = []
     for key in rows[0].keys():
+        if key.startswith("shuf_"):
+            continue
         if key.endswith("_depth_hazy_mean"):
             aliases.append(key[:-len("_depth_hazy_mean")])
     return sorted(set(aliases))
