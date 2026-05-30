@@ -1,0 +1,72 @@
+diagnosed 50/1000
+diagnosed 100/1000
+diagnosed 150/1000
+diagnosed 200/1000
+diagnosed 250/1000
+diagnosed 300/1000
+diagnosed 350/1000
+diagnosed 400/1000
+diagnosed 450/1000
+diagnosed 500/1000
+diagnosed 550/1000
+diagnosed 600/1000
+diagnosed 650/1000
+diagnosed 700/1000
+diagnosed 750/1000
+diagnosed 800/1000
+diagnosed 850/1000
+diagnosed 900/1000
+diagnosed 950/1000
+diagnosed 1000/1000
+{
+  "dataset": "HAZE4K",
+  "split": "test",
+  "num_images": 1000,
+  "baseline_label": "LF-v1-best",
+  "current_label": "LFCR-v2-decay-final",
+  "baseline_checkpoint": "/root/workspace/Dehaze-Net/experiment/HAZE4K/DEA-Net-LF-H4K-scout-20260521-003100/saved_model/best.pk",
+  "current_checkpoint": "../experiment/HAZE4K/DEA-Net-LFCR-v2-decay-H4K-scout100k-20260528-091455/saved_model/best.pk",
+  "baseline_checkpoint_step": 90000,
+  "current_checkpoint_step": 100000,
+  "baseline_checkpoint_max_psnr": 32.428102808280265,
+  "current_checkpoint_max_psnr": 32.15159383227195,
+  "baseline_lf_gate": 0.03389017656445503,
+  "current_lf_gate": 0.019098982214927673,
+  "lowfreq_pool": 8,
+  "mean_baseline_psnr": 32.4282744799393,
+  "mean_current_psnr": 32.15181876377115,
+  "mean_delta_psnr": -0.27645571616814324,
+  "median_delta_psnr": -0.28006099674059115,
+  "mean_delta_ssim": -8.735209703445435e-05,
+  "better_030db_count": 332,
+  "worse_030db_count": 493,
+  "mean_lf_residual_cosine": 0.1960187103245844,
+  "median_lf_residual_cosine": 0.23324721306562424,
+  "p10_lf_residual_cosine": -0.301496410369873,
+  "mean_lf_luma_residual_cosine": 0.1972341949160036,
+  "mean_lf_residual_norm_ratio": 0.5779998686435246,
+  "median_lf_residual_norm_ratio": 0.5579431305136948,
+  "p90_lf_residual_norm_ratio": 0.8541777073115419,
+  "mean_lf_luma_norm_ratio": 0.5811332273088301,
+  "mean_lf_residual_error_ratio": 1.0565199131192675,
+  "mean_lf_mse_delta": 8.573139934560458e-05,
+  "mean_lf_luma_mse_delta": 8.111285318773298e-05,
+  "lf_mse_improved_count": 413,
+  "lf_mse_regressed_count": 587,
+  "lf_luma_mse_improved_count": 417,
+  "lf_luma_mse_regressed_count": 583,
+  "wrong_direction_count": 264,
+  "possible_overshoot_count": 2,
+  "possible_under_correction_count": 102,
+  "weak_baseline_mean_delta_psnr": 0.08562898339590612,
+  "strong_baseline_mean_delta_psnr": -0.4077685046855128,
+  "weak_baseline_mean_lf_residual_cosine": 0.14753983080375474,
+  "strong_baseline_mean_lf_residual_cosine": 0.26945604782179,
+  "weak_baseline_mean_lf_norm_ratio": 0.362113769416152,
+  "strong_baseline_mean_lf_norm_ratio": 0.7412319070650845,
+  "weak_baseline_mean_lf_mse_delta": 9.814460540656001e-05,
+  "strong_baseline_mean_lf_mse_delta": 2.2855171198898462e-05,
+  "corr_delta_psnr_lf_residual_cosine": 0.853882219606973,
+  "corr_delta_psnr_lf_residual_norm_ratio": -0.38294533064521236,
+  "corr_delta_psnr_lf_mse_delta": -0.5950340861557903
+}

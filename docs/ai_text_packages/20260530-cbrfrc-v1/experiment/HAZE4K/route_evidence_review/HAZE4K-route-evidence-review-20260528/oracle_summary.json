@@ -1,0 +1,73 @@
+[
+  {
+    "oracle": "LF-v1_or_ResidualCalib",
+    "models": "lfv1,rescalib",
+    "mean_psnr": 33.00339461054752,
+    "mean_gain_vs_cr": 0.7780791664843009,
+    "mean_gain_vs_lfv1": 0.5751201306082246,
+    "best_single_in_set": "lfv1",
+    "mean_gain_vs_best_single_in_set": 0.5751201306082246,
+    "winner_counts": {
+      "rescalib": 509,
+      "lfv1": 491
+    }
+  },
+  {
+    "oracle": "LF-v1_or_CRPlus-v2",
+    "models": "lfv1,crplusv2",
+    "mean_psnr": 32.93730848189051,
+    "mean_gain_vs_cr": 0.7119930378273062,
+    "mean_gain_vs_lfv1": 0.5090340019512307,
+    "best_single_in_set": "lfv1",
+    "mean_gain_vs_best_single_in_set": 0.5090340019512307,
+    "winner_counts": {
+      "crplusv2": 488,
+      "lfv1": 512
+    }
+  },
+  {
+    "oracle": "LF-v1_or_ResidualCalib_or_CRPlus-v2",
+    "models": "lfv1,rescalib,crplusv2",
+    "mean_psnr": 33.23083780987483,
+    "mean_gain_vs_cr": 1.005522365811595,
+    "mean_gain_vs_lfv1": 0.8025633299355206,
+    "best_single_in_set": "lfv1",
+    "mean_gain_vs_best_single_in_set": 0.8025633299355206,
+    "winner_counts": {
+      "rescalib": 361,
+      "lfv1": 347,
+      "crplusv2": 292
+    }
+  },
+  {
+    "oracle": "CR_LFv1_ResidualCalib_CRPlus",
+    "models": "cr,lfv1,rescalib,crplusv2",
+    "mean_psnr": 33.39747820559911,
+    "mean_gain_vs_cr": 1.172162761535872,
+    "mean_gain_vs_lfv1": 0.9692037256597965,
+    "best_single_in_set": "lfv1",
+    "mean_gain_vs_best_single_in_set": 0.9692037256597965,
+    "winner_counts": {
+      "rescalib": 297,
+      "lfv1": 255,
+      "cr": 224,
+      "crplusv2": 224
+    }
+  },
+  {
+    "oracle": "all_current_five",
+    "models": "cr,lfv1,rescalib,crplusv2,lfcr_v1_w005",
+    "mean_psnr": 33.5097959234542,
+    "mean_gain_vs_cr": 1.2844804793909794,
+    "mean_gain_vs_lfv1": 1.0815214435149032,
+    "best_single_in_set": "lfv1",
+    "mean_gain_vs_best_single_in_set": 1.0815214435149032,
+    "winner_counts": {
+      "rescalib": 250,
+      "lfv1": 204,
+      "cr": 187,
+      "lfcr_v1_w005": 183,
+      "crplusv2": 176
+    }
+  }
+]

@@ -2,7 +2,8 @@
 
 Purpose: focused text-only package for reviewing the DEA-Net-CBRFRC-v1
 baseline-relative frequency residual corrector implementation, preflight,
-100k scout result, and mechanism diagnostics.
+100k scout result, mechanism diagnostics, and the compact historical evidence
+needed to interpret why this route failed its mechanism gates.
 
 GitHub location after sync:
 `docs/ai_text_packages/20260530-cbrfrc-v1/`.
@@ -19,6 +20,10 @@ Recommended read order:
 8. `experiment/HAZE4K/brf_diagnostics/DEA-Net-CBRFRC-v1-H4K-scout100k-20260530-012811-best-20260530-0830/per_image_metrics.csv`
 9. `experiment/HAZE4K/brf_preflight/*/summary.json`
 10. `experiment/HAZE4K/_run_logs/DEA-Net-CBRFRC-v1-H4K-scout100k-20260530-012811.compact.log`
+11. `docs/HAZE4K_LF_RESIDUAL_DIRECTION_DIAGNOSIS_20260524.md`
+12. `docs/HAZE4K_ROUTE_EVIDENCE_REVIEW_20260528.md`
+13. `experiment/HAZE4K/route_evidence_review/HAZE4K-route-evidence-review-20260528/model_summary.csv`
+14. `experiment/HAZE4K/per_image_eval/*/summary.json`
 
 Included:
 
@@ -30,6 +35,12 @@ Included:
   micro-overfit checks.
 - Small CBRFRC preflight logs and a compact training log excerpt.
 - Run args text and validation curve log.
+- Historical route cards for LF-v1 residual direction, ResidualCalib,
+  CRPlus-v2, LFCR-v1, LFCR-v2 decay, selector closure, and three-way output
+  analysis.
+- Compact historical per-image CSV/JSON/MD evidence for CR, LF-v1,
+  ResidualCalib, CRPlus-v2, LFCR-v1, LFCR-v2 decay, residual diagnostics, and
+  the route evidence review matrix.
 
 Excluded by design:
 

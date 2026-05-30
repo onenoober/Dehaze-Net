@@ -1,0 +1,77 @@
+evaluated 50/1000
+evaluated 100/1000
+evaluated 150/1000
+evaluated 200/1000
+evaluated 250/1000
+evaluated 300/1000
+evaluated 350/1000
+evaluated 400/1000
+evaluated 450/1000
+evaluated 500/1000
+evaluated 550/1000
+evaluated 600/1000
+evaluated 650/1000
+evaluated 700/1000
+evaluated 750/1000
+evaluated 800/1000
+evaluated 850/1000
+evaluated 900/1000
+evaluated 950/1000
+evaluated 1000/1000
+{
+  "dataset": "HAZE4K",
+  "split": "test",
+  "num_images": 1000,
+  "baseline_label": "ResidualCalib-best",
+  "current_label": "LFCR-v2-decay-final",
+  "baseline_checkpoint": "/root/workspace/Dehaze-Net/experiment/HAZE4K/DEA-Net-LF-ResidualCalib-H4K-scout100k-20260525-122654/saved_model/best.pk",
+  "current_checkpoint": "../experiment/HAZE4K/DEA-Net-LFCR-v2-decay-H4K-scout100k-20260528-091455/saved_model/best.pk",
+  "baseline_checkpoint_step": 90000,
+  "current_checkpoint_step": 100000,
+  "baseline_checkpoint_max_psnr": 32.39362828083658,
+  "current_checkpoint_max_psnr": 32.15159383227195,
+  "baseline_lf_gate": -0.07530899345874786,
+  "current_lf_gate": 0.019098982214927673,
+  "baseline_lf_residual_calibration": true,
+  "baseline_lf_residual_selector": false,
+  "lf_conditional_mask": false,
+  "lf_mask_hidden_channels": 8,
+  "lf_mask_init_bias": 2.0,
+  "lf_haze_aware_mask": false,
+  "lf_haze_mask_strength": 1.0,
+  "lf_residual_calibration": false,
+  "lf_calib_hidden_channels": 8,
+  "lf_calib_alpha_max": 1.0,
+  "lf_residual_selector": false,
+  "lf_selector_hidden_channels": 8,
+  "lf_selector_init_bias": 2.0,
+  "mean_input_psnr": 17.083768303705778,
+  "mean_input_ssim": 0.8313592735826969,
+  "mean_baseline_psnr": 32.39355313308116,
+  "mean_baseline_ssim": 0.9844995281100273,
+  "mean_current_psnr": 32.15181876377115,
+  "mean_current_ssim": 0.9843667841553688,
+  "mean_delta_psnr": -0.24173436931001327,
+  "median_delta_psnr": -0.21744972705489118,
+  "mean_delta_ssim": -0.0001327439546585083,
+  "min_delta_psnr": -6.754822112441886,
+  "max_delta_psnr": 10.61428882187576,
+  "better_psnr_count": 431,
+  "worse_psnr_count": 569,
+  "better_010db_count": 405,
+  "worse_010db_count": 531,
+  "better_030db_count": 345,
+  "worse_030db_count": 476,
+  "better_100db_count": 179,
+  "worse_100db_count": 278,
+  "weak_baseline_cutoff_psnr": 28.707598851137284,
+  "strong_baseline_cutoff_psnr": 36.09221870490341,
+  "weak_baseline_mean_delta_psnr": 0.17363099850959987,
+  "strong_baseline_mean_delta_psnr": -0.4488591213711605,
+  "weak_baseline_better_030db_count": 109,
+  "weak_baseline_worse_030db_count": 92,
+  "strong_baseline_better_030db_count": 66,
+  "strong_baseline_worse_030db_count": 136,
+  "corr_airlight_delta_psnr": -0.02972182702480518,
+  "corr_beta_delta_psnr": -0.041591051616019455
+}

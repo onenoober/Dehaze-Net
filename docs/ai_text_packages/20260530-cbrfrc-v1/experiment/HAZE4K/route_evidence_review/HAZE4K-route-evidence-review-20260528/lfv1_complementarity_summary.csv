@@ -1,0 +1,4 @@
+candidate,label,lfv1_regress_030_set_n,regress_set_mean_delta_vs_lfv1,regress_set_improves_lfv1_010,regress_set_improves_lfv1_030,regress_set_full_rescue_vs_cr,lfv1_gain_030_set_n,gain_set_mean_delta_vs_lfv1,gain_set_preserve_within_010,gain_set_loses_030_vs_lfv1,gain_set_loses_100_vs_lfv1,weak_cr_mean_delta_vs_cr,strong_cr_mean_delta_vs_cr
+rescalib,ResidualCalib,351,0.4823314920170813,216,188,108,453,-0.4127228242396732,200,218,134,0.6354098311865223,-0.11705884251204407
+crplusv2,CRPlus-v2,351,0.5745447217649342,233,200,108,453,-0.639377598891049,157,267,147,0.4462102970412398,0.09207545722199029
+lfcr_v1_w005,LFCR-v1 w0.005,351,0.33965111600686243,203,182,84,453,-0.7388055520033407,163,264,174,0.2135863225809589,-0.1789401701953449

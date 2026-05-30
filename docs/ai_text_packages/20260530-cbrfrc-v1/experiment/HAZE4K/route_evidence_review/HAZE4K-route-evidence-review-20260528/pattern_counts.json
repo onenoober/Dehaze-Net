@@ -1,0 +1,19 @@
+{
+  "n_images": 1000,
+  "cr_q25_psnr": 28.823010051819,
+  "cr_q75_psnr": 35.78918308399756,
+  "lfv1_gain_030_count": 453,
+  "lfv1_regress_030_count": 351,
+  "lfv1_neutral_count": 196,
+  "all_candidates_improve_cr_030": 168,
+  "all_candidates_regress_cr_030": 122,
+  "oracle5_gain_vs_lfv1_ge_030": 715,
+  "oracle5_gain_vs_lfv1_ge_100": 446,
+  "winner_counts": {
+    "rescalib": 250,
+    "lfv1": 204,
+    "cr": 187,
+    "lfcr_v1_w005": 183,
+    "crplusv2": 176
+  }
+}
