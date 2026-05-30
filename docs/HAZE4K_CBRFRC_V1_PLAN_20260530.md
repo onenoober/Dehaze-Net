@@ -2,10 +2,11 @@
 
 Date: 2026-05-30
 
-Status: active Stage B fair 100k scout. The preflight safety line passed and
-the first approved CBRFRC-v1 scout was launched on AutoDL. Do not launch
-another CBRFRC run, Stage C, or any joint fine-tune until the in-run mechanism
-gates pass.
+Status: completed negative Stage B fair 100k scout. The preflight safety line
+passed, so the first approved CBRFRC-v1 scout was launched on AutoDL and ran to
+100k. It did not pass mechanism or promotion gates. Do not launch Stage C,
+joint fine-tuning, or another CBRFRC-v1 capacity variant without changing the
+target/loss design.
 
 Update 2026-05-30: preflight passed only with preserve protection changed to
 `brf_preserve_warmup_steps=3000` and `brf_preserve_gate_weight=0.0`. Default
@@ -14,7 +15,8 @@ first 100k scout.
 
 Run 1 launched 2026-05-30: `DEA-Net-CBRFRC-v1-H4K-scout100k-20260530-012811`
 on `autodl-dehaze`, branch `codex/haze4k-cbrfrc-v1`, commit `4634b13`, tmux
-`cbrfrc_v1_100k`. Next required decision: 10k mechanism sanity gate.
+`cbrfrc_v1_100k`. It completed the fair 100k horizon on 2026-05-30. Best
+checkpoint was step `10000`; final checkpoint was step `100000`.
 
 ## Most Valuable Attempt
 
@@ -135,7 +137,7 @@ on `autodl-dehaze`, branch `codex/haze4k-cbrfrc-v1`, commit `4634b13`, tmux
   `0.032217 -> 0.023870`, residual cosine `0.0 -> 0.410177`,
   `gate_lf_mean 0.017986 -> 0.007157`, and `c_lf_norm 0.0 -> 0.225575`.
 
-## Active Run
+## Run Result
 
 - Run ID: `DEA-Net-CBRFRC-v1-H4K-scout100k-20260530-012811`.
 - Server/path: `autodl-dehaze`,
@@ -144,18 +146,36 @@ on `autodl-dehaze`, branch `codex/haze4k-cbrfrc-v1`, commit `4634b13`, tmux
   `experiment/HAZE4K/_run_logs/DEA-Net-CBRFRC-v1-H4K-scout100k-20260530-012811.log`.
 - Run dir:
   `experiment/HAZE4K/DEA-Net-CBRFRC-v1-H4K-scout100k-20260530-012811`.
-- Launch health: tmux and train process active, RTX 5090 busy, log advancing
-  before step `1000`.
+- Validation curve: 10k `32.2237 / 0.9844`, 20k `32.2122 / 0.9844`,
+  30k `32.1988 / 0.9844`, 40k `32.1999 / 0.9844`, 50k `32.2006 / 0.9844`,
+  60k `32.1934 / 0.9844`, 70k `32.1919 / 0.9844`, 80k `32.1956 / 0.9844`,
+  90k `32.1980 / 0.9844`, 100k `32.1977 / 0.9844`.
+- Best checkpoint: step `10000`, `32.2237 / 0.9844`, slightly below CR best
+  `32.2255` and far below LF-v1 best `32.4281`.
+- Final checkpoint: step `100000`, `32.1977 / 0.9844`.
+- Full-test BRF diagnostics for best checkpoint:
+  `experiment/HAZE4K/brf_diagnostics/DEA-Net-CBRFRC-v1-H4K-scout100k-20260530-012811-best-20260530-0830`.
+- Key diagnostic metrics: BRF best full-test `32.2247 / 0.984419`,
+  `delta_brf_vs_cr=-0.0007`, `delta_brf_vs_lfv1=-0.2035`,
+  wrong-direction `557/1000`, mean residual cosine `-0.0506`, median residual
+  cosine `-0.0517`, LF MSE improved/regressed `443/557`, weak/strong CR delta
+  about `-0.0009/-0.0009`, LF-v1 gain preservation `227/453` (`50.1%`),
+  LF-v1 regression rescue `352/352` (`100%`), `gate_lf_mean=0.0327`,
+  `gate_hf_mean=0.0072`.
+- Failure attribution: residual wrong direction. The LF gate did not collapse,
+  but the applied residual was not aligned with `GT-J0` on full test. The model
+  mostly preserved CR-level output while failing the intended baseline-relative
+  residual mechanism and losing about half of LF-v1 gain cases.
 
 ## Gates
 
 | Step | Image metric rule | Mechanism metric rule | Stop/continue rule |
 | ---: | --- | --- | --- |
-| 10000 | Must not collapse far below CR baseline. | `gate_lf_mean` in `0.01..0.15`, `gate_hf_mean < 0.03`, residual cosine rising, LF MSE trend better than LF-v1. | Stop if gates die, residual cosine stays non-positive, or LF MSE regressions mirror LF-v1. |
-| 30000 | PSNR should approach CR baseline. | wrong-direction and strong-CR regression must be improving. | Stop if weak cases improve only by hurting strong cases. |
-| 50000 | `mean PSNR >= CR + 0.10 dB` preferred. | LF-v1 gain preservation `>=70%`, LF-v1 regression rescue `>=25%`, wrong-direction count at least `15%` below LF-v1 trend. | Promote only if mechanism and quality agree. |
-| 70000 | Curve stable or rising. | Gates neither collapse to 0 nor saturate; color/HF metrics stable. | Stop if quality gain comes with systematic color or strong-baseline damage. |
-| 100000 | Full-test evidence required. | Compare against CR, LF-v1, ResidualCalib, CRPlus-v2, and LFCR-v1. | Decide Stage C only if mechanism gates pass. |
+| 10000 | Must not collapse far below CR baseline. Actual: `32.2237`, essentially tied but slightly below CR. | Full-test best checkpoint later showed wrong-direction `557/1000` and mean residual cosine `-0.0506`, so the apparent 10k quality tie was not mechanism-valid. | Failed in retrospect; should not be promoted from this mechanism evidence. |
+| 30000 | PSNR should approach CR baseline. Actual: `32.1988`, below CR. | Wrong-direction remained bad in best-checkpoint diagnostics. | Failed. |
+| 50000 | `mean PSNR >= CR + 0.10 dB` preferred. Actual: `32.2006`, below CR. | LF-v1 gain preservation only `50.1%`, below required `70%`; wrong-direction worse than LF-v1 target. | Failed promotion gate. |
+| 70000 | Curve stable or rising. Actual: `32.1919`, no rising curve. | Gate did not collapse, but residual alignment failed. | Failed. |
+| 100000 | Full-test evidence required. Actual final: `32.1977`. | Best-checkpoint diagnostics vs CR/LF-v1 completed; not promoted because mechanism and quality failed. | Do not run Stage C. |
 
 ## Analysis Plan
 

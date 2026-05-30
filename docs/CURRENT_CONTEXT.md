@@ -177,7 +177,7 @@ route reasoning in the dated analysis docs.
   most-valuable-attempt standard: highest route-decision value per training
   cost, with cheap preflight evidence, an earliest decisive gate, speed metrics,
   and mechanism metrics.
-- Active CBRFRC-v1 scout on `autodl-dehaze`:
+- Completed CBRFRC-v1 scout on `autodl-dehaze`:
   `DEA-Net-CBRFRC-v1-H4K-scout100k-20260530-012811` in
   `/root/autodl-tmp/workspace/Dehaze-Net`, branch
   `codex/haze4k-cbrfrc-v1` commit `4634b13`, tmux `cbrfrc_v1_100k`, log
@@ -189,9 +189,17 @@ route reasoning in the dated analysis docs.
   bounded LF oracle headroom was `+10.6562 dB` with `0/250` strong-regression
   cases, and the fixed-patch 2k micro-overfit loss fell `0.032217 -> 0.023870`
   with residual cosine `0.0 -> 0.410177` and final `gate_lf_mean=0.007157`.
-  The fair 100k scout was launched because this safety line passed. Do not
-  launch another CBRFRC run, Stage C, or joint fine-tune until the in-run gates
-  pass; the next required decision is the 10k mechanism sanity gate.
+  The fair 100k scout completed on 2026-05-30: best checkpoint is step `10000`
+  with `32.2237 / 0.9844`, final step `100000` is `32.1977 / 0.9844`, both
+  below CR best `32.2255` and LF-v1 best `32.4281`. Full 1000-image BRF
+  diagnostics for the best checkpoint are synced locally under
+  `experiment/HAZE4K/brf_diagnostics/DEA-Net-CBRFRC-v1-H4K-scout100k-20260530-012811-best-20260530-0830`:
+  `delta_brf_vs_cr=-0.0007`, `delta_brf_vs_lfv1=-0.2035`,
+  wrong-direction `557/1000`, mean residual cosine `-0.0506`, LF MSE
+  improved/regressed `443/557`, LF-v1 gain preservation `50.1%`, and
+  `gate_lf_mean=0.0327`. Conclusion: mechanism failed; do not run Stage C,
+  joint fine-tune, or another CBRFRC-v1 variant without a changed target or
+  loss design.
 
 ## Storage And Server Roles
 
