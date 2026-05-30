@@ -1,0 +1,70 @@
+{
+  "dataset": "HAZE4K",
+  "cr_checkpoint": "../experiment/HAZE4K/DEA-Net-CR-H4K-Baseline-scout-20260520-101334/saved_model/best.pk",
+  "cr_checkpoint_step": 90000,
+  "shape_smoke": {
+    "out_shape": [
+      2,
+      3,
+      256,
+      256
+    ],
+    "j0_shape": [
+      2,
+      3,
+      256,
+      256
+    ],
+    "c_lf_shape": [
+      2,
+      3,
+      256,
+      256
+    ],
+    "gate_lf_shape": [
+      2,
+      1,
+      256,
+      256
+    ],
+    "out_min": 0.0,
+    "out_max": 1.0,
+    "gate_lf_mean": 0.01798621006309986,
+    "gate_hf_mean": 0.006692850962281227,
+    "c_lf_norm": 0.0,
+    "max_abs_out_minus_j0": 0.0
+  },
+  "identity_oracle": {
+    "num_images": 16,
+    "mean_psnr_j0": 27.781652310263958,
+    "mean_ssim_j0": 0.9810495562851429,
+    "mean_psnr_j": 27.781652310263958,
+    "mean_ssim_j": 0.9810495562851429,
+    "identity_mean_psnr_delta": 0.0,
+    "identity_max_abs_psnr_delta": 0.0,
+    "identity_max_abs_pixel_delta": 0.0,
+    "mean_psnr_oracle_lf": 44.23086905066841,
+    "mean_psnr_oracle_lf_bound": 40.78401416828787,
+    "oracle_lf_vs_j0_delta": 16.449216740404452,
+    "oracle_lf_bound_vs_j0_delta": 13.002361858023907,
+    "oracle_lf_bound_strong_regression_count": 0,
+    "strong_baseline_count": 4,
+    "strong_baseline_cutoff_psnr": 29.27677149819267
+  },
+  "micro_overfit": {
+    "steps": 2000,
+    "subset_size": 64,
+    "batch_size": 8,
+    "lr": 0.001,
+    "initial_loss": 0.032217469066381454,
+    "final_loss": 0.02347884140908718,
+    "initial_res_lf": 0.00975416973233223,
+    "final_res_lf": 0.009642883203923702,
+    "initial_residual_cosine": 0.0,
+    "final_residual_cosine": 0.43166831135749817,
+    "initial_gate_lf_mean": 0.01798621006309986,
+    "final_gate_lf_mean": 0.004432949237525463,
+    "initial_c_lf_norm": 0.0,
+    "final_c_lf_norm": 0.0993025079369545
+  }
+}

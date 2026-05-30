@@ -1,0 +1,103 @@
+/root/autodl-tmp/workspace/Dehaze-Net/code/model/modules/deconv.py:19: UserWarning: The torch.cuda.*DtypeTensor constructors are no longer recommended. It's best to use methods such as torch.tensor(data, dtype=*, device='cuda') to create tensors. (Triggered internally at /pytorch/torch/csrc/tensor/python_tensor.cpp:78.)
+  conv_weight_cd = torch.cuda.FloatTensor(conv_shape[0], conv_shape[1], 3 * 3).fill_(0)
+identity/oracle 50/1000
+identity/oracle 100/1000
+identity/oracle 150/1000
+identity/oracle 200/1000
+identity/oracle 250/1000
+identity/oracle 300/1000
+identity/oracle 350/1000
+identity/oracle 400/1000
+identity/oracle 450/1000
+identity/oracle 500/1000
+identity/oracle 550/1000
+identity/oracle 600/1000
+identity/oracle 650/1000
+identity/oracle 700/1000
+identity/oracle 750/1000
+identity/oracle 800/1000
+identity/oracle 850/1000
+identity/oracle 900/1000
+identity/oracle 950/1000
+identity/oracle 1000/1000
+micro step 1 loss 0.031429 res_lf 0.008458 cosine 0.000000 gate_lf 0.017986
+micro step 100 loss 0.030642 res_lf 0.009792 cosine 0.075218 gate_lf 0.000001
+micro step 200 loss 0.029882 res_lf 0.007743 cosine -0.001172 gate_lf 0.000000
+micro step 300 loss 0.029468 res_lf 0.007426 cosine -0.008385 gate_lf 0.000000
+micro step 400 loss 0.031352 res_lf 0.009030 cosine 0.000000 gate_lf 0.000000
+micro step 500 loss 0.033444 res_lf 0.010493 cosine 0.000000 gate_lf 0.000000
+micro step 600 loss 0.031122 res_lf 0.009126 cosine -0.000737 gate_lf 0.000000
+micro step 700 loss 0.036442 res_lf 0.013818 cosine 0.000000 gate_lf 0.000000
+micro step 800 loss 0.032843 res_lf 0.010345 cosine 0.000000 gate_lf 0.000000
+micro step 900 loss 0.031132 res_lf 0.008242 cosine -0.002544 gate_lf 0.000000
+micro step 1000 loss 0.031286 res_lf 0.008817 cosine -0.002279 gate_lf 0.000000
+{
+  "dataset": "HAZE4K",
+  "cr_checkpoint": "../experiment/HAZE4K/DEA-Net-CR-H4K-Baseline-scout-20260520-101334/saved_model/best.pk",
+  "cr_checkpoint_step": 90000,
+  "shape_smoke": {
+    "out_shape": [
+      2,
+      3,
+      256,
+      256
+    ],
+    "j0_shape": [
+      2,
+      3,
+      256,
+      256
+    ],
+    "c_lf_shape": [
+      2,
+      3,
+      256,
+      256
+    ],
+    "gate_lf_shape": [
+      2,
+      1,
+      256,
+      256
+    ],
+    "out_min": 0.0,
+    "out_max": 1.0,
+    "gate_lf_mean": 0.01798621006309986,
+    "gate_hf_mean": 0.006692850962281227,
+    "c_lf_norm": 0.0,
+    "max_abs_out_minus_j0": 0.0
+  },
+  "identity_oracle": {
+    "num_images": 1000,
+    "mean_psnr_j0": 32.2254506212325,
+    "mean_ssim_j0": 0.98441736805439,
+    "mean_psnr_j": 32.2254506212325,
+    "mean_ssim_j": 0.98441736805439,
+    "identity_mean_psnr_delta": 0.0,
+    "identity_max_abs_psnr_delta": 0.0,
+    "identity_max_abs_pixel_delta": 0.0,
+    "mean_psnr_oracle_lf": 44.253776632379406,
+    "mean_psnr_oracle_lf_bound": 42.88168355504737,
+    "oracle_lf_vs_j0_delta": 12.028326011146918,
+    "oracle_lf_bound_vs_j0_delta": 10.656232933814875,
+    "oracle_lf_bound_strong_regression_count": 0,
+    "strong_baseline_count": 250,
+    "strong_baseline_cutoff_psnr": 35.79482472897563
+  },
+  "micro_overfit": {
+    "steps": 1000,
+    "subset_size": 64,
+    "batch_size": 8,
+    "lr": 0.001,
+    "initial_loss": 0.03142941743135452,
+    "final_loss": 0.031286127865314484,
+    "initial_res_lf": 0.008458463475108147,
+    "final_res_lf": 0.008816534653306007,
+    "initial_residual_cosine": 0.0,
+    "final_residual_cosine": -0.002279404317960143,
+    "initial_gate_lf_mean": 0.01798621006309986,
+    "final_gate_lf_mean": 1.538282348723108e-11,
+    "initial_c_lf_norm": 0.0,
+    "final_c_lf_norm": 6.172450106589622e-09
+  }
+}

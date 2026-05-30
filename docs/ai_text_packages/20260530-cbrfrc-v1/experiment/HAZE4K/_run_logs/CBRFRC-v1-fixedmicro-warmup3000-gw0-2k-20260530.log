@@ -1,0 +1,84 @@
+/root/autodl-tmp/workspace/Dehaze-Net/code/model/modules/deconv.py:19: UserWarning: The torch.cuda.*DtypeTensor constructors are no longer recommended. It's best to use methods such as torch.tensor(data, dtype=*, device='cuda') to create tensors. (Triggered internally at /pytorch/torch/csrc/tensor/python_tensor.cpp:78.)
+  conv_weight_cd = torch.cuda.FloatTensor(conv_shape[0], conv_shape[1], 3 * 3).fill_(0)
+identity/oracle 16/16
+micro step 1 loss 0.026835 res_lf 0.009751 cosine 0.268992 gate_lf 0.017986
+micro step 200 loss 0.027658 res_lf 0.009544 cosine 0.218890 gate_lf 0.043124
+micro step 400 loss 0.028215 res_lf 0.009530 cosine 0.190686 gate_lf 0.041374
+micro step 600 loss 0.028167 res_lf 0.009540 cosine 0.193279 gate_lf 0.041247
+micro step 800 loss 0.027098 res_lf 0.009605 cosine 0.248591 gate_lf 0.017639
+micro step 1000 loss 0.026365 res_lf 0.009574 cosine 0.283862 gate_lf 0.012374
+micro step 1200 loss 0.025188 res_lf 0.009461 cosine 0.337251 gate_lf 0.022992
+micro step 1400 loss 0.025805 res_lf 0.009561 cosine 0.311533 gate_lf 0.011613
+micro step 1600 loss 0.025332 res_lf 0.009561 cosine 0.335056 gate_lf 0.010934
+micro step 1800 loss 0.024153 res_lf 0.009505 cosine 0.391261 gate_lf 0.015002
+micro step 2000 loss 0.023870 res_lf 0.009611 cosine 0.410177 gate_lf 0.007157
+{
+  "dataset": "HAZE4K",
+  "cr_checkpoint": "../experiment/HAZE4K/DEA-Net-CR-H4K-Baseline-scout-20260520-101334/saved_model/best.pk",
+  "cr_checkpoint_step": 90000,
+  "shape_smoke": {
+    "out_shape": [
+      2,
+      3,
+      256,
+      256
+    ],
+    "j0_shape": [
+      2,
+      3,
+      256,
+      256
+    ],
+    "c_lf_shape": [
+      2,
+      3,
+      256,
+      256
+    ],
+    "gate_lf_shape": [
+      2,
+      1,
+      256,
+      256
+    ],
+    "out_min": 0.0,
+    "out_max": 1.0,
+    "gate_lf_mean": 0.01798621006309986,
+    "gate_hf_mean": 0.006692850962281227,
+    "c_lf_norm": 0.0,
+    "max_abs_out_minus_j0": 0.0
+  },
+  "identity_oracle": {
+    "num_images": 16,
+    "mean_psnr_j0": 27.781652310263958,
+    "mean_ssim_j0": 0.9810495562851429,
+    "mean_psnr_j": 27.781652310263958,
+    "mean_ssim_j": 0.9810495562851429,
+    "identity_mean_psnr_delta": 0.0,
+    "identity_max_abs_psnr_delta": 0.0,
+    "identity_max_abs_pixel_delta": 0.0,
+    "mean_psnr_oracle_lf": 44.23086905066841,
+    "mean_psnr_oracle_lf_bound": 40.78401416828787,
+    "oracle_lf_vs_j0_delta": 16.449216740404452,
+    "oracle_lf_bound_vs_j0_delta": 13.002361858023907,
+    "oracle_lf_bound_strong_regression_count": 0,
+    "strong_baseline_count": 4,
+    "strong_baseline_cutoff_psnr": 29.27677149819267
+  },
+  "micro_overfit": {
+    "steps": 2000,
+    "subset_size": 64,
+    "batch_size": 8,
+    "lr": 0.001,
+    "initial_loss": 0.032217469066381454,
+    "final_loss": 0.02387009561061859,
+    "initial_res_lf": 0.00975416973233223,
+    "final_res_lf": 0.009610716253519058,
+    "initial_residual_cosine": 0.0,
+    "final_residual_cosine": 0.4101770520210266,
+    "initial_gate_lf_mean": 0.01798621006309986,
+    "final_gate_lf_mean": 0.0071565983816981316,
+    "initial_c_lf_norm": 0.0,
+    "final_c_lf_norm": 0.22557474672794342
+  }
+}
