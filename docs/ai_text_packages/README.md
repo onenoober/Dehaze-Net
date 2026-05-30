@@ -22,3 +22,4 @@ Current packages:
 | --- | --- |
 | `20260529-ai-text/` | Text-only context package for AI model-architecture analysis of the current DEA-Net/HAZE4K fork. Start at `20260529-ai-text/PACKAGE_README.md`. |
 | `20260530-cbrfrc-v1/` | Focused text-only CBRFRC-v1 evidence package with implementation files, route docs, preflight logs, diagnostic CSV/JSON, compact training log, and run args. Start at `20260530-cbrfrc-v1/PACKAGE_README.md`. |
+| `20260530-brfrc-v2-representation-audit/` | Focused text-only BRFRC-v2 Stage 0 representation audit package with audit code, launch script, route docs, compact log, and small JSON/CSV/MD outputs. Start at `20260530-brfrc-v2-representation-audit/PACKAGE_README.md`. |
